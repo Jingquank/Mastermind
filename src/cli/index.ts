@@ -8,6 +8,7 @@ import { serverLogPath } from '../server/paths'
 import { readServerState } from '../server/statefile'
 import { CliError, ensureServer } from './daemon'
 import { postJson, probeHealth, requestShutdown, sleep } from './http'
+import { waitForHandback } from './wait'
 
 const program = new Command()
 
@@ -61,8 +62,7 @@ program
     if (opts.browser) openBrowser(session.url)
 
     if (opts.wait) {
-      // Full --wait state machine lands in M7.
-      die(1, '--wait is not implemented yet')
+      await waitForHandback(port, session.sessionId)
     }
     process.exit(0)
   })

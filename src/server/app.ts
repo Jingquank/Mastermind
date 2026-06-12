@@ -12,6 +12,8 @@ import type {
   SseEventName,
 } from '../shared/types'
 import { writeSessionFile } from './files'
+import { performHandback } from './handback'
+import { listSnapshots, readLatestSnapshot } from './snapshots'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -132,6 +134,49 @@ export function createApp(deps: AppDeps): Hono {
       return c.json({ error: 'file changed on disk', currentMtimeMs: result.currentMtimeMs }, 409)
     }
     return c.json({ mtimeMs: result.mtimeMs })
+  })
+
+  app.post('/api/sessions/:id/handback', async (c) => {
+    const session = registry.get(c.req.param('id'))
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    let body: { content?: string; baseMtimeMs?: number }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    if (typeof body.content !== 'string') return c.json({ error: 'content is required' }, 400)
+    const result = await performHandback(session, body.content, body.baseMtimeMs)
+    if (!result.ok) {
+      return c.json({ error: 'file changed on disk', currentMtimeMs: result.currentMtimeMs }, 409)
+    }
+    log(`session ${session.id}: hand back — ${result.summaryLine}`)
+    registry.broadcast(session.id, 'handback', {
+      summaryLine: result.summaryLine,
+      counts: result.counts,
+      snapshotId: result.snapshotId,
+      mtimeMs: result.mtimeMs,
+    })
+    return c.json({
+      mtimeMs: result.mtimeMs,
+      counts: result.counts,
+      summaryLine: result.summaryLine,
+      snapshotId: result.snapshotId,
+    })
+  })
+
+  app.get('/api/sessions/:id/snapshots', async (c) => {
+    const session = registry.get(c.req.param('id'))
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    return c.json(await listSnapshots(session.path))
+  })
+
+  app.get('/api/sessions/:id/snapshots/latest', async (c) => {
+    const session = registry.get(c.req.param('id'))
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    const latest = await readLatestSnapshot(session.path)
+    if (!latest) return c.json({ error: 'no snapshots' }, 404)
+    return c.json(latest)
   })
 
   app.get('/api/sessions/:id/events', (c) => {

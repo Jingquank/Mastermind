@@ -39,8 +39,23 @@ export function getFile(sessionId: string): Promise<FileResponse> {
   return request<FileResponse>(`/api/sessions/${sessionId}/file`)
 }
 
-export function putFile(sessionId: string, content: string, baseMtimeMs: number): Promise<{ mtimeMs: number }> {
+export function putFile(sessionId: string, content: string, baseMtimeMs?: number): Promise<{ mtimeMs: number }> {
   return request<{ mtimeMs: number }>(`/api/sessions/${sessionId}/file`, jsonInit('PUT', { content, baseMtimeMs }))
+}
+
+export interface HandbackResponse {
+  mtimeMs: number
+  counts: { comments: number; edits: number; highlights: number }
+  summaryLine: string
+  snapshotId: string
+}
+
+export function postHandback(sessionId: string, content: string, baseMtimeMs: number): Promise<HandbackResponse> {
+  return request<HandbackResponse>(`/api/sessions/${sessionId}/handback`, jsonInit('POST', { content, baseMtimeMs }))
+}
+
+export function getLatestSnapshot(sessionId: string): Promise<{ id: string; content: string }> {
+  return request<{ id: string; content: string }>(`/api/sessions/${sessionId}/snapshots/latest`)
 }
 
 export function openEvents(sessionId: string): EventSource {

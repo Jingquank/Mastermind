@@ -61,7 +61,13 @@ export function TopBar({ railOpen, onToggleRail, suggestionCount = 0, onAcceptAl
         <button type="button" className="btn-ghost" onClick={() => void save()} disabled={!dirty || saving}>
           {saving ? 'Saving…' : 'Save'}
         </button>
-        <button type="button" className="btn-cta" disabled title="Coming soon">
+        <button
+          type="button"
+          className="btn-cta"
+          onClick={() => void useDoc.getState().handback()}
+          disabled={saving}
+          title="Save with a review summary and signal the waiting agent"
+        >
           Save &amp; hand back
         </button>
       </div>

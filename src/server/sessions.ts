@@ -25,6 +25,8 @@ export interface Session {
   readonly createdAt: number
   /** sha256 of the last content the server itself wrote — used to swallow watcher echo. */
   lastSelfWriteHash: string | null
+  /** chokidar handle, owned by server/watch.ts */
+  watcher: { close(): Promise<void> } | null
   readonly uiConns: Set<Conn>
   readonly cliConns: Set<Conn>
   /* liveness bookkeeping */
@@ -36,13 +38,27 @@ export interface Session {
   closed: boolean
 }
 
+export interface RegistryTimers {
+  graceMs: number
+  neverOpenedMs: number
+}
+
 export class SessionRegistry {
   private byPath = new Map<string, Session>()
   private byId = new Map<string, Session>()
+  private graceMs: number
+  private neverOpenedMs: number
+
+  constructor(timers?: Partial<RegistryTimers>) {
+    this.graceMs = timers?.graceMs ?? SESSION_CLOSE_GRACE_MS
+    this.neverOpenedMs = timers?.neverOpenedMs ?? SESSION_NEVER_OPENED_MS
+  }
 
   /** Called whenever a session is created or destroyed (idle-exit tracking). */
   onChange: (() => void) | null = null
-  /** Hook for cleanup when a session closes (e.g. stop file watcher). */
+  /** Hook for setup when a session opens (start file watcher). */
+  onSessionOpened: ((session: Session) => void) | null = null
+  /** Hook for cleanup when a session closes (stop file watcher). */
   onSessionClosed: ((session: Session, reason: SessionCloseReason) => void) | null = null
 
   open(realPath: string, opts: { isDraft?: boolean } = {}): { session: Session; created: boolean } {
@@ -56,6 +72,7 @@ export class SessionRegistry {
       isDraft: opts.isDraft ?? false,
       createdAt: Date.now(),
       lastSelfWriteHash: null,
+      watcher: null,
       uiConns: new Set(),
       cliConns: new Set(),
       everConnected: false,
@@ -70,10 +87,11 @@ export class SessionRegistry {
         log(`session ${session.id} (${session.displayName}): no browser connected within timeout`)
         this.close(session.id, 'never-opened')
       }
-    }, SESSION_NEVER_OPENED_MS)
+    }, this.neverOpenedMs)
     this.byPath.set(realPath, session)
     this.byId.set(session.id, session)
     log(`session ${session.id} opened for ${realPath}`)
+    this.onSessionOpened?.(session)
     this.onChange?.()
     return { session, created: true }
   }
@@ -172,7 +190,7 @@ export class SessionRegistry {
     this.disarmGrace(session)
     session.graceArmedAt = Date.now()
     session.graceRearmed = false
-    session.graceTimer = setTimeout(() => this.graceFired(session), SESSION_CLOSE_GRACE_MS)
+    session.graceTimer = setTimeout(() => this.graceFired(session), this.graceMs)
   }
 
   private disarmGrace(session: Session): void {
@@ -188,10 +206,10 @@ export class SessionRegistry {
     const elapsed = Date.now() - session.graceArmedAt
     // Timer overshot badly → the machine slept; give the browser one more
     // window to reconnect after wake instead of declaring the tab closed.
-    if (elapsed > SESSION_CLOSE_GRACE_MS * 1.5 && !session.graceRearmed) {
+    if (elapsed > this.graceMs * 1.5 && !session.graceRearmed) {
       session.graceRearmed = true
       session.graceArmedAt = Date.now()
-      session.graceTimer = setTimeout(() => this.graceFired(session), SESSION_CLOSE_GRACE_MS)
+      session.graceTimer = setTimeout(() => this.graceFired(session), this.graceMs)
       return
     }
     this.close(session.id, 'tabs-closed')

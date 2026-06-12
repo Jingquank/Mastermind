@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { applyTextEdits } from '../../shared/edits'
 import { detectEol, normalizeToLf, restoreEol, type Eol } from '../../shared/eol'
 import type { SessionMeta, TextEdit } from '../../shared/types'
-import { ApiError, getFile, getSession, putFile } from './api'
+import { ApiError, getFile, getSession, postHandback, putFile } from './api'
 
 export type ViewMode = 'reading' | 'editing' | 'source'
 
@@ -31,9 +31,21 @@ export interface DocStore {
   flushEditor: (() => void) | null
   /** Undo stack for review operations applied outside the editors (cap 50). */
   history: string[]
+  /** The file changed on disk under us (banner state). */
+  diskChange: { mtimeMs: number; deleted: boolean } | null
+  /** Toast after a successful hand-back. */
+  handedBack: string | null
 
   load(sessionId: string): Promise<void>
   undo(): void
+  notifyDiskChange(mtimeMs: number, deleted?: boolean): void
+  dismissDiskChange(): void
+  /** Discard the buffer and adopt the on-disk content. */
+  reloadFromDisk(): Promise<void>
+  /** PUT without the mtime guard (the "Save anyway" path). */
+  saveForce(): Promise<void>
+  handback(): Promise<boolean>
+  clearHandedBack(): void
   setSource(source: string): void
   /** Editor flush path — updates the buffer without remounting the editor. */
   setSourceFromEditor(source: string): void
@@ -62,6 +74,8 @@ export const useDoc = create<DocStore>((set, get) => ({
   editorDirty: false,
   flushEditor: null,
   history: [],
+  diskChange: null,
+  handedBack: null,
 
   async load(sessionId) {
     set({ sessionId, status: 'loading', error: null })
@@ -164,7 +178,59 @@ export const useDoc = create<DocStore>((set, get) => ({
       conflict: false,
       externalVersion: s.externalVersion + 1,
       editorDirty: false,
+      diskChange: null,
     }))
+  },
+
+  notifyDiskChange(mtimeMs, deleted = false) {
+    set({ diskChange: { mtimeMs, deleted } })
+  },
+
+  dismissDiskChange() {
+    set({ diskChange: null })
+  },
+
+  async reloadFromDisk() {
+    const { sessionId } = get()
+    if (!sessionId) return
+    const file = await getFile(sessionId)
+    get().adoptDiskContent(file.content, file.mtimeMs)
+  },
+
+  async saveForce() {
+    const { sessionId, eol } = get()
+    if (!sessionId) return
+    get().flushEditor?.()
+    const current = get().source
+    const res = await putFile(sessionId, restoreEol(current, eol), undefined)
+    set({ savedSource: current, mtimeMs: res.mtimeMs, conflict: false, diskChange: null })
+  },
+
+  async handback() {
+    get().flushEditor?.()
+    const { sessionId, source, eol, mtimeMs, saving } = get()
+    if (!sessionId || saving) return false
+    set({ saving: true })
+    try {
+      const res = await postHandback(sessionId, restoreEol(source, eol), mtimeMs)
+      // the server appended/refreshed the summary block — adopt its content
+      const file = await getFile(sessionId)
+      get().adoptDiskContent(file.content, file.mtimeMs)
+      set({ handedBack: res.summaryLine })
+      return true
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        set({ conflict: true })
+        return false
+      }
+      throw err
+    } finally {
+      set({ saving: false })
+    }
+  },
+
+  clearHandedBack() {
+    set({ handedBack: null })
   },
 }))
 

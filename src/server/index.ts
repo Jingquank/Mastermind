@@ -7,6 +7,7 @@ import { createApp } from './app'
 import { log } from './log'
 import { SessionRegistry } from './sessions'
 import { clearServerState, readServerState, writeServerState } from './statefile'
+import { startWatcher, stopWatcher } from './watch'
 
 function listenOnce(app: Hono, port: number): Promise<Server> {
   return new Promise((resolve, reject) => {
@@ -47,10 +48,15 @@ async function main(): Promise<void> {
   const startedAt = Date.now()
   let lastActivity = Date.now()
 
-  const registry = new SessionRegistry()
+  const registry = new SessionRegistry({
+    graceMs: Number(process.env.MASTERMIND_GRACE_MS || '') || undefined,
+    neverOpenedMs: Number(process.env.MASTERMIND_NEVER_OPENED_MS || '') || undefined,
+  })
   registry.onChange = () => {
     lastActivity = Date.now()
   }
+  registry.onSessionOpened = (session) => startWatcher(session, registry)
+  registry.onSessionClosed = (session) => void stopWatcher(session)
 
   let shuttingDown = false
   let server: Server | null = null

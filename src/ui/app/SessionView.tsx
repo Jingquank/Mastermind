@@ -19,11 +19,19 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const error = useDoc((s) => s.error)
   const source = useDoc((s) => s.source)
   const conflict = useDoc((s) => s.conflict)
+  const diskChange = useDoc((s) => s.diskChange)
+  const handedBack = useDoc((s) => s.handedBack)
   const mode = useDoc((s) => s.mode)
   const externalVersion = useDoc((s) => s.externalVersion)
   const load = useDoc((s) => s.load)
   const applyEdits = useDoc((s) => s.applyEdits)
   const save = useDoc((s) => s.save)
+
+  useEffect(() => {
+    if (!handedBack) return
+    const t = setTimeout(() => useDoc.getState().clearHandedBack(), 5000)
+    return () => clearTimeout(t)
+  }, [handedBack])
 
   const articleRef = useRef<HTMLElement | null>(null)
   const [activeSpan, setActiveSpan] = useState<number | null>(null)
@@ -37,6 +45,20 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     // role=ui SSE connection: its liveness keeps the session (and a blocked
     // `mastermind open --wait`) alive while this tab is open.
     const es = openEvents(sessionId)
+    es.addEventListener('file-changed', (e) => {
+      const { mtimeMs } = JSON.parse((e as MessageEvent).data) as { mtimeMs: number }
+      useDoc.getState().notifyDiskChange(mtimeMs)
+    })
+    es.addEventListener('file-deleted', () => {
+      useDoc.getState().notifyDiskChange(0, true)
+    })
+    es.addEventListener('handback', (e) => {
+      // another tab (or this one) handed back; if our buffer is clean and we
+      // didn't initiate it, the disk now has a fresh summary block
+      const { mtimeMs } = JSON.parse((e as MessageEvent).data) as { mtimeMs: number }
+      const s = useDoc.getState()
+      if (!s.saving && Math.abs(s.mtimeMs - mtimeMs) > 0.001) s.notifyDiskChange(mtimeMs)
+    })
     return () => es.close()
   }, [sessionId])
 
@@ -146,9 +168,28 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       />
       {conflict && (
         <div className="banner" role="alert">
+          <span className="banner-text">Saving is paused — the file changed on disk after your last load.</span>
+          <button type="button" className="btn-ghost" onClick={() => void useDoc.getState().reloadFromDisk()}>
+            Reload (discard mine)
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => void useDoc.getState().saveForce()}>
+            Save anyway
+          </button>
+        </div>
+      )}
+      {!conflict && diskChange && (
+        <div className="banner" role="status">
           <span className="banner-text">
-            The file changed on disk while you were editing — saving is paused. (Reload flow lands in M7.)
+            {diskChange.deleted ? 'The file was deleted on disk.' : 'The file changed on disk.'}
           </span>
+          {!diskChange.deleted && (
+            <button type="button" className="btn-ghost" onClick={() => void useDoc.getState().reloadFromDisk()}>
+              Reload
+            </button>
+          )}
+          <button type="button" className="btn-ghost" onClick={() => useDoc.getState().dismissDiskChange()}>
+            Keep mine
+          </button>
         </div>
       )}
       <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
@@ -188,6 +229,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           />
           <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />
         </>
+      )}
+      {handedBack && (
+        <div className="toast" role="status">
+          ✓ {handedBack.replace('mastermind: ', '')}
+        </div>
       )}
     </>
   )
