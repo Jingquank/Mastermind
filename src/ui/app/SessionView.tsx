@@ -14,7 +14,7 @@ import { CheckIcon } from '../icons'
 import { RenameDialog } from './RenameDialog'
 import { SettingsPanel } from '../settings/SettingsPanel'
 import { TranslatedView } from '../translate/TranslatedView'
-import { useTranslation } from '../translate/translationStore'
+import { previewTargetLang, useTranslation } from '../translate/translationStore'
 import { openEvents } from './api'
 import { useConfig } from './configStore'
 import { useDirty, useDoc, type ViewMode } from './store'
@@ -26,6 +26,13 @@ function isTypingTarget(e: KeyboardEvent): boolean {
   const el = e.target as HTMLElement | null
   if (!el) return false
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable
+}
+
+/** Enter/Backspace must activate focused chrome, never the walker. */
+function isInteractiveTarget(e: KeyboardEvent): boolean {
+  const el = e.target as HTMLElement | null
+  if (!el || typeof el.closest !== 'function') return false
+  return el.closest('button, a, [role="button"], [tabindex]') !== null
 }
 
 export function SessionView({ sessionId }: { sessionId: string }) {
@@ -171,7 +178,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           const next = prev + (forward ? 1 : -1)
           return Math.min(Math.max(next, 0), suggestions.length - 1)
         })
-      } else if ((e.key === 'Enter' || e.key === 'Backspace' || e.key === 'Delete') && walkIndex !== null) {
+      } else if (
+        (e.key === 'Enter' || e.key === 'Backspace' || e.key === 'Delete') &&
+        walkIndex !== null &&
+        !isInteractiveTarget(e)
+      ) {
         const spanIdx = suggestions[walkIndex]
         const span = spanIdx !== undefined ? analysis?.spans[spanIdx] : undefined
         if (span) {
@@ -199,7 +210,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     const el = doc.querySelector(`[data-span-index="${spanIdx}"]`)
     if (el) {
       el.classList.add('kbd-focus')
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
     }
   }, [walkIndex, suggestions, analysis])
 
@@ -249,7 +261,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     return (
       <div className="center-note">
         <h1>MASTERMIND</h1>
-        <p>{error}</p>
+        <p>{error === '__session-not-found__' ? t('sessionNotFound') : error}</p>
       </div>
     )
   }
@@ -293,9 +305,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             ? {
                 label: transActive
                   ? t('original')
-                  : /^zh/i.test(langPair.b) || /^zh/i.test(langPair.a)
-                    ? '中文'
-                    : langPair.b,
+                  : (() => {
+                      const target = previewTargetLang(source, langPair)
+                      return /^(zh|中文)/i.test(target) ? '中文' : target
+                    })(),
                 active: transActive,
                 loading: transLoading,
                 onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
@@ -383,7 +396,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       )}
       {handedBack && (
         <div className="toast" role="status">
-          <CheckIcon width={13} height={13} /> {t('handedBackToast')}: {formatCounts(handedBack, lang)}
+          <CheckIcon width={13} height={13} /> {t('handedBackToast')}
+          {formatCounts(handedBack, lang)}
         </div>
       )}
       {!handedBack && notice && (

@@ -11,12 +11,25 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [apiKey, setApiKey] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const panelRef = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose()
     }
+    // popover idiom: clicking anywhere outside dismisses
+    const onPointerDown = (e: MouseEvent): void => {
+      const target = e.target as HTMLElement
+      if (panelRef.current && !panelRef.current.contains(target) && !target.closest('.settings-gear')) {
+        onClose()
+      }
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onPointerDown)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onPointerDown)
+    }
   }, [onClose])
 
   if (!config) return null
@@ -31,7 +44,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const activeTheme = themes.find((t) => t.id === config.theme)
 
   return (
-    <div className="settings-panel">
+    <div className="settings-panel" ref={panelRef}>
       <div className="settings-head">
         <span className="settings-title">{t('settings')}</span>
         <button type="button" className="btn-ghost" onClick={onClose}>
@@ -47,6 +60,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               key={th.id}
               type="button"
               className={`theme-chip${config.theme === th.id ? ' active' : ''}`}
+              aria-pressed={config.theme === th.id}
               onClick={() => patch({ theme: th.id })}
             >
               {th.name}

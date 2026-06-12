@@ -51,7 +51,7 @@ export function RenameDialog() {
             if (e.key === 'Enter') submit()
           }}
         />
-        {renameError && <p className="modal-error">{renameError}</p>}
+        {renameError && <p className="modal-error">{renameError === '__exists__' ? t('fileExists') : renameError}</p>}
         <div className="rail-actions">
           <button type="button" onClick={() => useDoc.getState().cancelRename()}>
             {t('cancel')}

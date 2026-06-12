@@ -121,7 +121,7 @@ export const useDoc = create<DocStore>((set, get) => ({
     } catch (err) {
       const message =
         err instanceof ApiError && err.status === 404
-          ? 'Session not found. It may have expired; run `mastermind open <file>` again.'
+          ? '__session-not-found__'
           : err instanceof Error
             ? err.message
             : String(err)
@@ -166,8 +166,10 @@ export const useDoc = create<DocStore>((set, get) => ({
   },
 
   setMode(mode) {
-    if (mode === get().mode) return
-    get().flushEditor?.()
+    const s = get()
+    if (s.diffOpen) set({ diffOpen: false })
+    if (mode === s.mode) return
+    s.flushEditor?.()
     set({ mode })
   },
 
@@ -314,7 +316,11 @@ export const useDoc = create<DocStore>((set, get) => ({
       document.title = `${res.displayName} — Mastermind`
       await get().save()
     } catch (err) {
-      set({ renameError: err instanceof Error ? err.message : String(err) })
+      if (err instanceof ApiError && err.status === 409) {
+        set({ renameError: '__exists__' })
+      } else {
+        set({ renameError: err instanceof Error ? err.message : String(err) })
+      }
     }
   },
 }))

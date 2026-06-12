@@ -90,7 +90,15 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
   const left = Math.min(Math.max(8, active.rect.left + active.rect.width / 2 - 130), window.innerWidth - 280)
 
   return (
-    <div className="sel-toolbar" style={{ top, left }} onMouseDown={(e) => e.preventDefault()}>
+    <div
+      className="sel-toolbar"
+      style={{ top, left }}
+      onMouseDown={(e) => {
+        // keep the document selection alive while clicking toolbar buttons,
+        // but never steal the caret from the composer's own textarea
+        if ((e.target as HTMLElement).tagName !== 'TEXTAREA') e.preventDefault()
+      }}
+    >
       {!composing ? (
         <>
           <button type="button" onClick={() => setComposing(true)}>

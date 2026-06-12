@@ -70,9 +70,14 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
     // second pass once cards have real heights
     const raf = requestAnimationFrame(measure)
     window.addEventListener('resize', measure)
+    // type-metric changes (font size / line height / width sliders) move
+    // anchors without a source change — track the document's real size
+    const ro = new ResizeObserver(() => measure())
+    ro.observe(doc)
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', measure)
+      ro.disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, items, spans, replyFor, activeSpan])

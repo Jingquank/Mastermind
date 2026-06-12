@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import { useT } from '../i18n'
 import { GearIcon, SwapIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
@@ -24,6 +25,7 @@ export function TopBar({
   agentWaiting = false,
 }: TopBarProps) {
   const t = useT()
+  const headerRef = useRef<HTMLElement | null>(null)
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
@@ -38,8 +40,20 @@ export function TopBar({
     { id: 'source', label: t('source') },
   ]
 
+  // anchored overlays (settings panel, translating pill) position off the
+  // bar's REAL height — which doubles when the bar wraps at narrow widths
+  useLayoutEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const apply = () => document.documentElement.style.setProperty('--topbar-h', `${el.offsetHeight}px`)
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   return (
-    <header className="topbar">
+    <header className="topbar" ref={headerRef}>
       <div className="topbar-left">
         <span className="topbar-filename">{meta?.displayName ?? '…'}</span>
         <span className={`dirty-dot${dirty ? ' visible' : ''}`} title={dirty ? t('unsavedChanges') : t('saved')} />
@@ -56,6 +70,7 @@ export function TopBar({
             key={m.id}
             type="button"
             className={`seg-btn${mode === m.id ? ' active' : ''}`}
+            aria-pressed={mode === m.id}
             onClick={() => setMode(m.id)}
           >
             {m.label}
@@ -67,6 +82,7 @@ export function TopBar({
           <button
             type="button"
             className={`btn-ghost lang-toggle${translation.active ? ' active' : ''}`}
+            aria-pressed={translation.active}
             onClick={translation.onToggle}
             disabled={translation.loading}
             title={t('toggleLang')}

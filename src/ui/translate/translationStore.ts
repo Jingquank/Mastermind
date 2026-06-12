@@ -18,6 +18,10 @@ interface TransState {
   reset(): void
 }
 
+export function previewTargetLang(source: string, pair: { a: string; b: string }): string {
+  return pickTarget(source, pair).targetLang
+}
+
 function pickTarget(source: string, pair: { a: string; b: string }): { sourceLang: string; targetLang: string } {
   const zhish = (l: string) => /^(zh|cjk|中文)/i.test(l)
   const docIsCjk = detectDocScript(source) === 'cjk'
