@@ -11,6 +11,7 @@ import type {
   SessionMeta,
   SseEventName,
 } from '../shared/types'
+import { writeSessionFile } from './files'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -114,6 +115,23 @@ export function createApp(deps: AppDeps): Hono {
     } catch {
       return c.json({ error: 'file unreadable (deleted?)' }, 410)
     }
+  })
+
+  app.put('/api/sessions/:id/file', async (c) => {
+    const session = registry.get(c.req.param('id'))
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    let body: { content?: string; baseMtimeMs?: number }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    if (typeof body.content !== 'string') return c.json({ error: 'content is required' }, 400)
+    const result = await writeSessionFile(session, body.content, body.baseMtimeMs)
+    if (!result.ok) {
+      return c.json({ error: 'file changed on disk', currentMtimeMs: result.currentMtimeMs }, 409)
+    }
+    return c.json({ mtimeMs: result.mtimeMs })
   })
 
   app.get('/api/sessions/:id/events', (c) => {

@@ -1,63 +1,68 @@
-import { useEffect, useState } from 'react'
-import type { SessionMeta } from '../../shared/types'
-import { ApiError, getFile, getSession, openEvents } from './api'
-
-interface LoadedDoc {
-  meta: SessionMeta
-  content: string
-  mtimeMs: number
-}
+import { useEffect, useMemo } from 'react'
+import { parseMarkdown } from '../../shared/markdown/processor'
+import { MarkdownView } from '../modes/reading/Renderer'
+import { openEvents } from './api'
+import { useDoc } from './store'
+import { TopBar } from './TopBar'
 
 export function SessionView({ sessionId }: { sessionId: string }) {
-  const [doc, setDoc] = useState<LoadedDoc | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const status = useDoc((s) => s.status)
+  const error = useDoc((s) => s.error)
+  const source = useDoc((s) => s.source)
+  const conflict = useDoc((s) => s.conflict)
+  const load = useDoc((s) => s.load)
+  const applyEdits = useDoc((s) => s.applyEdits)
+  const save = useDoc((s) => s.save)
 
   useEffect(() => {
-    let cancelled = false
-    Promise.all([getSession(sessionId), getFile(sessionId)])
-      .then(([meta, file]) => {
-        if (cancelled) return
-        setDoc({ meta, content: file.content, mtimeMs: file.mtimeMs })
-        document.title = `${meta.displayName} — Mastermind`
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return
-        if (err instanceof ApiError && err.status === 404) {
-          setError('Session not found — it may have expired. Run `mastermind open <file>` again.')
-        } else {
-          setError(err instanceof Error ? err.message : String(err))
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [sessionId])
+    void load(sessionId)
+  }, [sessionId, load])
 
   useEffect(() => {
-    // role=ui SSE connection: its liveness is what keeps the session (and a
-    // blocked `mastermind open --wait`) alive while this tab is open.
+    // role=ui SSE connection: its liveness keeps the session (and a blocked
+    // `mastermind open --wait`) alive while this tab is open.
     const es = openEvents(sessionId)
     return () => es.close()
   }, [sessionId])
 
-  if (error) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        void save()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [save])
+
+  const tree = useMemo(() => (status === 'ready' ? parseMarkdown(source) : null), [status, source])
+
+  if (status === 'error') {
     return (
-      <main style={{ padding: '4rem', fontFamily: 'system-ui' }}>
-        <h1>Mastermind</h1>
+      <div className="center-note">
+        <h1>MASTERMIND</h1>
         <p>{error}</p>
-      </main>
+      </div>
     )
   }
-  if (!doc) return null
+  if (!tree) return null
 
   return (
-    <main style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 1rem', fontFamily: 'system-ui' }}>
-      <header style={{ borderBottom: '1px solid #ddd', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-        <strong style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14 }}>{doc.meta.displayName}</strong>
-      </header>
-      <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, monospace', fontSize: 13, lineHeight: 1.6 }}>
-        {doc.content}
-      </pre>
-    </main>
+    <>
+      <TopBar />
+      {conflict && (
+        <div className="banner" role="alert">
+          <span className="banner-text">
+            The file changed on disk while you were editing — saving is paused. (Reload flow lands in M7.)
+          </span>
+        </div>
+      )}
+      <div className="doc-shell">
+        <article className="doc-column md-root">
+          <MarkdownView tree={tree} ctx={{ source, onEdit: (edit) => applyEdits([edit]) }} />
+        </article>
+      </div>
+    </>
   )
 }

@@ -1,0 +1,448 @@
+/* ============================================================
+   Mastermind base styles.
+   Tokens follow the PINOC Editorial reference theme; at M9 the
+   [data-theme] blocks move into themes/<id>/tokens.css and this
+   file keeps only the token-consuming rules.
+   ============================================================ */
+
+@font-face {
+  font-family: 'Ancho';
+  src: url('/themes/pinoc-editorial/fonts/Ancho-UltraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/themes/pinoc-editorial/fonts/Outfit-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/themes/pinoc-editorial/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+[data-theme='pinoc-editorial'] {
+  /* ---- Surfaces & text ---- */
+  --color-bg: #f3f0eb;
+  --color-bg-elevated: #faf9f6;
+  --color-text: #1a1a1a;
+  --color-text-muted: #736e65;
+  --color-text-faint: #918d85;
+  --color-border: #d5d3ce;
+
+  /* ---- Accent family ---- */
+  --color-accent: #00e05a;
+  --color-accent-dim: #00b848;
+  --color-accent-surface: rgba(0, 224, 90, 0.12);
+  --color-on-accent: #002b12;
+  --color-cta-bg: #1a1a1a;
+  --color-cta-text: #00e05a;
+
+  /* ---- Inversion family ---- */
+  --color-invert-bg: #0e0d0b;
+  --color-invert-bg-elevated: #1a1816;
+  --color-invert-text: #f0ede6;
+  --color-invert-text-muted: rgba(240, 237, 230, 0.62);
+  --color-invert-border: rgba(240, 237, 230, 0.12);
+
+  /* ---- Review semantics ---- */
+  --review-insert-text: var(--color-accent-dim);
+  --review-insert-bg: var(--color-accent-surface);
+  --review-insert-border: var(--color-accent);
+  --review-delete-text: #b5482a;
+  --review-delete-bg: rgba(181, 72, 42, 0.1);
+  --review-delete-border: rgba(181, 72, 42, 0.45);
+  --review-highlight-bg: rgba(212, 160, 23, 0.22);
+  --review-highlight-border: rgba(212, 160, 23, 0.55);
+  --review-comment-anchor: var(--color-accent-dim);
+  --review-comment-active-bg: var(--color-accent-surface);
+
+  /* ---- Typography ---- */
+  --font-display: 'Ancho', 'Outfit', sans-serif;
+  --font-body: 'Outfit', -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --font-size-body: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.05;
+  --lh-title: 1.2;
+  --lh-snug: 1.4;
+  --lh-body: 1.6;
+  --ls-heading: -0.03em;
+  --ls-title: -0.02em;
+  --ls-normal: 0;
+  --ls-caps: 0.06em;
+  --ls-label: 0.08em;
+
+  /* ---- Shape & layout ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 46rem;
+  --space-unit: 4px;
+}
+
+/* ---------- base ---------- */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent-surface);
+}
+
+/* ---------- top bar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 4);
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+  min-width: 0;
+}
+
+.topbar-filename {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  flex: none;
+}
+
+.dirty-dot.visible {
+  opacity: 1;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+}
+
+/* ---------- buttons ---------- */
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.btn-cta {
+  white-space: nowrap;
+  background: var(--color-cta-bg);
+  color: var(--color-cta-text);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 3.5);
+}
+
+.btn-ghost {
+  white-space: nowrap;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 2.5);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.seg-btn {
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2.5);
+}
+
+.seg-btn.active {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+/* ---------- banners ---------- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 3);
+  max-width: var(--content-max-width);
+  margin: calc(var(--space-unit) * 3) auto 0;
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.banner .banner-text {
+  flex: 1;
+}
+
+/* ---------- document column ---------- */
+
+.doc-shell {
+  display: flex;
+  justify-content: center;
+}
+
+.doc-column {
+  width: 100%;
+  max-width: var(--content-max-width);
+  padding: calc(var(--space-unit) * 8) calc(var(--space-unit) * 4) calc(var(--space-unit) * 24);
+  min-width: 0;
+}
+
+/* ---------- markdown elements ---------- */
+
+.md-root h1,
+.md-root h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-heading);
+}
+
+.md-root h1 {
+  font-size: clamp(2rem, 3.6vw, 2.75rem);
+  margin: 0 0 calc(var(--space-unit) * 6);
+}
+
+.md-root h2 {
+  font-size: clamp(1.5rem, 2.4vw, 1.875rem);
+  margin: calc(var(--space-unit) * 12) 0 calc(var(--space-unit) * 4);
+}
+
+.md-root h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: var(--lh-title);
+  letter-spacing: var(--ls-title);
+  margin: calc(var(--space-unit) * 8) 0 calc(var(--space-unit) * 3);
+}
+
+.md-root h4,
+.md-root h5,
+.md-root h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-normal);
+  margin: calc(var(--space-unit) * 6) 0 calc(var(--space-unit) * 2);
+}
+
+.md-root p {
+  margin: calc(var(--space-unit) * 3) 0;
+}
+
+.md-root strong {
+  font-weight: 600;
+}
+
+.md-root a {
+  color: var(--color-accent-dim);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-accent-dim) 40%, transparent);
+  text-underline-offset: 2px;
+}
+
+.md-root a:hover {
+  text-decoration-color: var(--color-accent-dim);
+}
+
+.md-inline-code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 0.08em 0.35em;
+}
+
+.md-code {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: calc(var(--space-unit) * 3) calc(var(--space-unit) * 4);
+  overflow-x: auto;
+  line-height: 1.55;
+}
+
+.md-code code {
+  font-family: inherit;
+}
+
+.md-root blockquote {
+  margin: calc(var(--space-unit) * 4) 0;
+  padding: 0 0 0 calc(var(--space-unit) * 4);
+  border-left: 2px solid var(--color-accent);
+  color: var(--color-text-muted);
+}
+
+.md-root hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: calc(var(--space-unit) * 8) 0;
+}
+
+.md-root table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: calc(var(--space-unit) * 4) 0;
+  font-size: var(--font-size-sm);
+}
+
+.md-root th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.md-root th,
+.md-root td {
+  border-bottom: 1px solid var(--color-border);
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 3) calc(var(--space-unit) * 2) 0;
+  vertical-align: top;
+}
+
+.md-root ul,
+.md-root ol {
+  margin: calc(var(--space-unit) * 3) 0;
+  padding-left: calc(var(--space-unit) * 6);
+}
+
+.md-root li {
+  margin: calc(var(--space-unit) * 1) 0;
+}
+
+.md-root li.task-item {
+  list-style: none;
+  margin-left: calc(var(--space-unit) * -5);
+}
+
+.task-checkbox {
+  accent-color: var(--color-accent-dim);
+  width: 15px;
+  height: 15px;
+  margin-right: calc(var(--space-unit) * 2);
+  vertical-align: -2px;
+}
+
+.md-root img {
+  max-width: 100%;
+}
+
+.md-muted,
+.md-footnote-ref,
+.md-footnote-def {
+  color: var(--color-text-faint);
+}
+
+.md-footnote-def {
+  font-size: var(--font-size-sm);
+}
+
+/* ---------- misc ---------- */
+
+.center-note {
+  max-width: var(--content-max-width);
+  margin: 20vh auto 0;
+  padding: 0 calc(var(--space-unit) * 4);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.center-note h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: var(--ls-heading);
+  color: var(--color-text);
+}
+
+.center-note code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 0.08em 0.35em;
+}
