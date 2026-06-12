@@ -1,6 +1,9 @@
 import type { Parent, PhrasingContent, Root } from 'mdast'
 import type { Node } from 'unist'
 import type { Sentinels } from '../critic/mask'
+// Container prefixes embedded in raw multi-line slices must NOT live in atom
+// content: serializers re-add prefixes per line (double-prefix otherwise).
+import { stripLinePrefixes } from '../critic/scanner'
 import type { CriticSpan } from '../critic/types'
 
 /* ---- custom mdast node shapes ------------------------------------------ */
@@ -110,15 +113,6 @@ function synthPosition(span: CriticSpan) {
 
 function textNode(value: string): PhrasingContent {
   return { type: 'text', value } as PhrasingContent
-}
-
-/**
- * Container prefixes (`> `, list continuation indent) embedded in a raw
- * multi-line span slice must NOT live in atom content: serializers re-add
- * prefixes per line, so keeping them would double-prefix on round-trip.
- */
-function stripLinePrefixes(s: string): string {
-  return s.replace(/\n[ \t]*(?:>[ \t]?)*/g, '\n')
 }
 
 function makeAtom(span: CriticSpan, original: string): PhrasingContent {

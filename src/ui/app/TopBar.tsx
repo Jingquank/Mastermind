@@ -6,7 +6,12 @@ const MODES: { id: ViewMode; label: string; enabled: boolean }[] = [
   { id: 'source', label: 'Source', enabled: true },
 ]
 
-export function TopBar() {
+interface TopBarProps {
+  railOpen?: boolean
+  onToggleRail?: () => void
+}
+
+export function TopBar({ railOpen, onToggleRail }: TopBarProps) {
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
@@ -35,6 +40,11 @@ export function TopBar() {
         ))}
       </nav>
       <div className="topbar-right">
+        {onToggleRail && (
+          <button type="button" className="btn-ghost" onClick={onToggleRail} title="Toggle comment rail">
+            {railOpen ? 'Hide comments' : 'Show comments'}
+          </button>
+        )}
         <button type="button" className="btn-ghost" onClick={() => void save()} disabled={!dirty || saving}>
           {saving ? 'Saving…' : 'Save'}
         </button>

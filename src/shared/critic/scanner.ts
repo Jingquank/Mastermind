@@ -140,6 +140,14 @@ export function scan(text: string, exclude: readonly Range[] = []): CriticSpan[]
 
 const AUTHOR_RE = /^\s*@([^\s:@]{1,64}):\s?/
 
+/**
+ * Drop container prefixes (`> `, continuation indent) from a raw multi-line
+ * span slice — they're markdown plumbing, not content.
+ */
+export function stripLinePrefixes(s: string): string {
+  return s.replace(/\n[ \t]*(?:>[ \t]?)*/g, '\n')
+}
+
 export function parseAuthor(content: string): { author: string | null; body: string } {
   const m = AUTHOR_RE.exec(content)
   if (!m) return { author: null, body: content }
@@ -147,7 +155,7 @@ export function parseAuthor(content: string): { author: string | null; body: str
 }
 
 function toEntry(span: CriticSpan, text: string): CommentEntry {
-  const { author, body } = parseAuthor(text.slice(span.innerStart, span.innerEnd))
+  const { author, body } = parseAuthor(stripLinePrefixes(text.slice(span.innerStart, span.innerEnd)))
   return { span, author, body }
 }
 
