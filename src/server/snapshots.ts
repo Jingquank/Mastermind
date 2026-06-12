@@ -29,11 +29,19 @@ export async function writeSnapshot(filePath: string, content: string, date = ne
   return id
 }
 
+/** Sort by id (extension stripped) — `X-2.md` must sort AFTER `X.md`. */
+function sortedIds(files: string[]): string[] {
+  return files
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => f.slice(0, -3))
+    .sort()
+}
+
 async function prune(dir: string): Promise<void> {
-  const entries = (await fs.readdir(dir)).filter((f) => f.endsWith('.md')).sort()
-  const excess = entries.length - SNAPSHOT_KEEP
+  const ids = sortedIds(await fs.readdir(dir))
+  const excess = ids.length - SNAPSHOT_KEEP
   for (let i = 0; i < excess; i++) {
-    await fs.unlink(path.join(dir, entries[i]!)).catch(() => {})
+    await fs.unlink(path.join(dir, `${ids[i]!}.md`)).catch(() => {})
   }
 }
 
@@ -52,9 +60,9 @@ export async function listSnapshots(filePath: string): Promise<SnapshotInfo[]> {
     return []
   }
   const out: SnapshotInfo[] = []
-  for (const f of entries.filter((f) => f.endsWith('.md')).sort().reverse()) {
-    const st = await fs.stat(path.join(dir, f)).catch(() => null)
-    if (st) out.push({ id: f.slice(0, -3), mtimeMs: st.mtimeMs, size: st.size })
+  for (const id of sortedIds(entries).reverse()) {
+    const st = await fs.stat(path.join(dir, `${id}.md`)).catch(() => null)
+    if (st) out.push({ id, mtimeMs: st.mtimeMs, size: st.size })
   }
   return out
 }
