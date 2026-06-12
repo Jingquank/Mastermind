@@ -66,6 +66,8 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
+        // overlays (settings, dialogs) consume Escape first
+        if (document.querySelector('.settings-panel, .modal-backdrop')) return
         setComposing(false)
         setComment('')
         setActive(null)

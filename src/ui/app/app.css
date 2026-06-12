@@ -1161,7 +1161,7 @@ input[type='checkbox'] {
   border-color: var(--color-accent-dim);
 }
 
-/* the check itself, drawn with borders so it inherits --color-on-accent */
+/* the check itself, drawn with borders in --color-bg (clears 3:1 on every theme's fill) */
 .milkdown-host li[data-checked='true']::after {
   content: '';
   position: absolute;
