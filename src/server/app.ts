@@ -181,6 +181,7 @@ export function createApp(deps: AppDeps): Hono {
       displayName: session.displayName,
       isDraft: session.isDraft,
       mtimeMs,
+      agentWaiting: session.cliConns.size > 0,
     }
     return c.json(meta)
   })

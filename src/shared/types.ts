@@ -41,6 +41,8 @@ export interface SessionMeta {
   displayName: string
   isDraft: boolean
   mtimeMs: number
+  /** A `mastermind open --wait` is currently blocked on this session. */
+  agentWaiting: boolean
 }
 
 export interface FileResponse {
@@ -109,5 +111,6 @@ export type SseEvent =
   | { event: 'handback'; data: { summaryLine: string; counts: ReviewCounts; snapshotId: string } }
   | { event: 'session-closed'; data: { reason: SessionCloseReason } }
   | { event: 'config-changed'; data: Record<string, never> }
+  | { event: 'waiters-changed'; data: { count: number } }
 
 export type SseEventName = SseEvent['event']

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { applyTextEdits } from '../../shared/edits'
 import { detectEol, normalizeToLf, restoreEol, type Eol } from '../../shared/eol'
-import type { SessionMeta, TextEdit } from '../../shared/types'
+import type { ReviewCounts, SessionMeta, TextEdit } from '../../shared/types'
 import { ApiError, getFile, getLatestSnapshot, getSession, postHandback, postRename, putFile } from './api'
 
 export type ViewMode = 'reading' | 'editing' | 'source'
@@ -19,6 +19,10 @@ export interface DocStore {
   error: string | null
   conflict: boolean
   saving: boolean
+  /** Which write is in flight — drives button labels. */
+  savingKind: 'save' | 'handback' | null
+  /** Transient toast: i18n key + optional count; kind picks the style. */
+  notice: { kind: 'error' | 'ok'; msg: string; count?: number } | null
   /**
    * Bumped whenever the buffer changes from OUTSIDE the active editor
    * (load, accept/reject, disk reload) — editor components remount on it.
@@ -33,8 +37,8 @@ export interface DocStore {
   history: string[]
   /** The file changed on disk under us (banner state). */
   diskChange: { mtimeMs: number; deleted: boolean } | null
-  /** Toast after a successful hand-back. */
-  handedBack: string | null
+  /** Toast after a successful hand-back (counts, localized at render). */
+  handedBack: ReviewCounts | null
   /** Revision diff view open? */
   diffOpen: boolean
   /** Offer "show what changed" after a reload when a snapshot exists. */
@@ -50,6 +54,7 @@ export interface DocStore {
   saveForce(): Promise<void>
   handback(): Promise<boolean>
   clearHandedBack(): void
+  setNotice(notice: DocStore['notice']): void
   setDiffOpen(open: boolean): void
   dismissDiffOffer(): void
   /** Draft naming: first save prompts for a filename. */
@@ -81,6 +86,8 @@ export const useDoc = create<DocStore>((set, get) => ({
   error: null,
   conflict: false,
   saving: false,
+  savingKind: null,
+  notice: null,
   externalVersion: 0,
   editorDirty: false,
   flushEditor: null,
@@ -114,7 +121,7 @@ export const useDoc = create<DocStore>((set, get) => ({
     } catch (err) {
       const message =
         err instanceof ApiError && err.status === 404
-          ? 'Session not found — it may have expired. Run `mastermind open <file>` again.'
+          ? 'Session not found. It may have expired; run `mastermind open <file>` again.'
           : err instanceof Error
             ? err.message
             : String(err)
@@ -173,7 +180,7 @@ export const useDoc = create<DocStore>((set, get) => ({
       return false
     }
     if (source === savedSource) return true
-    set({ saving: true })
+    set({ saving: true, savingKind: 'save', notice: null })
     try {
       const res = (await putFile(sessionId, restoreEol(source, eol), mtimeMs)) as {
         mtimeMs: number
@@ -191,9 +198,11 @@ export const useDoc = create<DocStore>((set, get) => ({
         set({ conflict: true })
         return false
       }
-      throw err
+      // a failed save must never be silent — the file is the protocol
+      set({ notice: { kind: 'error', msg: 'saveFailed' } })
+      return false
     } finally {
-      set({ saving: false })
+      set({ saving: false, savingKind: null })
     }
   },
 
@@ -208,7 +217,13 @@ export const useDoc = create<DocStore>((set, get) => ({
       externalVersion: s.externalVersion + 1,
       editorDirty: false,
       diskChange: null,
+      // reload must be undoable: keep the discarded buffer on the stack
+      history: normalized === s.source ? s.history : [...s.history.slice(-49), s.source],
     }))
+  },
+
+  setNotice(notice) {
+    set({ notice })
   },
 
   notifyDiskChange(mtimeMs, deleted = false) {
@@ -258,22 +273,23 @@ export const useDoc = create<DocStore>((set, get) => ({
       set({ renamePrompt: true })
       return false
     }
-    set({ saving: true })
+    set({ saving: true, savingKind: 'handback', notice: null })
     try {
       const res = await postHandback(sessionId, restoreEol(source, eol), mtimeMs)
       // the server appended/refreshed the summary block — adopt its content
       const file = await getFile(sessionId)
       get().adoptDiskContent(file.content, file.mtimeMs)
-      set({ handedBack: res.summaryLine })
+      set({ handedBack: res.counts })
       return true
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         set({ conflict: true })
         return false
       }
-      throw err
+      set({ notice: { kind: 'error', msg: 'handbackFailed' } })
+      return false
     } finally {
-      set({ saving: false })
+      set({ saving: false, savingKind: null })
     }
   },
 

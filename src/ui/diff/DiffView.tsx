@@ -29,7 +29,7 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
         if (!cancelled) setLoaded({ snapshotId: snap.id, oldText: stripSummary(snap.content) })
       })
       .catch(() => {
-        if (!cancelled) setError('No hand-back snapshot found for this file.')
+        if (!cancelled) setError(t('noSnapshot'))
       })
     return () => {
       cancelled = true
@@ -56,14 +56,18 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
       <div className="diff-head">
         <span className="diff-title">
           {t('changesSince')}
-          {loaded && <span className="diff-meta"> · {t('snapshot')} {loaded.snapshotId}</span>}
-          {parts && <span className="diff-meta"> · {changeCount === 0 ? t('noChanges') : `${changeCount} ${t('changedRegions')}`}</span>}
+          {parts && (
+            <span className="diff-meta" title={loaded ? `snapshot ${loaded.snapshotId}` : undefined}>
+              {' '}· {changeCount === 0 ? t('noChanges') : `${changeCount} ${t('editsCount')}`}
+            </span>
+          )}
         </span>
         <button type="button" className="btn-ghost" onClick={onClose}>
           {t('backToDocument')}
         </button>
       </div>
       {error && <p className="diff-error">{error}</p>}
+      {!parts && !error && <p className="diff-error">{t('loadingSnapshot')}</p>}
       {parts && (
         <pre className="diff-body">
           {parts.map((p, i) =>

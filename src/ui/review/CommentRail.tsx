@@ -109,6 +109,14 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
             className={`rail-card${isActive ? ' active' : ''}`}
             style={{ top: card.top }}
             onClick={() => onActivate(card.spanIndex)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                e.preventDefault()
+                onActivate(card.spanIndex)
+              }
+            }}
           >
             {card.thread.anchor && (
               <div className="rail-card-anchor">
@@ -117,7 +125,7 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
             )}
             {card.thread.comments.map((c, i) => (
               <div key={i} className="rail-comment">
-                <span className="rail-author">{c.author ? `@${c.author}` : '—'}</span>
+                {c.author && <span className="rail-author">@{c.author}</span>}
                 <div className="rail-body">{c.body}</div>
               </div>
             ))}

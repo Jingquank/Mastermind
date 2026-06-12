@@ -134,6 +134,7 @@ export class SessionRegistry {
       this.disarmGrace(session)
     } else {
       session.cliConns.add(conn)
+      this.broadcast(sessionId, 'waiters-changed', { count: session.cliConns.size }, ['ui'])
     }
     return true
   }
@@ -141,8 +142,12 @@ export class SessionRegistry {
   detach(sessionId: string, conn: Conn): void {
     const session = this.byId.get(sessionId)
     if (!session) return
+    const hadCli = session.cliConns.has(conn)
     session.uiConns.delete(conn)
     session.cliConns.delete(conn)
+    if (hadCli && !session.closed) {
+      this.broadcast(sessionId, 'waiters-changed', { count: session.cliConns.size }, ['ui'])
+    }
     if (conn.role === 'ui' && session.uiConns.size === 0 && session.everConnected && !session.closed) {
       this.armGrace(session)
     }

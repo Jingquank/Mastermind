@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useConfig, type ConfigPatch } from '../app/configStore'
+import { useT } from '../i18n'
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const config = useConfig((s) => s.config)
   const themes = useConfig((s) => s.themes)
   const update = useConfig((s) => s.update)
 
+  const t = useT()
   const [apiKey, setApiKey] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -31,23 +33,23 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="settings-panel">
       <div className="settings-head">
-        <span className="settings-title">Settings</span>
+        <span className="settings-title">{t('settings')}</span>
         <button type="button" className="btn-ghost" onClick={onClose}>
-          Close
+          {t('close')}
         </button>
       </div>
 
       <section>
-        <h4>Theme</h4>
+        <h4>{t('theme')}</h4>
         <div className="settings-theme-row">
-          {themes.map((t) => (
+          {themes.map((th) => (
             <button
-              key={t.id}
+              key={th.id}
               type="button"
-              className={`theme-chip${config.theme === t.id ? ' active' : ''}`}
-              onClick={() => patch({ theme: t.id })}
+              className={`theme-chip${config.theme === th.id ? ' active' : ''}`}
+              onClick={() => patch({ theme: th.id })}
             >
-              {t.name}
+              {th.name}
             </button>
           ))}
         </div>
@@ -60,15 +62,15 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 patch({ grain: { ...config.grain, [config.theme]: { enabled: e.target.checked } } })
               }
             />
-            Film grain
+            {t('filmGrain')}
           </label>
         )}
       </section>
 
       <section>
-        <h4>Reading</h4>
+        <h4>{t('readingSection')}</h4>
         <label className="settings-row">
-          Font size <span className="settings-val">{config.fontSize}px</span>
+          {t('fontSize')} <span className="settings-val">{config.fontSize}px</span>
           <input
             type="range"
             min={14}
@@ -79,7 +81,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="settings-row">
-          Line height <span className="settings-val">{config.lineHeight.toFixed(2)}</span>
+          {t('lineHeight')} <span className="settings-val">{config.lineHeight.toFixed(2)}</span>
           <input
             type="range"
             min={1.4}
@@ -90,7 +92,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="settings-row">
-          Content width <span className="settings-val">{config.contentWidth}px</span>
+          {t('contentWidth')} <span className="settings-val">{config.contentWidth}px</span>
           <input
             type="range"
             min={600}
@@ -103,9 +105,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       </section>
 
       <section>
-        <h4>Review</h4>
+        <h4>{t('reviewSection')}</h4>
         <label className="settings-row">
-          Author tag
+          {t('authorTag')}
           <input
             type="text"
             className="settings-input"
@@ -119,9 +121,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       </section>
 
       <section>
-        <h4>Languages</h4>
+        <h4>{t('languagesSection')}</h4>
         <label className="settings-row">
-          UI language
+          {t('uiLanguage')}
           <select
             className="settings-input"
             value={config.uiLang}
@@ -132,7 +134,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </select>
         </label>
         <label className="settings-row">
-          Reading pair
+          {t('readingPair')}
           <span className="settings-pair">
             <input
               type="text"
@@ -155,14 +157,14 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             checked={config.keepOriginalFeedback}
             onChange={(e) => patch({ keepOriginalFeedback: e.target.checked })}
           />
-          Keep original text alongside translated comments
+          {t('keepOriginal')}
         </label>
       </section>
 
       <section>
-        <h4>Translation provider</h4>
+        <h4>{t('providerSection')}</h4>
         <label className="settings-row">
-          Type
+          {t('providerType')}
           <select
             className="settings-input"
             value={provider?.type ?? 'none'}
@@ -172,16 +174,16 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               else patch({ provider: { type: v as 'anthropic' | 'openai-compatible', baseUrl: provider?.baseUrl, model: provider?.model } })
             }}
           >
-            <option value="none">Not configured</option>
-            <option value="anthropic">Anthropic API</option>
-            <option value="openai-compatible">OpenAI-compatible (Ollama, LM Studio…)</option>
+            <option value="none">{t('providerNone')}</option>
+            <option value="anthropic">{t('providerAnthropic')}</option>
+            <option value="openai-compatible">{t('providerOpenai')}</option>
           </select>
         </label>
         {provider && (
           <>
             {provider.type === 'openai-compatible' && (
               <label className="settings-row">
-                Base URL
+                {t('baseUrl')}
                 <input
                   type="text"
                   className="settings-input"
@@ -192,7 +194,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               </label>
             )}
             <label className="settings-row">
-              Model
+              {t('model')}
               <input
                 type="text"
                 className="settings-input"
@@ -202,7 +204,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               />
             </label>
             <label className="settings-row">
-              API key {provider.configured && <span className="settings-val">saved ✓</span>}
+              {t('apiKey')} {provider.configured && <span className="settings-val">{t('keySaved')}</span>}
               <span className="settings-pair">
                 <input
                   type="password"
@@ -220,7 +222,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                     setApiKey('')
                   }}
                 >
-                  Save key
+                  {t('saveKey')}
                 </button>
               </span>
             </label>

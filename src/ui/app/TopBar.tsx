@@ -1,4 +1,5 @@
 import { useT } from '../i18n'
+import { GearIcon, SwapIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
 
 interface TopBarProps {
@@ -9,6 +10,7 @@ interface TopBarProps {
   onRejectAll?: () => void
   onToggleSettings?: () => void
   translation?: { label: string; active: boolean; loading: boolean; onToggle: () => void }
+  agentWaiting?: boolean
 }
 
 export function TopBar({
@@ -19,6 +21,7 @@ export function TopBar({
   onRejectAll,
   onToggleSettings,
   translation,
+  agentWaiting = false,
 }: TopBarProps) {
   const t = useT()
   const meta = useDoc((s) => s.meta)
@@ -26,6 +29,7 @@ export function TopBar({
   const setMode = useDoc((s) => s.setMode)
   const save = useDoc((s) => s.save)
   const saving = useDoc((s) => s.saving)
+  const savingKind = useDoc((s) => s.savingKind)
   const dirty = useDirty()
 
   const MODES: { id: ViewMode; label: string }[] = [
@@ -39,8 +43,14 @@ export function TopBar({
       <div className="topbar-left">
         <span className="topbar-filename">{meta?.displayName ?? '…'}</span>
         <span className={`dirty-dot${dirty ? ' visible' : ''}`} title={dirty ? t('unsavedChanges') : t('saved')} />
+        {agentWaiting && (
+          <span className="agent-chip" title={t('handBackTitle')}>
+            <span className="agent-chip-dot" />
+            {t('agentWaiting')}
+          </span>
+        )}
       </div>
-      <nav className="seg" aria-label="View mode">
+      <nav className="seg" aria-label={t('viewMode')} title={`⌘E ${t('viewMode')}`}>
         {MODES.map((m) => (
           <button
             key={m.id}
@@ -61,26 +71,36 @@ export function TopBar({
             disabled={translation.loading}
             title={t('toggleLang')}
           >
-            {translation.loading ? '…' : translation.label}
+            <SwapIcon />
+            {translation.loading ? t('translating') : translation.label}
           </button>
         )}
         {suggestionCount > 0 && (
-          <>
-            <button type="button" className="btn-ghost accept-all" onClick={onAcceptAll} title={t('acceptAllTitle')}>
-              {t('acceptAll')} ({suggestionCount})
+          <div className="seg review-bulk" role="group" aria-label={`${suggestionCount} ${t('suggestionsLabel')}`}>
+            <span className="bulk-count" title={`${suggestionCount} ${t('suggestionsLabel')}`}>
+              {suggestionCount}
+            </span>
+            <button type="button" className="seg-btn bulk-accept" onClick={onAcceptAll} title={t('acceptAllTitle')}>
+              {t('acceptAll')}
             </button>
-            <button type="button" className="btn-ghost reject-all" onClick={onRejectAll} title={t('rejectAllTitle')}>
+            <button type="button" className="seg-btn bulk-reject" onClick={onRejectAll} title={t('rejectAllTitle')}>
               {t('rejectAll')}
             </button>
-          </>
+          </div>
         )}
         {onToggleRail && (
           <button type="button" className="btn-ghost" onClick={onToggleRail} title={t('toggleRail')}>
             {railOpen ? t('hideComments') : t('showComments')}
           </button>
         )}
-        <button type="button" className="btn-ghost" onClick={() => void save()} disabled={!dirty || saving}>
-          {saving ? t('saving') : t('save')}
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => void save()}
+          disabled={!dirty || saving}
+          title={`${t('save')} (⌘S)`}
+        >
+          {savingKind === 'save' ? t('saving') : dirty ? t('save') : t('saved')}
         </button>
         <button
           type="button"
@@ -89,7 +109,7 @@ export function TopBar({
           disabled={saving}
           title={t('handBackTitle')}
         >
-          {t('handBack')}
+          {savingKind === 'handback' ? t('handingBack') : t('handBack')}
         </button>
         {onToggleSettings && (
           <button
@@ -99,7 +119,7 @@ export function TopBar({
             title={t('settings')}
             aria-label={t('settings')}
           >
-            ⚙
+            <GearIcon width={15} height={15} />
           </button>
         )}
       </div>

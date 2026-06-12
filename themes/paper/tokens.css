@@ -14,6 +14,8 @@
   --color-on-accent: #f5fff9;
   --color-cta-bg: #2a2520;
   --color-cta-text: #f3eee4;
+  --focus-ring: #2a2520;
+  --color-selection: rgba(42, 37, 32, 0.12);
 
   /* ---- Inversion family ---- */
   --color-invert-bg: #221e19;

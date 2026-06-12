@@ -3,17 +3,22 @@
   --color-bg: #f3f0eb;
   --color-bg-elevated: #faf9f6;
   --color-text: #1a1a1a;
-  --color-text-muted: #736e65;
-  --color-text-faint: #918d85;
+  --color-text-muted: #6c675e; /* 4.9:1 on bg — carries 11px metadata */
+  --color-text-faint: #918d85; /* decorative/placeholder only — below AA for text */
   --color-border: #d5d3ce;
 
-  /* ---- Accent family (verbatim) ---- */
+  /* ---- Accent family ---- */
   --color-accent: #00e05a;
-  --color-accent-dim: #00b848;
+  /* text-safe green: AA on bg (4.5+) AND on the insert wash; #00B848 measured 2.32:1 */
+  --color-accent-dim: #006e30;
   --color-accent-surface: rgba(0, 224, 90, 0.12);
   --color-on-accent: #002b12;
   --color-cta-bg: #1a1a1a;
   --color-cta-text: #00e05a;
+  /* focus ring: ink on light surfaces (the green measures 1.56:1 on paper) */
+  --focus-ring: #1a1a1a;
+  /* text selection must not read as an insertion */
+  --color-selection: rgba(26, 26, 26, 0.12);
 
   /* ---- Inversion family (verbatim) ---- */
   --color-invert-bg: #0e0d0b;
@@ -26,7 +31,7 @@
   --review-insert-text: var(--color-accent-dim);
   --review-insert-bg: var(--color-accent-surface);
   --review-insert-border: var(--color-accent);
-  --review-delete-text: #b5482a;
+  --review-delete-text: #a03e22; /* AA on bg and on its own wash */
   --review-delete-bg: rgba(181, 72, 42, 0.1);
   --review-delete-border: rgba(181, 72, 42, 0.45);
   --review-highlight-bg: rgba(212, 160, 23, 0.22);

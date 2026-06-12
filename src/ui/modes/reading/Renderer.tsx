@@ -12,6 +12,7 @@ import { Fragment, type ReactNode, createElement } from 'react'
 import type { CriticCommentNode, CriticSubNode, CriticWrapNode } from '../../../shared/markdown/critic-mdast'
 import { toggleTaskEdit } from '../../../shared/markdown/tasklist'
 import type { TextEdit } from '../../../shared/types'
+import { DiamondIcon } from '../../icons'
 
 export interface RenderCtx {
   source: string
@@ -47,6 +48,7 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
           key={key}
           className={`critic critic-hl${anchored ? ' critic-anchor' : ''}`}
           data-span-index={n.data.spanIndex}
+          {...(anchored ? { role: 'button', tabIndex: 0 } : {})}
         >
           {renderInline(n.children, ctx)}
         </mark>
@@ -72,8 +74,11 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
           className="critic critic-comment-marker"
           data-span-index={n.data.spanIndex}
           title={n.data.content}
+          role="button"
+          tabIndex={0}
+          aria-label={n.data.content}
         >
-          ◆
+          <DiamondIcon />
         </span>
       )
     }

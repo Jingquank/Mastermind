@@ -11,9 +11,47 @@ import { history } from '@milkdown/kit/plugin/history'
 import { commonmark } from '@milkdown/kit/preset/commonmark'
 import { gfm } from '@milkdown/kit/preset/gfm'
 import type { Node as PMNode } from '@milkdown/kit/prose/model'
+import { Plugin } from '@milkdown/kit/prose/state'
+import { $prose } from '@milkdown/kit/utils'
 import { useEffect, useRef } from 'react'
 import { useDoc } from '../../app/store'
 import { critic } from './critic'
+
+/**
+ * Reading mode has live task checkboxes; Editing mode must not lose them.
+ * Clicking the marker zone of a task list item toggles its `checked` attr
+ * (the CSS checkbox on li[data-checked] is the affordance).
+ */
+const taskToggle = $prose(
+  () =>
+    new Plugin({
+      props: {
+        handleDOMEvents: {
+          mousedown(view, event) {
+            const target = event.target as HTMLElement
+            const li = target.closest('li[data-checked]')
+            if (!li || !view.dom.contains(li)) return false
+            const rect = li.getBoundingClientRect()
+            if (event.clientX - rect.left > 20) return false
+            const pos = view.posAtDOM(li, 0)
+            const $pos = view.state.doc.resolve(pos)
+            for (let depth = $pos.depth; depth > 0; depth--) {
+              const node = $pos.node(depth)
+              if (node.type.name === 'list_item' && typeof node.attrs.checked === 'boolean') {
+                const before = $pos.before(depth)
+                view.dispatch(
+                  view.state.tr.setNodeMarkup(before, undefined, { ...node.attrs, checked: !node.attrs.checked }),
+                )
+                event.preventDefault()
+                return true
+              }
+            }
+            return false
+          },
+        },
+      },
+    }),
+)
 
 /**
  * House serialization style for documents edited in WYSIWYG mode. The no-edit
@@ -72,6 +110,7 @@ export function MilkdownEditor() {
       .use(gfm)
       .use(history)
       .use(listener)
+      .use(taskToggle)
       .create()
       .then((ed) => {
         if (destroyed) {

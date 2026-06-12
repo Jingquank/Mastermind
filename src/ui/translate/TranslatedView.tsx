@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { segmentBlocks, type SourceBlock } from '../../shared/blocks'
 import { analyzeMarkdown } from '../../shared/markdown/analyze'
 import type { TextEdit } from '../../shared/types'
+import { useT } from '../i18n'
+import { AlertIcon, ChatIcon, PendingDot } from '../icons'
 import { MarkdownView } from '../modes/reading/Renderer'
 import { useTranslation } from './translationStore'
 
@@ -29,6 +31,7 @@ function TransBlock({
   authorTag: string
   onEdit: (edits: TextEdit[]) => void
 }) {
+  const t = useT()
   const [composing, setComposing] = useState(false)
   const [comment, setComment] = useState('')
   const shown = translated ?? block.text
@@ -49,17 +52,18 @@ function TransBlock({
       </div>
       <div className="trans-block-side">
         {block.translatable && translated === undefined && (
-          <span className="trans-miss" title={failed ? 'Translation failed — showing the original' : 'Not translated'}>
-            {failed ? '⚠' : '·'}
+          <span className="trans-miss" title={failed ? t('translationFailedBlock') : t('untranslated')}>
+            {failed ? <AlertIcon /> : <PendingDot />}
           </span>
         )}
         <button
           type="button"
           className="trans-comment-btn"
-          title="Comment on this block (anchors to the source block)"
+          title={t('commentBlockTitle')}
+          aria-label={t('commentBlockTitle')}
           onClick={() => setComposing((v) => !v)}
         >
-          💬
+          <ChatIcon />
         </button>
       </div>
       {composing && (
@@ -68,7 +72,8 @@ function TransBlock({
             autoFocus
             rows={2}
             value={comment}
-            placeholder="Comment on this block…"
+            placeholder={t('commentBlockPlaceholder')}
+            title={t('commentHint')}
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submit()
@@ -80,10 +85,10 @@ function TransBlock({
           />
           <div className="rail-actions">
             <button type="button" onClick={() => setComposing(false)}>
-              Cancel
+              {t('cancel')}
             </button>
             <button type="button" className="primary" disabled={!comment.trim()} onClick={submit}>
-              Comment
+              {t('comment')}
             </button>
           </div>
         </div>
@@ -98,6 +103,7 @@ function TransBlock({
  * back to the source with an indicator. Comments anchor at block granularity.
  */
 export function TranslatedView({ sessionId, source, authorTag, onEdit }: Props) {
+  const t = useT()
   const [blocks, setBlocks] = useState<SourceBlock[] | null>(null)
   const map = useTranslation((s) => s.map)
   const failed = useTranslation((s) => s.failed)
@@ -122,7 +128,7 @@ export function TranslatedView({ sessionId, source, authorTag, onEdit }: Props) 
 
   return (
     <article className="trans-view">
-      {loading && <div className="trans-loading">Translating…</div>}
+      {loading && <div className="trans-loading">{t('translating')}</div>}
       {blocks.map((b) => (
         <TransBlock
           key={`${b.hash}-${b.start}`}

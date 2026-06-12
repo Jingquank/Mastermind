@@ -1,10 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useT } from '../i18n'
 import { GrainOverlay, ThemeEffects } from '../theme/ThemeProvider'
 import { useConfig } from './configStore'
 import { SessionView } from './SessionView'
 
 export function App() {
   const load = useConfig((s) => s.load)
+  const t = useT()
+  const [draftError, setDraftError] = useState(false)
   useEffect(() => {
     void load()
   }, [load])
@@ -19,27 +22,31 @@ export function App() {
         <div className="center-note">
           <h1>MASTERMIND</h1>
           <p>
-            Open a document with <code>mastermind open &lt;file.md&gt;</code>
+            {t('openHint')} <code>mastermind open &lt;file.md&gt;</code>
           </p>
           <p>
             <button
               type="button"
               className="btn-cta"
               onClick={() => {
-                void fetch('/api/sessions', {
+                setDraftError(false)
+                fetch('/api/sessions', {
                   method: 'POST',
                   headers: { 'content-type': 'application/json' },
                   body: JSON.stringify({ draft: true }),
                 })
-                  .then((r) => r.json())
+                  .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
                   .then((j: { url?: string }) => {
                     if (j.url) window.location.href = j.url
+                    else setDraftError(true)
                   })
+                  .catch(() => setDraftError(true))
               }}
             >
-              + New draft
+              {t('newDraft')}
             </button>
           </p>
+          {draftError && <p className="modal-error">{t('newDraftFailed')}</p>}
         </div>
       )}
       <GrainOverlay />

@@ -109,6 +109,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             autoFocus
             rows={3}
             placeholder={t('commentPlaceholder')}
+            title={t('commentHint')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => {
