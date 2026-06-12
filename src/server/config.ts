@@ -66,10 +66,14 @@ export function updateConfig(patch: ConfigPatch): MastermindConfig {
 
 export function redactConfig(config: MastermindConfig): ClientConfig {
   const { provider, ...rest } = config
+  // openai-compatible endpoints (Ollama, LM Studio) work keyless
+  const configured = Boolean(
+    provider && provider.model && (provider.type === 'openai-compatible' || provider.apiKey),
+  )
   return {
     ...rest,
     provider: provider
-      ? { type: provider.type, baseUrl: provider.baseUrl, model: provider.model, configured: Boolean(provider.apiKey) }
+      ? { type: provider.type, baseUrl: provider.baseUrl, model: provider.model, configured }
       : null,
   }
 }

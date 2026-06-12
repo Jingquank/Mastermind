@@ -890,6 +890,87 @@ input[type='checkbox'] {
   accent-color: var(--color-accent-dim);
 }
 
+/* ---------- translated view ---------- */
+
+.trans-view {
+  position: relative;
+}
+
+.trans-loading {
+  position: sticky;
+  top: 64px;
+  z-index: 10;
+  display: inline-block;
+  background: var(--color-invert-bg);
+  color: var(--color-invert-text);
+  border-radius: var(--radius-md);
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 3);
+  font-size: var(--font-size-sm);
+}
+
+.trans-block {
+  position: relative;
+  padding-right: calc(var(--space-unit) * 8);
+}
+
+.trans-block-side {
+  position: absolute;
+  top: calc(var(--space-unit) * 3);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-unit) * 1);
+  align-items: center;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.trans-block:hover .trans-block-side {
+  opacity: 1;
+}
+
+.trans-block.failed .trans-block-side {
+  opacity: 1;
+}
+
+.trans-miss {
+  color: var(--review-delete-text);
+  font-size: var(--font-size-sm);
+}
+
+.trans-comment-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.trans-composer {
+  margin: calc(var(--space-unit) * 2) 0;
+  padding: calc(var(--space-unit) * 2);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.trans-composer textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: calc(var(--space-unit) * 1.5);
+  color: var(--color-text);
+}
+
+.lang-toggle.active {
+  color: var(--color-accent-dim);
+}
+
 /* ---------- grain overlay ---------- */
 
 .grain-overlay {

@@ -13,6 +13,7 @@ interface TopBarProps {
   onAcceptAll?: () => void
   onRejectAll?: () => void
   onToggleSettings?: () => void
+  translation?: { label: string; active: boolean; loading: boolean; onToggle: () => void }
 }
 
 export function TopBar({
@@ -22,6 +23,7 @@ export function TopBar({
   onAcceptAll,
   onRejectAll,
   onToggleSettings,
+  translation,
 }: TopBarProps) {
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
@@ -51,6 +53,17 @@ export function TopBar({
         ))}
       </nav>
       <div className="topbar-right">
+        {translation && (
+          <button
+            type="button"
+            className={`btn-ghost lang-toggle${translation.active ? ' active' : ''}`}
+            onClick={translation.onToggle}
+            disabled={translation.loading}
+            title="Toggle reading language"
+          >
+            {translation.loading ? '…' : translation.label}
+          </button>
+        )}
         {suggestionCount > 0 && (
           <>
             <button type="button" className="btn-ghost accept-all" onClick={onAcceptAll} title="Apply every suggested edit">

@@ -10,6 +10,8 @@ import { HoverActions } from '../review/HoverActions'
 import { resolveAll } from '../../shared/critic/resolve'
 import { DiffView } from '../diff/DiffView'
 import { SettingsPanel } from '../settings/SettingsPanel'
+import { TranslatedView } from '../translate/TranslatedView'
+import { useTranslation } from '../translate/translationStore'
 import { openEvents } from './api'
 import { useConfig } from './configStore'
 import { useDoc, type ViewMode } from './store'
@@ -43,9 +45,14 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [railOpen, setRailOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
+  const providerConfigured = useConfig((s) => s.config?.provider?.configured) ?? false
+  const langPair = useConfig((s) => s.config?.langPair) ?? { a: 'en', b: 'zh-CN' }
+  const transActive = useTranslation((s) => s.active)
+  const transLoading = useTranslation((s) => s.loading)
 
   useEffect(() => {
     void load(sessionId)
+    useTranslation.getState().reset()
   }, [sessionId, load])
 
   useEffect(() => {
@@ -94,9 +101,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [save])
 
+  const showTranslated = mode === 'reading' && transActive
   const analysis = useMemo(
-    () => (status === 'ready' && mode === 'reading' ? analyzeMarkdown(source) : null),
-    [status, source, mode],
+    () => (status === 'ready' && mode === 'reading' && !showTranslated ? analyzeMarkdown(source) : null),
+    [status, source, mode, showTranslated],
   )
   const anchoredHighlights = useMemo(() => {
     const set = new Set<number>()
@@ -181,10 +189,24 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       <TopBar
         railOpen={railOpen}
         onToggleRail={mode === 'reading' && hasThreads ? () => setRailOpen((v) => !v) : undefined}
-        suggestionCount={mode === 'reading' ? suggestionCount : 0}
+        suggestionCount={mode === 'reading' && !showTranslated ? suggestionCount : 0}
         onAcceptAll={() => bulkResolve('accept')}
         onRejectAll={() => bulkResolve('reject')}
         onToggleSettings={() => setSettingsOpen((v) => !v)}
+        translation={
+          providerConfigured && mode === 'reading'
+            ? {
+                label: transActive
+                  ? 'Original'
+                  : /^zh/i.test(langPair.b) || /^zh/i.test(langPair.a)
+                    ? '中文 ⇄'
+                    : `${langPair.b} ⇄`,
+                active: transActive,
+                loading: transLoading,
+                onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
+              }
+            : undefined
+        }
       />
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
       {conflict && (
@@ -226,7 +248,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       )}
       <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
         <div className="doc-column">
-          {mode === 'reading' && analysis && (
+          {showTranslated && (
+            <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
+          )}
+          {mode === 'reading' && !showTranslated && analysis && (
             <article className="md-root" ref={articleRef} onClick={onArticleClick}>
               <MarkdownView
                 tree={analysis.tree}
@@ -250,7 +275,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           />
         )}
       </div>
-      {mode === 'reading' && analysis && (
+      {mode === 'reading' && !showTranslated && analysis && (
         <>
           <SelectionToolbar
             containerRef={articleRef}

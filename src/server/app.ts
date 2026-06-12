@@ -16,6 +16,8 @@ import { writeSessionFile } from './files'
 import { performHandback } from './handback'
 import { listSnapshots, readLatestSnapshot } from './snapshots'
 import { scanThemes } from './themes'
+import { clearCache } from './translate/cache'
+import { providerConfigured, translateBlocks, type TranslateRequestBlock } from './translate/index'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -80,6 +82,38 @@ export function createApp(deps: AppDeps): Hono {
   })
 
   app.get('/api/themes', async (c) => c.json(await scanThemes()))
+
+  app.post('/api/translate', async (c) => {
+    let body: { sessionId?: string; sourceLang?: string; targetLang?: string; blocks?: TranslateRequestBlock[] }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    if (!body.sessionId || !body.targetLang || !Array.isArray(body.blocks)) {
+      return c.json({ error: 'sessionId, targetLang, blocks required' }, 400)
+    }
+    const session = registry.get(body.sessionId)
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    const config = readConfig()
+    if (!providerConfigured(config)) return c.json({ error: 'no translation provider configured' }, 400)
+    const results = await translateBlocks(
+      session,
+      body.blocks.slice(0, 50),
+      body.sourceLang ?? 'auto-detected source language',
+      body.targetLang,
+      config,
+    )
+    return c.json({ results })
+  })
+
+  app.delete('/api/translate/cache', (c) => {
+    const sessionId = c.req.query('sessionId')
+    const session = sessionId ? registry.get(sessionId) : undefined
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    clearCache(session.path, c.req.query('lang') || undefined)
+    return c.body(null, 204)
+  })
 
   app.post('/api/sessions', async (c) => {
     let body: CreateSessionRequest
