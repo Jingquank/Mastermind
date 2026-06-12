@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { applyTextEdits } from '../../shared/edits'
 import { detectEol, normalizeToLf, restoreEol, type Eol } from '../../shared/eol'
 import type { SessionMeta, TextEdit } from '../../shared/types'
-import { ApiError, getFile, getSession, postHandback, putFile } from './api'
+import { ApiError, getFile, getLatestSnapshot, getSession, postHandback, putFile } from './api'
 
 export type ViewMode = 'reading' | 'editing' | 'source'
 
@@ -35,6 +35,10 @@ export interface DocStore {
   diskChange: { mtimeMs: number; deleted: boolean } | null
   /** Toast after a successful hand-back. */
   handedBack: string | null
+  /** Revision diff view open? */
+  diffOpen: boolean
+  /** Offer "show what changed" after a reload when a snapshot exists. */
+  diffOffer: boolean
 
   load(sessionId: string): Promise<void>
   undo(): void
@@ -46,6 +50,8 @@ export interface DocStore {
   saveForce(): Promise<void>
   handback(): Promise<boolean>
   clearHandedBack(): void
+  setDiffOpen(open: boolean): void
+  dismissDiffOffer(): void
   setSource(source: string): void
   /** Editor flush path — updates the buffer without remounting the editor. */
   setSourceFromEditor(source: string): void
@@ -76,6 +82,8 @@ export const useDoc = create<DocStore>((set, get) => ({
   history: [],
   diskChange: null,
   handedBack: null,
+  diffOpen: false,
+  diffOffer: false,
 
   async load(sessionId) {
     set({ sessionId, status: 'loading', error: null })
@@ -195,6 +203,21 @@ export const useDoc = create<DocStore>((set, get) => ({
     if (!sessionId) return
     const file = await getFile(sessionId)
     get().adoptDiskContent(file.content, file.mtimeMs)
+    // spec: after reload, offer the revision diff when a snapshot exists
+    try {
+      await getLatestSnapshot(sessionId)
+      set({ diffOffer: true })
+    } catch {
+      set({ diffOffer: false })
+    }
+  },
+
+  setDiffOpen(open) {
+    set({ diffOpen: open, diffOffer: open ? false : get().diffOffer })
+  },
+
+  dismissDiffOffer() {
+    set({ diffOffer: false })
   },
 
   async saveForce() {

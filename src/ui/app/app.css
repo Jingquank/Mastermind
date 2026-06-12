@@ -759,6 +759,63 @@ mark.critic-hl.critic-anchor:hover {
   color: var(--review-delete-text);
 }
 
+/* ---------- revision diff ---------- */
+
+.diff-view {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: calc(var(--space-unit) * 6) calc(var(--space-unit) * 4) calc(var(--space-unit) * 24);
+}
+
+.diff-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 3);
+  margin-bottom: calc(var(--space-unit) * 4);
+}
+
+.diff-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.diff-meta {
+  color: var(--color-text-faint);
+  font-weight: 400;
+  font-size: var(--font-size-sm);
+}
+
+.diff-error {
+  color: var(--color-text-muted);
+}
+
+.diff-body {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: calc(var(--space-unit) * 4);
+}
+
+.diff-ins {
+  color: var(--review-insert-text);
+  background: var(--review-insert-bg);
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+}
+
+.diff-del {
+  color: var(--review-delete-text);
+  background: var(--review-delete-bg);
+  text-decoration: line-through;
+  border-radius: var(--radius-xs);
+}
+
 /* ---------- toast ---------- */
 
 .toast {

@@ -8,6 +8,7 @@ import { SourceEditor } from '../modes/source/SourceEditor'
 import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { resolveAll } from '../../shared/critic/resolve'
+import { DiffView } from '../diff/DiffView'
 import { openEvents } from './api'
 import { useDoc, type ViewMode } from './store'
 import { TopBar } from './TopBar'
@@ -21,6 +22,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const conflict = useDoc((s) => s.conflict)
   const diskChange = useDoc((s) => s.diskChange)
   const handedBack = useDoc((s) => s.handedBack)
+  const diffOpen = useDoc((s) => s.diffOpen)
+  const diffOffer = useDoc((s) => s.diffOffer)
   const mode = useDoc((s) => s.mode)
   const externalVersion = useDoc((s) => s.externalVersion)
   const load = useDoc((s) => s.load)
@@ -148,6 +151,15 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   }
   if (status !== 'ready') return null
 
+  if (diffOpen) {
+    return (
+      <>
+        <TopBar />
+        <DiffView sessionId={sessionId} onClose={() => useDoc.getState().setDiffOpen(false)} />
+      </>
+    )
+  }
+
   const hasThreads = analysis?.items.some((i) => i.type === 'thread') ?? false
   const showRail = mode === 'reading' && railOpen && hasThreads
   const suggestionCount = analysis?.items.filter((i) => i.type === 'suggestion').length ?? 0
@@ -189,6 +201,17 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           )}
           <button type="button" className="btn-ghost" onClick={() => useDoc.getState().dismissDiskChange()}>
             Keep mine
+          </button>
+        </div>
+      )}
+      {!conflict && !diskChange && diffOffer && (
+        <div className="banner" role="status">
+          <span className="banner-text">Reloaded.</span>
+          <button type="button" className="btn-ghost" onClick={() => useDoc.getState().setDiffOpen(true)}>
+            Show what changed since your last review
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => useDoc.getState().dismissDiffOffer()}>
+            Dismiss
           </button>
         </div>
       )}
