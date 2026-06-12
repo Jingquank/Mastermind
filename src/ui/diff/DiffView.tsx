@@ -1,5 +1,6 @@
 import { diffWords } from 'diff'
 import { useEffect, useMemo, useState } from 'react'
+import { useT } from '../i18n'
 import { stripSummary } from '../../shared/summary'
 import { getLatestSnapshot } from '../app/api'
 import { useDoc } from '../app/store'
@@ -19,6 +20,7 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
   const source = useDoc((s) => s.source)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const t = useT()
 
   useEffect(() => {
     let cancelled = false
@@ -53,12 +55,12 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
     <div className="diff-view">
       <div className="diff-head">
         <span className="diff-title">
-          Changes since your last review
-          {loaded && <span className="diff-meta"> · snapshot {loaded.snapshotId}</span>}
-          {parts && <span className="diff-meta"> · {changeCount === 0 ? 'no changes' : `${changeCount} changed regions`}</span>}
+          {t('changesSince')}
+          {loaded && <span className="diff-meta"> · {t('snapshot')} {loaded.snapshotId}</span>}
+          {parts && <span className="diff-meta"> · {changeCount === 0 ? t('noChanges') : `${changeCount} ${t('changedRegions')}`}</span>}
         </span>
         <button type="button" className="btn-ghost" onClick={onClose}>
-          Back to document
+          {t('backToDocument')}
         </button>
       </div>
       {error && <p className="diff-error">{error}</p>}

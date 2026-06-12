@@ -1,10 +1,5 @@
+import { useT } from '../i18n'
 import { useDirty, useDoc, type ViewMode } from './store'
-
-const MODES: { id: ViewMode; label: string; enabled: boolean }[] = [
-  { id: 'reading', label: 'Reading', enabled: true },
-  { id: 'editing', label: 'Editing', enabled: true },
-  { id: 'source', label: 'Source', enabled: true },
-]
 
 interface TopBarProps {
   railOpen?: boolean
@@ -25,6 +20,7 @@ export function TopBar({
   onToggleSettings,
   translation,
 }: TopBarProps) {
+  const t = useT()
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
@@ -32,11 +28,17 @@ export function TopBar({
   const saving = useDoc((s) => s.saving)
   const dirty = useDirty()
 
+  const MODES: { id: ViewMode; label: string }[] = [
+    { id: 'reading', label: t('reading') },
+    { id: 'editing', label: t('editing') },
+    { id: 'source', label: t('source') },
+  ]
+
   return (
     <header className="topbar">
       <div className="topbar-left">
         <span className="topbar-filename">{meta?.displayName ?? '…'}</span>
-        <span className={`dirty-dot${dirty ? ' visible' : ''}`} title={dirty ? 'Unsaved changes' : 'Saved'} />
+        <span className={`dirty-dot${dirty ? ' visible' : ''}`} title={dirty ? t('unsavedChanges') : t('saved')} />
       </div>
       <nav className="seg" aria-label="View mode">
         {MODES.map((m) => (
@@ -44,8 +46,6 @@ export function TopBar({
             key={m.id}
             type="button"
             className={`seg-btn${mode === m.id ? ' active' : ''}`}
-            disabled={!m.enabled}
-            title={m.enabled ? undefined : 'Coming soon'}
             onClick={() => setMode(m.id)}
           >
             {m.label}
@@ -59,40 +59,46 @@ export function TopBar({
             className={`btn-ghost lang-toggle${translation.active ? ' active' : ''}`}
             onClick={translation.onToggle}
             disabled={translation.loading}
-            title="Toggle reading language"
+            title={t('toggleLang')}
           >
             {translation.loading ? '…' : translation.label}
           </button>
         )}
         {suggestionCount > 0 && (
           <>
-            <button type="button" className="btn-ghost accept-all" onClick={onAcceptAll} title="Apply every suggested edit">
-              Accept all ({suggestionCount})
+            <button type="button" className="btn-ghost accept-all" onClick={onAcceptAll} title={t('acceptAllTitle')}>
+              {t('acceptAll')} ({suggestionCount})
             </button>
-            <button type="button" className="btn-ghost reject-all" onClick={onRejectAll} title="Revert every suggested edit">
-              Reject all
+            <button type="button" className="btn-ghost reject-all" onClick={onRejectAll} title={t('rejectAllTitle')}>
+              {t('rejectAll')}
             </button>
           </>
         )}
         {onToggleRail && (
-          <button type="button" className="btn-ghost" onClick={onToggleRail} title="Toggle comment rail">
-            {railOpen ? 'Hide comments' : 'Show comments'}
+          <button type="button" className="btn-ghost" onClick={onToggleRail} title={t('toggleRail')}>
+            {railOpen ? t('hideComments') : t('showComments')}
           </button>
         )}
         <button type="button" className="btn-ghost" onClick={() => void save()} disabled={!dirty || saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t('saving') : t('save')}
         </button>
         <button
           type="button"
           className="btn-cta"
           onClick={() => void useDoc.getState().handback()}
           disabled={saving}
-          title="Save with a review summary and signal the waiting agent"
+          title={t('handBackTitle')}
         >
-          Save &amp; hand back
+          {t('handBack')}
         </button>
         {onToggleSettings && (
-          <button type="button" className="btn-ghost settings-gear" onClick={onToggleSettings} title="Settings" aria-label="Settings">
+          <button
+            type="button"
+            className="btn-ghost settings-gear"
+            onClick={onToggleSettings}
+            title={t('settings')}
+            aria-label={t('settings')}
+          >
             ⚙
           </button>
         )}

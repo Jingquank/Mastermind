@@ -9,6 +9,7 @@ import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { resolveAll } from '../../shared/critic/resolve'
 import { DiffView } from '../diff/DiffView'
+import { useT } from '../i18n'
 import { RenameDialog } from './RenameDialog'
 import { SettingsPanel } from '../settings/SettingsPanel'
 import { TranslatedView } from '../translate/TranslatedView'
@@ -42,6 +43,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     return () => clearTimeout(t)
   }, [handedBack])
 
+  const t = useT()
   const articleRef = useRef<HTMLElement | null>(null)
   const [activeSpan, setActiveSpan] = useState<number | null>(null)
   const [railOpen, setRailOpen] = useState(true)
@@ -214,38 +216,38 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       {renamePrompt && <RenameDialog />}
       {conflict && (
         <div className="banner" role="alert">
-          <span className="banner-text">Saving is paused — the file changed on disk after your last load.</span>
+          <span className="banner-text">{t('savePaused')}</span>
           <button type="button" className="btn-ghost" onClick={() => void useDoc.getState().reloadFromDisk()}>
-            Reload (discard mine)
+            {t('reloadDiscard')}
           </button>
           <button type="button" className="btn-ghost" onClick={() => void useDoc.getState().saveForce()}>
-            Save anyway
+            {t('saveAnyway')}
           </button>
         </div>
       )}
       {!conflict && diskChange && (
         <div className="banner" role="status">
           <span className="banner-text">
-            {diskChange.deleted ? 'The file was deleted on disk.' : 'The file changed on disk.'}
+            {diskChange.deleted ? t('fileDeleted') : t('fileChanged')}
           </span>
           {!diskChange.deleted && (
             <button type="button" className="btn-ghost" onClick={() => void useDoc.getState().reloadFromDisk()}>
-              Reload
+              {t('reload')}
             </button>
           )}
           <button type="button" className="btn-ghost" onClick={() => useDoc.getState().dismissDiskChange()}>
-            Keep mine
+            {t('keepMine')}
           </button>
         </div>
       )}
       {!conflict && !diskChange && diffOffer && (
         <div className="banner" role="status">
-          <span className="banner-text">Reloaded.</span>
+          <span className="banner-text">{t('reloaded')}</span>
           <button type="button" className="btn-ghost" onClick={() => useDoc.getState().setDiffOpen(true)}>
-            Show what changed since your last review
+            {t('showWhatChanged')}
           </button>
           <button type="button" className="btn-ghost" onClick={() => useDoc.getState().dismissDiffOffer()}>
-            Dismiss
+            {t('dismiss')}
           </button>
         </div>
       )}

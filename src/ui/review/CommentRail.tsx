@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { useT } from '../i18n'
 import { acceptEdit } from '../../shared/critic/resolve'
 import type { CriticSpan, ReviewItem } from '../../shared/critic/types'
 import type { TextEdit } from '../../shared/types'
@@ -28,6 +29,7 @@ interface CardLayout {
 const CARD_GAP = 8
 
 export function CommentRail({ items, spans, source, docRef, authorTag, activeSpan, onActivate, onEdit }: Props) {
+  const t = useT()
   const railRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef(new Map<string, HTMLDivElement>())
   const [layouts, setLayouts] = useState<CardLayout[]>([])
@@ -125,7 +127,7 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
                   autoFocus
                   rows={2}
                   value={replyText}
-                  placeholder="Reply…"
+                  placeholder={t('replyPlaceholder')}
                   onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitReply(card.thread)
@@ -138,10 +140,10 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
                 />
                 <div className="rail-actions">
                   <button type="button" onClick={() => setReplyFor(null)}>
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button type="button" className="primary" disabled={!replyText.trim()} onClick={() => submitReply(card.thread)}>
-                    Reply
+                    {t('reply')}
                   </button>
                 </div>
               </div>
@@ -155,7 +157,7 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
                     setReplyText('')
                   }}
                 >
-                  Reply
+                  {t('reply')}
                 </button>
                 <button
                   type="button"
@@ -164,7 +166,7 @@ export function CommentRail({ items, spans, source, docRef, authorTag, activeSpa
                     resolveThread(card.thread)
                   }}
                 >
-                  Resolve
+                  {t('resolve')}
                 </button>
               </div>
             )}

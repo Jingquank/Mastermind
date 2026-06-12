@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { CriticSpan } from '../../../shared/critic/types'
 import type { TextEdit } from '../../../shared/types'
+import { useT } from '../../i18n'
 import { rangeToSource, type SelRange } from './selection'
 
 interface Props {
@@ -22,6 +23,7 @@ function sanitizeComment(text: string): string {
 }
 
 export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdit }: Props) {
+  const t = useT()
   const [active, setActive] = useState<Active | null>(null)
   const [composing, setComposing] = useState(false)
   const [comment, setComment] = useState('')
@@ -92,13 +94,13 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
       {!composing ? (
         <>
           <button type="button" onClick={() => setComposing(true)}>
-            Comment
+            {t('comment')}
           </button>
           <button type="button" onClick={() => apply(`{--${slice}--}`)}>
-            Suggest deletion
+            {t('suggestDeletion')}
           </button>
           <button type="button" onClick={() => apply(`{==${slice}==}`)}>
-            Highlight
+            {t('highlight')}
           </button>
         </>
       ) : (
@@ -106,7 +108,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
           <textarea
             autoFocus
             rows={3}
-            placeholder="Comment…"
+            placeholder={t('commentPlaceholder')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => {
@@ -118,7 +120,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
           />
           <div className="sel-composer-actions">
             <button type="button" onClick={() => setComposing(false)}>
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -126,7 +128,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
               disabled={!comment.trim()}
               onClick={() => apply(`{==${slice}==}{>>@${authorTag}: ${sanitizeComment(comment)}<<}`)}
             >
-              Comment
+              {t('comment')}
             </button>
           </div>
         </div>

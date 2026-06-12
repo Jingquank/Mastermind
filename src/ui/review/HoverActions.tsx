@@ -1,4 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react'
+import { useT } from '../i18n'
 import { acceptEdit, rejectEdit } from '../../shared/critic/resolve'
 import type { CriticSpan } from '../../shared/critic/types'
 import type { TextEdit } from '../../shared/types'
@@ -18,6 +19,7 @@ interface HoverState {
 
 /** Floating Accept/Reject chip over hovered ins/del/sub marks (Reading mode). */
 export function HoverActions({ articleRef, spans, source, onEdit }: Props) {
+  const t = useT()
   const [state, setState] = useState<HoverState | null>(null)
 
   useEffect(() => {
@@ -68,10 +70,10 @@ export function HoverActions({ articleRef, spans, source, onEdit }: Props) {
       style={{ top: Math.max(4, state.top - 34), left: Math.max(4, state.left) }}
     >
       <button type="button" className="accept" onClick={() => act('accept')}>
-        Accept
+        {t('accept')}
       </button>
       <button type="button" className="reject" onClick={() => act('reject')}>
-        Reject
+        {t('reject')}
       </button>
     </div>
   )
