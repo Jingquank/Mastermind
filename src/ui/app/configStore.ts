@@ -43,11 +43,20 @@ export const useConfig = create<ConfigState>((set, get) => ({
     if (current) {
       set({ config: { ...current, ...patch, provider: current.provider } as ClientConfig })
     }
-    const config = await fetchJson<ClientConfig>('/api/config', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(patch),
-    })
-    set({ config })
+    try {
+      const config = await fetchJson<ClientConfig>('/api/config', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      set({ config })
+    } catch {
+      // never leave an optimistic value lying about persisted state
+      await get()
+        .load()
+        .catch(() => {})
+      const { useDoc } = await import('./store')
+      useDoc.getState().setNotice({ kind: 'error', msg: 'configSaveFailed' })
+    }
   },
 }))

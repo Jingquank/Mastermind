@@ -60,6 +60,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [activeSpan, setActiveSpan] = useState<number | null>(null)
   const [railOpen, setRailOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false)
+    // hand focus back to the invoking control
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('.settings-gear')?.focus())
+  }, [])
   const [agentWaiting, setAgentWaiting] = useState(false)
   const [walkIndex, setWalkIndex] = useState<number | null>(null)
   const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
@@ -191,13 +196,14 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           applyEdits([edit])
           setWalkIndex((prev) => (prev === null ? null : suggestions.length - 1 <= 0 ? null : Math.min(prev, suggestions.length - 2)))
         }
-      } else if (e.key === 'Escape') {
+      } else if (e.key === 'Escape' && !settingsOpen && !renamePrompt) {
+        // layered dismissal: overlays consume Escape before the walker does
         setWalkIndex(null)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [save, suggestions, walkIndex, analysis, applyEdits])
+  }, [save, suggestions, walkIndex, analysis, applyEdits, settingsOpen, renamePrompt])
 
   // paint + scroll the walker's current suggestion
   useEffect(() => {
@@ -272,7 +278,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   if (diffOpen) {
     return (
       <>
-        <TopBar agentWaiting={agentWaiting} />
+        <TopBar agentWaiting={agentWaiting} onToggleSettings={() => setSettingsOpen((v) => !v)} />
+        {settingsOpen && <SettingsPanel onClose={closeSettings} />}
         <DiffView sessionId={sessionId} onClose={() => useDoc.getState().setDiffOpen(false)} />
       </>
     )
@@ -316,7 +323,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             : undefined
         }
       />
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel onClose={closeSettings} />}
       {renamePrompt && <RenameDialog />}
       {conflict && (
         <div className="banner" role="alert">

@@ -56,9 +56,6 @@ const sourceTheme = EditorView.theme({
   '&.cm-focused': { outline: 'none' },
   '.cm-line': { padding: '0' },
   '.cm-cursor': { borderLeftColor: 'var(--color-text)' },
-  '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
-    backgroundColor: 'var(--color-accent-surface) !important',
-  },
 })
 
 export function SourceEditor() {

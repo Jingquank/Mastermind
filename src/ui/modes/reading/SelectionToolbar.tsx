@@ -71,8 +71,27 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
         setActive(null)
       }
     }
-    if (active) window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    // keep the floating toolbar anchored to its selection while scrolling
+    let raf = 0
+    const onScroll = (): void => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const sel = window.getSelection()
+        if (!sel || sel.rangeCount === 0) return
+        const rect = sel.getRangeAt(0).getBoundingClientRect()
+        setActive((prev) => (prev ? { ...prev, rect: { top: rect.top, left: rect.left, width: rect.width } } : prev))
+      })
+    }
+    if (active) {
+      window.addEventListener('keydown', onKey)
+      window.addEventListener('scroll', onScroll, { passive: true })
+    }
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
   }, [active])
 
   if (!active) return null
@@ -123,6 +142,12 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && comment.trim()) {
                 apply(`{==${slice}==}{>>@${authorTag}: ${sanitizeComment(comment)}<<}`)
+              } else if (e.key === 'Escape') {
+                // the textarea swallows keydowns (stopPropagation below), so
+                // the window-level Escape handler never sees this one
+                setComposing(false)
+                setComment('')
+                setActive(null)
               }
               e.stopPropagation()
             }}

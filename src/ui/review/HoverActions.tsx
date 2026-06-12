@@ -46,11 +46,14 @@ export function HoverActions({ articleRef, spans, source, onEdit }: Props) {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') setState(null)
     }
+    const onScroll = (): void => setState(null)
     document.addEventListener('mouseover', onOver)
     document.addEventListener('keydown', onKey)
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       document.removeEventListener('mouseover', onOver)
       document.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', onScroll)
       if (hideTimer) clearTimeout(hideTimer)
     }
   }, [articleRef])
