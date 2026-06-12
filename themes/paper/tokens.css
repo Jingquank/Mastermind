@@ -1,0 +1,64 @@
+[data-theme='paper'] {
+  /* ---- Surfaces & text — warm light, serif body ---- */
+  --color-bg: #faf7f1;
+  --color-bg-elevated: #ffffff;
+  --color-text: #2a2520;
+  --color-text-muted: #6f675c;
+  --color-text-faint: #978e81;
+  --color-border: #e0dad0;
+
+  /* ---- Accent family — quiet forest ink ---- */
+  --color-accent: #2e7d52;
+  --color-accent-dim: #276b46;
+  --color-accent-surface: rgba(46, 125, 82, 0.1);
+  --color-on-accent: #f5fff9;
+  --color-cta-bg: #2a2520;
+  --color-cta-text: #f3eee4;
+
+  /* ---- Inversion family ---- */
+  --color-invert-bg: #221e19;
+  --color-invert-bg-elevated: #2e2922;
+  --color-invert-text: #f3eee4;
+  --color-invert-text-muted: rgba(243, 238, 228, 0.62);
+  --color-invert-border: rgba(243, 238, 228, 0.14);
+
+  /* ---- Review semantics ---- */
+  --review-insert-text: #276b46;
+  --review-insert-bg: rgba(46, 125, 82, 0.11);
+  --review-insert-border: #2e7d52;
+  --review-delete-text: #a8442a;
+  --review-delete-bg: rgba(168, 68, 42, 0.1);
+  --review-delete-border: rgba(168, 68, 42, 0.45);
+  --review-highlight-bg: rgba(208, 158, 31, 0.22);
+  --review-highlight-border: rgba(208, 158, 31, 0.55);
+  --review-comment-anchor: #276b46;
+  --review-comment-active-bg: rgba(46, 125, 82, 0.1);
+
+  /* ---- Typography — serif long-form ---- */
+  --font-display: 'Charter', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Charter', 'Iowan Old Style', Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --font-size-body: 1.0625rem;
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.15;
+  --lh-title: 1.25;
+  --lh-snug: 1.45;
+  --lh-body: 1.65;
+  --ls-heading: -0.01em;
+  --ls-title: -0.005em;
+  --ls-normal: 0;
+  --ls-caps: 0.05em;
+  --ls-label: 0.07em;
+
+  /* ---- Shape & layout ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 44rem;
+  --space-unit: 4px;
+
+  --display-transform: none;
+  --display-weight: 700;
+}

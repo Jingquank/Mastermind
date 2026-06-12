@@ -1,90 +1,9 @@
 /* ============================================================
-   Mastermind base styles.
-   Tokens follow the PINOC Editorial reference theme; at M9 the
-   [data-theme] blocks move into themes/<id>/tokens.css and this
-   file keeps only the token-consuming rules.
+   Mastermind base styles — token-consuming rules ONLY.
+   Every color/face/size comes from var(--*) supplied by the
+   active theme's tokens.css (themes/<id>/tokens.css). Fonts are
+   injected from the theme.json manifest at runtime.
    ============================================================ */
-
-@font-face {
-  font-family: 'Ancho';
-  src: url('/themes/pinoc-editorial/fonts/Ancho-UltraBold.woff2') format('woff2');
-  font-weight: 800;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Outfit';
-  src: url('/themes/pinoc-editorial/fonts/Outfit-Variable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('/themes/pinoc-editorial/fonts/GeistMono-Variable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-display: swap;
-}
-
-[data-theme='pinoc-editorial'] {
-  /* ---- Surfaces & text ---- */
-  --color-bg: #f3f0eb;
-  --color-bg-elevated: #faf9f6;
-  --color-text: #1a1a1a;
-  --color-text-muted: #736e65;
-  --color-text-faint: #918d85;
-  --color-border: #d5d3ce;
-
-  /* ---- Accent family ---- */
-  --color-accent: #00e05a;
-  --color-accent-dim: #00b848;
-  --color-accent-surface: rgba(0, 224, 90, 0.12);
-  --color-on-accent: #002b12;
-  --color-cta-bg: #1a1a1a;
-  --color-cta-text: #00e05a;
-
-  /* ---- Inversion family ---- */
-  --color-invert-bg: #0e0d0b;
-  --color-invert-bg-elevated: #1a1816;
-  --color-invert-text: #f0ede6;
-  --color-invert-text-muted: rgba(240, 237, 230, 0.62);
-  --color-invert-border: rgba(240, 237, 230, 0.12);
-
-  /* ---- Review semantics ---- */
-  --review-insert-text: var(--color-accent-dim);
-  --review-insert-bg: var(--color-accent-surface);
-  --review-insert-border: var(--color-accent);
-  --review-delete-text: #b5482a;
-  --review-delete-bg: rgba(181, 72, 42, 0.1);
-  --review-delete-border: rgba(181, 72, 42, 0.45);
-  --review-highlight-bg: rgba(212, 160, 23, 0.22);
-  --review-highlight-border: rgba(212, 160, 23, 0.55);
-  --review-comment-anchor: var(--color-accent-dim);
-  --review-comment-active-bg: var(--color-accent-surface);
-
-  /* ---- Typography ---- */
-  --font-display: 'Ancho', 'Outfit', sans-serif;
-  --font-body: 'Outfit', -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
-
-  --font-size-body: 1rem;
-  --font-size-sm: 0.875rem;
-  --font-size-micro: 0.6875rem;
-  --lh-display: 1.05;
-  --lh-title: 1.2;
-  --lh-snug: 1.4;
-  --lh-body: 1.6;
-  --ls-heading: -0.03em;
-  --ls-title: -0.02em;
-  --ls-normal: 0;
-  --ls-caps: 0.06em;
-  --ls-label: 0.08em;
-
-  /* ---- Shape & layout ---- */
-  --radius-xs: 2px;
-  --radius-md: 4px;
-  --radius-full: 9999px;
-  --content-max-width: 46rem;
-  --space-unit: 4px;
-}
 
 /* ---------- base ---------- */
 
@@ -447,7 +366,8 @@ button:disabled {
 .md-root h1,
 .md-root h2 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: var(--display-weight, 800);
+  text-transform: var(--display-transform, none);
   line-height: var(--lh-display);
   letter-spacing: var(--ls-heading);
 }
@@ -464,7 +384,8 @@ button:disabled {
 
 .md-root h3 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: var(--display-weight, 800);
+  text-transform: var(--display-transform, none);
   font-size: clamp(1.25rem, 2vw, 1.5rem);
   line-height: var(--lh-title);
   letter-spacing: var(--ls-title);
@@ -844,9 +765,141 @@ mark.critic-hl.critic-anchor:hover {
 
 .center-note h1 {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: var(--display-weight, 800);
   letter-spacing: var(--ls-heading);
   color: var(--color-text);
+}
+
+/* ---------- settings panel ---------- */
+
+.settings-panel {
+  position: fixed;
+  top: 57px;
+  right: calc(var(--space-unit) * 3);
+  z-index: 45;
+  width: 340px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: calc(var(--space-unit) * 4);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(var(--space-unit) * 3);
+}
+
+.settings-title {
+  font-weight: 600;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+}
+
+.settings-panel section {
+  border-top: 1px solid var(--color-border);
+  padding: calc(var(--space-unit) * 3) 0;
+}
+
+.settings-panel h4 {
+  margin: 0 0 calc(var(--space-unit) * 2);
+  font-size: var(--font-size-micro);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-unit) * 1);
+  margin-bottom: calc(var(--space-unit) * 3);
+  font-size: var(--font-size-sm);
+}
+
+.settings-row:has(> input[type='checkbox']) {
+  flex-direction: row;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+}
+
+.settings-val {
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-micro);
+}
+
+.settings-input {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: calc(var(--space-unit) * 1.5);
+  color: var(--color-text);
+  width: 100%;
+}
+
+.settings-input.narrow {
+  width: 90px;
+}
+
+.settings-pair {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+}
+
+.settings-theme-row {
+  display: flex;
+  gap: calc(var(--space-unit) * 2);
+  flex-wrap: wrap;
+  margin-bottom: calc(var(--space-unit) * 2);
+}
+
+.theme-chip {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.theme-chip.active {
+  border-color: var(--color-accent-dim);
+  color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-accent-dim);
+}
+
+.settings-gear {
+  font-size: 1rem;
+  padding: calc(var(--space-unit) * 1.5);
+}
+
+input[type='range'] {
+  accent-color: var(--color-accent-dim);
+}
+
+input[type='checkbox'] {
+  accent-color: var(--color-accent-dim);
+}
+
+/* ---------- grain overlay ---------- */
+
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+  mix-blend-mode: multiply;
 }
 
 .center-note code {

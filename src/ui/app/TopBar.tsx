@@ -12,9 +12,17 @@ interface TopBarProps {
   suggestionCount?: number
   onAcceptAll?: () => void
   onRejectAll?: () => void
+  onToggleSettings?: () => void
 }
 
-export function TopBar({ railOpen, onToggleRail, suggestionCount = 0, onAcceptAll, onRejectAll }: TopBarProps) {
+export function TopBar({
+  railOpen,
+  onToggleRail,
+  suggestionCount = 0,
+  onAcceptAll,
+  onRejectAll,
+  onToggleSettings,
+}: TopBarProps) {
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
@@ -70,6 +78,11 @@ export function TopBar({ railOpen, onToggleRail, suggestionCount = 0, onAcceptAl
         >
           Save &amp; hand back
         </button>
+        {onToggleSettings && (
+          <button type="button" className="btn-ghost settings-gear" onClick={onToggleSettings} title="Settings" aria-label="Settings">
+            ⚙
+          </button>
+        )}
       </div>
     </header>
   )

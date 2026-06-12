@@ -9,7 +9,9 @@ import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { resolveAll } from '../../shared/critic/resolve'
 import { DiffView } from '../diff/DiffView'
+import { SettingsPanel } from '../settings/SettingsPanel'
 import { openEvents } from './api'
+import { useConfig } from './configStore'
 import { useDoc, type ViewMode } from './store'
 import { TopBar } from './TopBar'
 
@@ -39,6 +41,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const articleRef = useRef<HTMLElement | null>(null)
   const [activeSpan, setActiveSpan] = useState<number | null>(null)
   const [railOpen, setRailOpen] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
 
   useEffect(() => {
     void load(sessionId)
@@ -61,6 +65,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       const { mtimeMs } = JSON.parse((e as MessageEvent).data) as { mtimeMs: number }
       const s = useDoc.getState()
       if (!s.saving && Math.abs(s.mtimeMs - mtimeMs) > 0.001) s.notifyDiskChange(mtimeMs)
+    })
+    es.addEventListener('config-changed', () => {
+      void useConfig.getState().load()
     })
     return () => es.close()
   }, [sessionId])
@@ -177,7 +184,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         suggestionCount={mode === 'reading' ? suggestionCount : 0}
         onAcceptAll={() => bulkResolve('accept')}
         onRejectAll={() => bulkResolve('reject')}
+        onToggleSettings={() => setSettingsOpen((v) => !v)}
       />
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
       {conflict && (
         <div className="banner" role="alert">
           <span className="banner-text">Saving is paused — the file changed on disk after your last load.</span>
@@ -234,7 +243,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             spans={analysis.spans}
             source={source}
             docRef={articleRef}
-            authorTag={DEFAULT_AUTHOR_TAG}
+            authorTag={authorTag}
             activeSpan={activeCardSpan}
             onActivate={setActiveSpan}
             onEdit={applyEdits}
@@ -247,7 +256,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             containerRef={articleRef}
             source={source}
             spans={analysis.spans}
-            authorTag={DEFAULT_AUTHOR_TAG}
+            authorTag={authorTag}
             onEdit={applyEdits}
           />
           <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />

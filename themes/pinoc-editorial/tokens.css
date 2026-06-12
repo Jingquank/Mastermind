@@ -1,0 +1,65 @@
+[data-theme='pinoc-editorial'] {
+  /* ---- Surfaces & text (verbatim from design system) ---- */
+  --color-bg: #f3f0eb;
+  --color-bg-elevated: #faf9f6;
+  --color-text: #1a1a1a;
+  --color-text-muted: #736e65;
+  --color-text-faint: #918d85;
+  --color-border: #d5d3ce;
+
+  /* ---- Accent family (verbatim) ---- */
+  --color-accent: #00e05a;
+  --color-accent-dim: #00b848;
+  --color-accent-surface: rgba(0, 224, 90, 0.12);
+  --color-on-accent: #002b12;
+  --color-cta-bg: #1a1a1a;
+  --color-cta-text: #00e05a;
+
+  /* ---- Inversion family (verbatim) ---- */
+  --color-invert-bg: #0e0d0b;
+  --color-invert-bg-elevated: #1a1816;
+  --color-invert-text: #f0ede6;
+  --color-invert-text-muted: rgba(240, 237, 230, 0.62);
+  --color-invert-border: rgba(240, 237, 230, 0.12);
+
+  /* ---- Review semantics ---- */
+  --review-insert-text: var(--color-accent-dim);
+  --review-insert-bg: var(--color-accent-surface);
+  --review-insert-border: var(--color-accent);
+  --review-delete-text: #b5482a;
+  --review-delete-bg: rgba(181, 72, 42, 0.1);
+  --review-delete-border: rgba(181, 72, 42, 0.45);
+  --review-highlight-bg: rgba(212, 160, 23, 0.22);
+  --review-highlight-border: rgba(212, 160, 23, 0.55);
+  --review-comment-anchor: var(--color-accent-dim);
+  --review-comment-active-bg: var(--color-accent-surface);
+
+  /* ---- Typography ---- */
+  --font-display: 'Ancho', 'Outfit', sans-serif;
+  --font-body: 'Outfit', -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --font-size-body: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.05;
+  --lh-title: 1.2;
+  --lh-snug: 1.4;
+  --lh-body: 1.6;
+  --ls-heading: -0.03em;
+  --ls-title: -0.02em;
+  --ls-normal: 0;
+  --ls-caps: 0.06em;
+  --ls-label: 0.08em;
+
+  /* ---- Shape & layout ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 46rem;
+  --space-unit: 4px;
+
+  /* display headings render ALL-CAPS (Ancho has no lowercase) */
+  --display-transform: none;
+  --display-weight: 800;
+}

@@ -11,9 +11,11 @@ import type {
   SessionMeta,
   SseEventName,
 } from '../shared/types'
+import { readConfig, redactConfig, updateConfig, type ConfigPatch } from './config'
 import { writeSessionFile } from './files'
 import { performHandback } from './handback'
 import { listSnapshots, readLatestSnapshot } from './snapshots'
+import { scanThemes } from './themes'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -60,6 +62,24 @@ export function createApp(deps: AppDeps): Hono {
     setTimeout(() => deps.requestShutdown('admin request'), 20)
     return c.body(null, 202)
   })
+
+  app.get('/api/config', (c) => c.json(redactConfig(readConfig())))
+
+  app.put('/api/config', async (c) => {
+    let patch: ConfigPatch
+    try {
+      patch = await c.req.json<ConfigPatch>()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    const next = updateConfig(patch)
+    for (const session of registry.all()) {
+      registry.broadcast(session.id, 'config-changed', {})
+    }
+    return c.json(redactConfig(next))
+  })
+
+  app.get('/api/themes', async (c) => c.json(await scanThemes()))
 
   app.post('/api/sessions', async (c) => {
     let body: CreateSessionRequest

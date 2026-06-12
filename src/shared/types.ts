@@ -56,6 +56,52 @@ export interface ReviewCounts {
   highlights: number
 }
 
+/* ---- config ---- */
+
+export interface ProviderConfig {
+  type: 'anthropic' | 'openai-compatible'
+  baseUrl?: string
+  apiKey?: string
+  model?: string
+}
+
+export interface MastermindConfig {
+  version: 1
+  theme: string
+  /** px */
+  fontSize: number
+  lineHeight: number
+  /** px */
+  contentWidth: number
+  authorTag: string
+  uiLang: 'en' | 'zh-CN'
+  /** the reading-language toggle pair */
+  langPair: { a: string; b: string }
+  keepOriginalFeedback: boolean
+  /** per-theme grain overrides */
+  grain: Record<string, { enabled?: boolean }>
+  provider: ProviderConfig | null
+}
+
+/** What the browser sees — never the API key. */
+export interface ClientConfig extends Omit<MastermindConfig, 'provider'> {
+  provider: { type: ProviderConfig['type']; baseUrl?: string; model?: string; configured: boolean } | null
+}
+
+export interface ThemeFontInfo {
+  family: string
+  url: string
+  weight: string | number
+}
+
+export interface ThemeInfo {
+  id: string
+  name: string
+  appearance: 'light' | 'dark'
+  grain: { enabled: boolean; opacity?: number; tintOpacity?: number } | null
+  fonts: ThemeFontInfo[]
+}
+
 export type SseEvent =
   | { event: 'ping'; data: Record<string, never> }
   | { event: 'file-changed'; data: { mtimeMs: number } }
