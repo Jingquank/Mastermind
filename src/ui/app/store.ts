@@ -19,9 +19,23 @@ export interface DocStore {
   error: string | null
   conflict: boolean
   saving: boolean
+  /**
+   * Bumped whenever the buffer changes from OUTSIDE the active editor
+   * (load, accept/reject, disk reload) — editor components remount on it.
+   * Editor-originated flushes do not bump it.
+   */
+  externalVersion: number
+  /** The active editor has unflushed changes (dot indicator while typing). */
+  editorDirty: boolean
+  /** Registered by the active editor: flush pending edits into `source`. */
+  flushEditor: (() => void) | null
 
   load(sessionId: string): Promise<void>
   setSource(source: string): void
+  /** Editor flush path — updates the buffer without remounting the editor. */
+  setSourceFromEditor(source: string): void
+  setEditorDirty(dirty: boolean): void
+  registerFlusher(fn: (() => void) | null): void
   applyEdits(edits: TextEdit[]): void
   setMode(mode: ViewMode): void
   save(): Promise<boolean>
@@ -41,13 +55,16 @@ export const useDoc = create<DocStore>((set, get) => ({
   error: null,
   conflict: false,
   saving: false,
+  externalVersion: 0,
+  editorDirty: false,
+  flushEditor: null,
 
   async load(sessionId) {
     set({ sessionId, status: 'loading', error: null })
     try {
       const [meta, file] = await Promise.all([getSession(sessionId), getFile(sessionId)])
       const normalized = normalizeToLf(file.content)
-      set({
+      set((s) => ({
         meta,
         source: normalized,
         savedSource: normalized,
@@ -55,7 +72,9 @@ export const useDoc = create<DocStore>((set, get) => ({
         mtimeMs: file.mtimeMs,
         status: 'ready',
         conflict: false,
-      })
+        externalVersion: s.externalVersion + 1,
+        editorDirty: false,
+      }))
       document.title = `${meta.displayName} — Mastermind`
     } catch (err) {
       const message =
@@ -69,18 +88,33 @@ export const useDoc = create<DocStore>((set, get) => ({
   },
 
   setSource(source) {
-    set({ source })
+    set((s) => ({ source, externalVersion: s.externalVersion + 1 }))
+  },
+
+  setSourceFromEditor(source) {
+    set({ source, editorDirty: false })
+  },
+
+  setEditorDirty(dirty) {
+    if (get().editorDirty !== dirty) set({ editorDirty: dirty })
+  },
+
+  registerFlusher(fn) {
+    set({ flushEditor: fn })
   },
 
   applyEdits(edits) {
-    set({ source: applyTextEdits(get().source, edits) })
+    set((s) => ({ source: applyTextEdits(s.source, edits), externalVersion: s.externalVersion + 1 }))
   },
 
   setMode(mode) {
+    if (mode === get().mode) return
+    get().flushEditor?.()
     set({ mode })
   },
 
   async save() {
+    get().flushEditor?.()
     const { sessionId, source, savedSource, eol, mtimeMs, saving } = get()
     if (!sessionId || saving) return false
     if (source === savedSource) return true
@@ -102,10 +136,18 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   adoptDiskContent(content, mtimeMs) {
     const normalized = normalizeToLf(content)
-    set({ source: normalized, savedSource: normalized, eol: detectEol(content), mtimeMs, conflict: false })
+    set((s) => ({
+      source: normalized,
+      savedSource: normalized,
+      eol: detectEol(content),
+      mtimeMs,
+      conflict: false,
+      externalVersion: s.externalVersion + 1,
+      editorDirty: false,
+    }))
   },
 }))
 
 export function useDirty(): boolean {
-  return useDoc((s) => s.source !== s.savedSource)
+  return useDoc((s) => s.source !== s.savedSource || s.editorDirty)
 }

@@ -9,6 +9,7 @@ import type {
   RootContent,
 } from 'mdast'
 import { Fragment, type ReactNode, createElement } from 'react'
+import type { CriticCommentNode, CriticSubNode, CriticWrapNode } from '../../../shared/markdown/critic-mdast'
 import { toggleTaskEdit } from '../../../shared/markdown/tasklist'
 import type { TextEdit } from '../../../shared/types'
 
@@ -16,6 +17,69 @@ export interface RenderCtx {
   source: string
   /** Absent → interactive affordances (task checkboxes) are disabled. */
   onEdit?: (edit: TextEdit) => void
+  /** spanIndexes of highlights that anchor a comment thread (dotted underline). */
+  anchoredHighlights?: ReadonlySet<number>
+}
+
+function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): ReactNode | undefined {
+  switch (node.type) {
+    case 'criticInsert': {
+      const n = node as CriticWrapNode
+      return (
+        <ins key={key} className="critic critic-ins" data-span-index={n.data.spanIndex}>
+          {renderInline(n.children, ctx)}
+        </ins>
+      )
+    }
+    case 'criticDelete': {
+      const n = node as CriticWrapNode
+      return (
+        <del key={key} className="critic critic-del" data-span-index={n.data.spanIndex}>
+          {renderInline(n.children, ctx)}
+        </del>
+      )
+    }
+    case 'criticHighlight': {
+      const n = node as CriticWrapNode
+      const anchored = ctx.anchoredHighlights?.has(n.data.spanIndex)
+      return (
+        <mark
+          key={key}
+          className={`critic critic-hl${anchored ? ' critic-anchor' : ''}`}
+          data-span-index={n.data.spanIndex}
+        >
+          {renderInline(n.children, ctx)}
+        </mark>
+      )
+    }
+    case 'criticSub': {
+      const n = node as CriticSubNode
+      return (
+        <span key={key} className="critic critic-sub" data-span-index={n.data.spanIndex}>
+          <del>{n.data.old}</del>
+          <span className="critic-sub-arrow" aria-hidden>
+            →
+          </span>
+          <ins>{n.data.new}</ins>
+        </span>
+      )
+    }
+    case 'criticComment': {
+      const n = node as CriticCommentNode
+      return (
+        <span
+          key={key}
+          className="critic critic-comment-marker"
+          data-span-index={n.data.spanIndex}
+          title={n.data.content}
+        >
+          ◆
+        </span>
+      )
+    }
+    default:
+      return undefined
+  }
 }
 
 type Positioned = { position?: { start?: { offset?: number }; end?: { offset?: number } } }
@@ -31,6 +95,8 @@ function renderInline(nodes: readonly PhrasingContent[], ctx: RenderCtx): ReactN
 }
 
 function renderPhrasing(node: PhrasingContent, key: number, ctx: RenderCtx): ReactNode {
+  const critic = renderCritic(node, key, ctx)
+  if (critic !== undefined) return critic
   switch (node.type) {
     case 'text':
       return (

@@ -1,15 +1,21 @@
 import { useEffect, useMemo } from 'react'
-import { parseMarkdown } from '../../shared/markdown/processor'
+import { analyzeMarkdown } from '../../shared/markdown/analyze'
+import { MilkdownEditor } from '../modes/editing/MilkdownEditor'
 import { MarkdownView } from '../modes/reading/Renderer'
+import { SourceEditor } from '../modes/source/SourceEditor'
 import { openEvents } from './api'
-import { useDoc } from './store'
+import { useDoc, type ViewMode } from './store'
 import { TopBar } from './TopBar'
+
+const MODE_CYCLE: Record<ViewMode, ViewMode> = { reading: 'editing', editing: 'source', source: 'reading' }
 
 export function SessionView({ sessionId }: { sessionId: string }) {
   const status = useDoc((s) => s.status)
   const error = useDoc((s) => s.error)
   const source = useDoc((s) => s.source)
   const conflict = useDoc((s) => s.conflict)
+  const mode = useDoc((s) => s.mode)
+  const externalVersion = useDoc((s) => s.externalVersion)
   const load = useDoc((s) => s.load)
   const applyEdits = useDoc((s) => s.applyEdits)
   const save = useDoc((s) => s.save)
@@ -30,13 +36,31 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
         void save()
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault()
+        const s = useDoc.getState()
+        s.setMode(MODE_CYCLE[s.mode])
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [save])
 
-  const tree = useMemo(() => (status === 'ready' ? parseMarkdown(source) : null), [status, source])
+  const analysis = useMemo(
+    () => (status === 'ready' && mode === 'reading' ? analyzeMarkdown(source) : null),
+    [status, source, mode],
+  )
+  const anchoredHighlights = useMemo(() => {
+    const set = new Set<number>()
+    if (!analysis) return set
+    for (const item of analysis.items) {
+      if (item.type === 'thread' && item.anchor) {
+        const idx = analysis.spans.indexOf(item.anchor)
+        if (idx >= 0) set.add(idx)
+      }
+    }
+    return set
+  }, [analysis])
 
   if (status === 'error') {
     return (
@@ -46,7 +70,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       </div>
     )
   }
-  if (!tree) return null
+  if (status !== 'ready') return null
 
   return (
     <>
@@ -59,9 +83,18 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         </div>
       )}
       <div className="doc-shell">
-        <article className="doc-column md-root">
-          <MarkdownView tree={tree} ctx={{ source, onEdit: (edit) => applyEdits([edit]) }} />
-        </article>
+        <div className="doc-column">
+          {mode === 'reading' && analysis && (
+            <article className="md-root">
+              <MarkdownView
+                tree={analysis.tree}
+                ctx={{ source, onEdit: (edit) => applyEdits([edit]), anchoredHighlights }}
+              />
+            </article>
+          )}
+          {mode === 'editing' && <MilkdownEditor key={`e${externalVersion}`} />}
+          {mode === 'source' && <SourceEditor key={`s${externalVersion}`} />}
+        </div>
       </div>
     </>
   )

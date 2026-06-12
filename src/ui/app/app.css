@@ -421,6 +421,124 @@ button:disabled {
   font-size: var(--font-size-sm);
 }
 
+/* ---------- CriticMarkup ---------- */
+
+.critic {
+  border-radius: var(--radius-xs);
+}
+
+ins.critic-ins {
+  color: var(--review-insert-text);
+  background: var(--review-insert-bg);
+  text-decoration: none;
+  padding: 0 0.08em;
+}
+
+del.critic-del {
+  color: var(--review-delete-text);
+  background: var(--review-delete-bg);
+  text-decoration: line-through;
+  padding: 0 0.08em;
+}
+
+mark.critic-hl {
+  background: var(--review-highlight-bg);
+  color: inherit;
+  padding: 0 0.08em;
+}
+
+mark.critic-hl.critic-anchor {
+  border-bottom: 2px dotted var(--review-comment-anchor);
+  cursor: pointer;
+}
+
+mark.critic-hl.critic-anchor.active,
+mark.critic-hl.critic-anchor:hover {
+  background: var(--review-comment-active-bg);
+}
+
+.critic-sub del {
+  color: var(--review-delete-text);
+  background: var(--review-delete-bg);
+  text-decoration: line-through;
+  padding: 0 0.08em;
+  border-radius: var(--radius-xs);
+}
+
+.critic-sub ins {
+  color: var(--review-insert-text);
+  background: var(--review-insert-bg);
+  text-decoration: none;
+  padding: 0 0.08em;
+  border-radius: var(--radius-xs);
+}
+
+.critic-sub-arrow {
+  color: var(--color-text-faint);
+  padding: 0 0.15em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.critic-comment-marker {
+  color: var(--review-comment-anchor);
+  font-size: 0.7em;
+  vertical-align: super;
+  cursor: pointer;
+  padding: 0 0.1em;
+}
+
+/* ---------- editors ---------- */
+
+.milkdown-host .milkdown {
+  outline: none;
+}
+
+.milkdown-host .ProseMirror {
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  min-height: 50vh;
+}
+
+.milkdown-host .ProseMirror-selectednode {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  border-radius: var(--radius-xs);
+}
+
+.source-host {
+  font-family: var(--font-mono);
+}
+
+.source-host .cm-editor {
+  min-height: 50vh;
+}
+
+.cm-critic-ins {
+  color: var(--review-insert-text);
+  background: var(--review-insert-bg);
+}
+
+.cm-critic-del {
+  color: var(--review-delete-text);
+  background: var(--review-delete-bg);
+}
+
+.cm-critic-sub {
+  color: var(--review-delete-text);
+  background: var(--review-delete-bg);
+}
+
+.cm-critic-hl {
+  background: var(--review-highlight-bg);
+}
+
+.cm-critic-comment {
+  color: var(--review-comment-anchor);
+  background: var(--review-comment-active-bg);
+}
+
 /* ---------- misc ---------- */
 
 .center-note {

@@ -2,8 +2,8 @@ import { useDirty, useDoc, type ViewMode } from './store'
 
 const MODES: { id: ViewMode; label: string; enabled: boolean }[] = [
   { id: 'reading', label: 'Reading', enabled: true },
-  { id: 'editing', label: 'Editing', enabled: false },
-  { id: 'source', label: 'Source', enabled: false },
+  { id: 'editing', label: 'Editing', enabled: true },
+  { id: 'source', label: 'Source', enabled: true },
 ]
 
 export function TopBar() {

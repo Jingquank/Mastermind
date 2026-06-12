@@ -1,19 +1,23 @@
 import type { CriticSpan, Range } from './types'
 
 export interface Sentinels {
-  /** Replaces risky characters inside sub/comment spans. */
-  neutral: string
+  /**
+   * Two alternating chars that replace sub/comment span content — alternation
+   * keeps ADJACENT spans' runs distinguishable in text-node values.
+   */
+  neutral: [string, string]
   open: Record<'ins' | 'del' | 'highlight', string>
   close: Record<'ins' | 'del' | 'highlight', string>
 }
 
-/** Candidate Private Use Area bases; each consumes 7 consecutive codepoints. */
+/** Candidate Private Use Area bases; each pool consumes 8 consecutive codepoints. */
 const BASES = [0xe000, 0xe010, 0xe020, 0xe030, 0xe040]
+const POOL_SIZE = 8
 
 function sentinelsFromBase(base: number): Sentinels {
   const ch = (offset: number) => String.fromCharCode(base + offset)
   return {
-    neutral: ch(0),
+    neutral: [ch(0), ch(7)],
     open: { ins: ch(1), del: ch(3), highlight: ch(5) },
     close: { ins: ch(2), del: ch(4), highlight: ch(6) },
   }
@@ -22,7 +26,7 @@ function sentinelsFromBase(base: number): Sentinels {
 export function pickSentinels(text: string): Sentinels {
   for (const base of BASES) {
     let clash = false
-    for (let off = 0; off < 7 && !clash; off++) {
+    for (let off = 0; off < POOL_SIZE && !clash; off++) {
       if (text.includes(String.fromCharCode(base + off))) clash = true
     }
     if (!clash) return sentinelsFromBase(base)
@@ -38,9 +42,9 @@ function isLowSurrogate(code: number): boolean {
 }
 
 /**
- * Neutralize [start, end): every char becomes the neutral sentinel EXCEPT
- * newlines and each line's leading blockquote/indent prefix (`[ \t]*(> ?)*`),
- * which must survive so block structure parses identically.
+ * Neutralize [start, end): every char becomes `neutral` EXCEPT newlines and
+ * each line's leading blockquote/indent prefix (`[ \t]*(> ?)*`), which must
+ * survive so block structure parses identically.
  */
 function neutralizeRegion(chars: string[], start: number, end: number, neutral: string): void {
   let i = start
@@ -84,9 +88,10 @@ export interface MaskResult {
 export function maskSource(text: string, spans: readonly CriticSpan[], sentinels?: Sentinels): MaskResult {
   const s = sentinels ?? pickSentinels(text)
   const chars = text.split('')
+  let atomOrdinal = 0
   for (const span of spans) {
     if (span.kind === 'sub' || span.kind === 'comment') {
-      neutralizeRegion(chars, span.start, span.end, s.neutral)
+      neutralizeRegion(chars, span.start, span.end, s.neutral[(atomOrdinal++ % 2) as 0 | 1])
       continue
     }
     const open = s.open[span.kind]
@@ -103,19 +108,6 @@ export function maskSource(text: string, spans: readonly CriticSpan[], sentinels
     throw new Error(`mask length invariant violated: ${masked.length} !== ${text.length}`)
   }
   return { masked, sentinels: s }
-}
-
-/** Ranges (within [innerStart, innerEnd)) still occupied by sentinel runs — used by the transform. */
-export function isSentinel(sentinels: Sentinels, ch: string): boolean {
-  return (
-    ch === sentinels.neutral ||
-    ch === sentinels.open.ins ||
-    ch === sentinels.close.ins ||
-    ch === sentinels.open.del ||
-    ch === sentinels.close.del ||
-    ch === sentinels.open.highlight ||
-    ch === sentinels.close.highlight
-  )
 }
 
 export type { Range }
