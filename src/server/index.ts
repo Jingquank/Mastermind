@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server'
 import type { Hono } from 'hono'
+import fsp from 'node:fs/promises'
 import type { Server } from 'node:http'
 import pkg from '../../package.json'
 import { DAEMON_IDLE_EXIT_MS, DEFAULT_PORT, PORT_SCAN_LIMIT } from '../shared/constants'
@@ -56,7 +57,16 @@ async function main(): Promise<void> {
     lastActivity = Date.now()
   }
   registry.onSessionOpened = (session) => startWatcher(session, registry)
-  registry.onSessionClosed = (session) => void stopWatcher(session)
+  registry.onSessionClosed = (session) => {
+    void stopWatcher(session)
+    if (session.isDraft) {
+      // abandoned blank draft → remove the placeholder
+      void fsp
+        .stat(session.path)
+        .then((st) => (st.size === 0 ? fsp.unlink(session.path) : undefined))
+        .catch(() => {})
+    }
+  }
 
   let shuttingDown = false
   let server: Server | null = null

@@ -21,6 +21,25 @@ export function App() {
           <p>
             Open a document with <code>mastermind open &lt;file.md&gt;</code>
           </p>
+          <p>
+            <button
+              type="button"
+              className="btn-cta"
+              onClick={() => {
+                void fetch('/api/sessions', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ draft: true }),
+                })
+                  .then((r) => r.json())
+                  .then((j: { url?: string }) => {
+                    if (j.url) window.location.href = j.url
+                  })
+              }}
+            >
+              + New draft
+            </button>
+          </p>
         </div>
       )}
       <GrainOverlay />

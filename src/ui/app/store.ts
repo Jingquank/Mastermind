@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { applyTextEdits } from '../../shared/edits'
 import { detectEol, normalizeToLf, restoreEol, type Eol } from '../../shared/eol'
 import type { SessionMeta, TextEdit } from '../../shared/types'
-import { ApiError, getFile, getLatestSnapshot, getSession, postHandback, putFile } from './api'
+import { ApiError, getFile, getLatestSnapshot, getSession, postHandback, postRename, putFile } from './api'
 
 export type ViewMode = 'reading' | 'editing' | 'source'
 
@@ -52,6 +52,11 @@ export interface DocStore {
   clearHandedBack(): void
   setDiffOpen(open: boolean): void
   dismissDiffOffer(): void
+  /** Draft naming: first save prompts for a filename. */
+  renamePrompt: boolean
+  renameError: string | null
+  cancelRename(): void
+  completeRename(filename: string): Promise<void>
   setSource(source: string): void
   /** Editor flush path — updates the buffer without remounting the editor. */
   setSourceFromEditor(source: string): void
@@ -84,6 +89,8 @@ export const useDoc = create<DocStore>((set, get) => ({
   handedBack: null,
   diffOpen: false,
   diffOffer: false,
+  renamePrompt: false,
+  renameError: null,
 
   async load(sessionId) {
     set({ sessionId, status: 'loading', error: null })
@@ -100,6 +107,8 @@ export const useDoc = create<DocStore>((set, get) => ({
         conflict: false,
         externalVersion: s.externalVersion + 1,
         editorDirty: false,
+        // new drafts open straight into WYSIWYG
+        mode: meta.isDraft ? 'editing' : s.mode,
       }))
       document.title = `${meta.displayName} — Mastermind`
     } catch (err) {
@@ -157,13 +166,25 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   async save() {
     get().flushEditor?.()
-    const { sessionId, source, savedSource, eol, mtimeMs, saving } = get()
+    const { sessionId, source, savedSource, eol, mtimeMs, saving, meta } = get()
     if (!sessionId || saving) return false
+    if (meta?.isDraft) {
+      set({ renamePrompt: true })
+      return false
+    }
     if (source === savedSource) return true
     set({ saving: true })
     try {
-      const res = await putFile(sessionId, restoreEol(source, eol), mtimeMs)
-      set({ savedSource: source, mtimeMs: res.mtimeMs, conflict: false })
+      const res = (await putFile(sessionId, restoreEol(source, eol), mtimeMs)) as {
+        mtimeMs: number
+        content?: string
+      }
+      if (res.content !== undefined) {
+        // the feedback-language rule rewrote comments — adopt the saved bytes
+        get().adoptDiskContent(res.content, res.mtimeMs)
+      } else {
+        set({ savedSource: source, mtimeMs: res.mtimeMs, conflict: false })
+      }
       return true
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -231,8 +252,12 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   async handback() {
     get().flushEditor?.()
-    const { sessionId, source, eol, mtimeMs, saving } = get()
+    const { sessionId, source, eol, mtimeMs, saving, meta } = get()
     if (!sessionId || saving) return false
+    if (meta?.isDraft) {
+      set({ renamePrompt: true })
+      return false
+    }
     set({ saving: true })
     try {
       const res = await postHandback(sessionId, restoreEol(source, eol), mtimeMs)
@@ -254,6 +279,27 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   clearHandedBack() {
     set({ handedBack: null })
+  },
+
+  cancelRename() {
+    set({ renamePrompt: false, renameError: null })
+  },
+
+  async completeRename(filename) {
+    const { sessionId, meta } = get()
+    if (!sessionId || !meta) return
+    try {
+      const res = await postRename(sessionId, filename)
+      set({
+        meta: { ...meta, isDraft: false, path: res.path, displayName: res.displayName },
+        renamePrompt: false,
+        renameError: null,
+      })
+      document.title = `${res.displayName} — Mastermind`
+      await get().save()
+    } catch (err) {
+      set({ renameError: err instanceof Error ? err.message : String(err) })
+    }
   },
 }))
 

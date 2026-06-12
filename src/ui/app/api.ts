@@ -58,6 +58,13 @@ export function getLatestSnapshot(sessionId: string): Promise<{ id: string; cont
   return request<{ id: string; content: string }>(`/api/sessions/${sessionId}/snapshots/latest`)
 }
 
+export function postRename(sessionId: string, filename: string): Promise<{ path: string; displayName: string }> {
+  return request<{ path: string; displayName: string }>(
+    `/api/sessions/${sessionId}/rename`,
+    jsonInit('POST', { filename }),
+  )
+}
+
 export function openEvents(sessionId: string): EventSource {
   return new EventSource(`/api/sessions/${sessionId}/events?role=ui`)
 }

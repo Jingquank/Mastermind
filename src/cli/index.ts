@@ -70,9 +70,25 @@ program
 program
   .command('new')
   .argument('[path]', 'optional path for the new draft')
-  .description('create a blank draft and open it')
-  .action(async () => {
-    die(1, 'new is not implemented yet')
+  .option('--no-browser', 'print the URL without opening a browser tab')
+  .description('create a blank draft and open it (prompts for a name on first save)')
+  .action(async (pathArg: string | undefined, opts: { browser: boolean }) => {
+    const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
+    const port = await ensureServer({ pinnedPort })
+    let session: CreateSessionResponse
+    if (pathArg) {
+      const abs = path.resolve(pathArg)
+      if (!fs.existsSync(abs)) {
+        fs.mkdirSync(path.dirname(abs), { recursive: true })
+        fs.writeFileSync(abs, '', { flag: 'wx' })
+      }
+      session = await postJson<CreateSessionResponse>(port, '/api/sessions', { path: abs })
+    } else {
+      session = await postJson<CreateSessionResponse>(port, '/api/sessions', { draft: true, dir: process.cwd() })
+    }
+    process.stdout.write(`${session.url}\n`)
+    if (opts.browser) openBrowser(session.url)
+    process.exit(0)
   })
 
 program

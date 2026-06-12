@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { SSE_PING_INTERVAL_MS } from '../shared/constants'
 import type {
@@ -12,12 +13,14 @@ import type {
   SseEventName,
 } from '../shared/types'
 import { readConfig, redactConfig, updateConfig, type ConfigPatch } from './config'
+import { processFeedbackLanguage } from './feedback'
 import { writeSessionFile } from './files'
 import { performHandback } from './handback'
 import { listSnapshots, readLatestSnapshot } from './snapshots'
 import { scanThemes } from './themes'
 import { clearCache } from './translate/cache'
 import { providerConfigured, translateBlocks, type TranslateRequestBlock } from './translate/index'
+import { startWatcher, stopWatcher } from './watch'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -122,17 +125,38 @@ export function createApp(deps: AppDeps): Hono {
     } catch {
       return c.json({ error: 'invalid JSON body' }, 400)
     }
-    if (!body.path) return c.json({ error: 'path is required' }, 400)
-    let real: string
-    try {
-      real = await fs.realpath(path.resolve(body.path))
-    } catch {
-      return c.json({ error: `file not found: ${body.path}` }, 404)
-    }
-    const st = await fs.stat(real)
-    if (!st.isFile()) return c.json({ error: `not a file: ${real}` }, 400)
 
-    const { session, created } = registry.open(real, { isDraft: body.draft ?? false })
+    let real: string
+    let isDraft = false
+    if (body.draft) {
+      // blank draft: eagerly create untitled.md (one session model — real
+      // path, real watcher); renamed on first save, unlinked if left empty
+      const dir = body.dir ? path.resolve(body.dir) : os.homedir()
+      const dirStat = await fs.stat(dir).catch(() => null)
+      if (!dirStat?.isDirectory()) return c.json({ error: `not a directory: ${dir}` }, 400)
+      let name = 'untitled.md'
+      for (let n = 2; ; n++) {
+        try {
+          await fs.writeFile(path.join(dir, name), '', { flag: 'wx' })
+          break
+        } catch {
+          name = `untitled-${n}.md`
+        }
+      }
+      real = await fs.realpath(path.join(dir, name))
+      isDraft = true
+    } else {
+      if (!body.path) return c.json({ error: 'path is required' }, 400)
+      try {
+        real = await fs.realpath(path.resolve(body.path))
+      } catch {
+        return c.json({ error: `file not found: ${body.path}` }, 404)
+      }
+      const st = await fs.stat(real)
+      if (!st.isFile()) return c.json({ error: `not a file: ${real}` }, 400)
+    }
+
+    const { session, created } = registry.open(real, { isDraft })
     const resp: CreateSessionResponse = {
       sessionId: session.id,
       url: `http://${c.req.header('host')}/d/${session.id}`,
@@ -183,11 +207,42 @@ export function createApp(deps: AppDeps): Hono {
       return c.json({ error: 'invalid JSON body' }, 400)
     }
     if (typeof body.content !== 'string') return c.json({ error: 'content is required' }, 400)
-    const result = await writeSessionFile(session, body.content, body.baseMtimeMs)
+    const processed = await processFeedbackLanguage(body.content, readConfig())
+    const result = await writeSessionFile(session, processed, body.baseMtimeMs)
     if (!result.ok) {
       return c.json({ error: 'file changed on disk', currentMtimeMs: result.currentMtimeMs }, 409)
     }
-    return c.json({ mtimeMs: result.mtimeMs })
+    // content returned only when the feedback rule rewrote it — UI adopts
+    return c.json({ mtimeMs: result.mtimeMs, content: processed !== body.content ? processed : undefined })
+  })
+
+  app.post('/api/sessions/:id/rename', async (c) => {
+    const session = registry.get(c.req.param('id'))
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    let body: { filename?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    let name = path.basename((body.filename ?? '').trim())
+    if (!name || name === '.md' || name.startsWith('.')) return c.json({ error: 'invalid filename' }, 400)
+    if (!name.endsWith('.md')) name += '.md'
+    const target = path.join(path.dirname(session.path), name)
+    const exists = await fs.stat(target).then(
+      () => true,
+      () => false,
+    )
+    if (exists) return c.json({ error: `${name} already exists`, code: 'exists' }, 409)
+
+    await stopWatcher(session)
+    await fs.rename(session.path, target)
+    const real = await fs.realpath(target)
+    registry.rekey(session, real)
+    session.isDraft = false
+    startWatcher(session, registry)
+    log(`session ${session.id}: renamed to ${real}`)
+    return c.json({ path: real, displayName: session.displayName })
   })
 
   app.post('/api/sessions/:id/handback', async (c) => {

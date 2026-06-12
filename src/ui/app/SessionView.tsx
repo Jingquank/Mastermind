@@ -9,6 +9,7 @@ import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { resolveAll } from '../../shared/critic/resolve'
 import { DiffView } from '../diff/DiffView'
+import { RenameDialog } from './RenameDialog'
 import { SettingsPanel } from '../settings/SettingsPanel'
 import { TranslatedView } from '../translate/TranslatedView'
 import { useTranslation } from '../translate/translationStore'
@@ -28,6 +29,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const handedBack = useDoc((s) => s.handedBack)
   const diffOpen = useDoc((s) => s.diffOpen)
   const diffOffer = useDoc((s) => s.diffOffer)
+  const renamePrompt = useDoc((s) => s.renamePrompt)
   const mode = useDoc((s) => s.mode)
   const externalVersion = useDoc((s) => s.externalVersion)
   const load = useDoc((s) => s.load)
@@ -209,6 +211,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         }
       />
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {renamePrompt && <RenameDialog />}
       {conflict && (
         <div className="banner" role="alert">
           <span className="banner-text">Saving is paused — the file changed on disk after your last load.</span>
