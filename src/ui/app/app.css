@@ -715,6 +715,50 @@ mark.critic-hl.critic-anchor:hover {
   background: var(--review-comment-active-bg);
 }
 
+/* ---------- hover accept/reject ---------- */
+
+.hover-actions {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  gap: 2px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.hover-actions button {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-micro);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2);
+}
+
+.hover-actions .accept {
+  color: var(--color-accent-dim);
+}
+
+.hover-actions .reject {
+  color: var(--review-delete-text);
+}
+
+.hover-actions button:hover {
+  background: var(--color-bg);
+}
+
+.btn-ghost.accept-all {
+  color: var(--color-accent-dim);
+}
+
+.btn-ghost.reject-all {
+  color: var(--review-delete-text);
+}
+
 /* ---------- misc ---------- */
 
 .center-note {

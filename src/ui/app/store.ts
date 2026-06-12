@@ -29,8 +29,11 @@ export interface DocStore {
   editorDirty: boolean
   /** Registered by the active editor: flush pending edits into `source`. */
   flushEditor: (() => void) | null
+  /** Undo stack for review operations applied outside the editors (cap 50). */
+  history: string[]
 
   load(sessionId: string): Promise<void>
+  undo(): void
   setSource(source: string): void
   /** Editor flush path — updates the buffer without remounting the editor. */
   setSourceFromEditor(source: string): void
@@ -58,6 +61,7 @@ export const useDoc = create<DocStore>((set, get) => ({
   externalVersion: 0,
   editorDirty: false,
   flushEditor: null,
+  history: [],
 
   async load(sessionId) {
     set({ sessionId, status: 'loading', error: null })
@@ -88,7 +92,19 @@ export const useDoc = create<DocStore>((set, get) => ({
   },
 
   setSource(source) {
-    set((s) => ({ source, externalVersion: s.externalVersion + 1 }))
+    set((s) => ({
+      source,
+      externalVersion: s.externalVersion + 1,
+      history: [...s.history.slice(-49), s.source],
+    }))
+  },
+
+  undo() {
+    set((s) => {
+      const prev = s.history.at(-1)
+      if (prev === undefined) return s
+      return { source: prev, history: s.history.slice(0, -1), externalVersion: s.externalVersion + 1 }
+    })
   },
 
   setSourceFromEditor(source) {
@@ -104,7 +120,11 @@ export const useDoc = create<DocStore>((set, get) => ({
   },
 
   applyEdits(edits) {
-    set((s) => ({ source: applyTextEdits(s.source, edits), externalVersion: s.externalVersion + 1 }))
+    set((s) => ({
+      source: applyTextEdits(s.source, edits),
+      externalVersion: s.externalVersion + 1,
+      history: [...s.history.slice(-49), s.source],
+    }))
   },
 
   setMode(mode) {

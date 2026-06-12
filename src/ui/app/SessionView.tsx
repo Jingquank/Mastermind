@@ -6,6 +6,8 @@ import { MarkdownView } from '../modes/reading/Renderer'
 import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
 import { SourceEditor } from '../modes/source/SourceEditor'
 import { CommentRail } from '../review/CommentRail'
+import { HoverActions } from '../review/HoverActions'
+import { resolveAll } from '../../shared/critic/resolve'
 import { openEvents } from './api'
 import { useDoc, type ViewMode } from './store'
 import { TopBar } from './TopBar'
@@ -47,6 +49,13 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         e.preventDefault()
         const s = useDoc.getState()
         s.setMode(MODE_CYCLE[s.mode])
+      } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        // review-operation undo — only outside the editors (they have their own)
+        const s = useDoc.getState()
+        if (s.mode === 'reading') {
+          e.preventDefault()
+          s.undo()
+        }
       }
     }
     window.addEventListener('keydown', onKey)
@@ -119,12 +128,21 @@ export function SessionView({ sessionId }: { sessionId: string }) {
 
   const hasThreads = analysis?.items.some((i) => i.type === 'thread') ?? false
   const showRail = mode === 'reading' && railOpen && hasThreads
+  const suggestionCount = analysis?.items.filter((i) => i.type === 'suggestion').length ?? 0
+
+  const bulkResolve = (resolveMode: 'accept' | 'reject') => {
+    const s = useDoc.getState()
+    s.setSource(resolveAll(s.source, analysis?.spans ?? [], resolveMode))
+  }
 
   return (
     <>
       <TopBar
         railOpen={railOpen}
         onToggleRail={mode === 'reading' && hasThreads ? () => setRailOpen((v) => !v) : undefined}
+        suggestionCount={mode === 'reading' ? suggestionCount : 0}
+        onAcceptAll={() => bulkResolve('accept')}
+        onRejectAll={() => bulkResolve('reject')}
       />
       {conflict && (
         <div className="banner" role="alert">
@@ -160,13 +178,16 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         )}
       </div>
       {mode === 'reading' && analysis && (
-        <SelectionToolbar
-          containerRef={articleRef}
-          source={source}
-          spans={analysis.spans}
-          authorTag={DEFAULT_AUTHOR_TAG}
-          onEdit={applyEdits}
-        />
+        <>
+          <SelectionToolbar
+            containerRef={articleRef}
+            source={source}
+            spans={analysis.spans}
+            authorTag={DEFAULT_AUTHOR_TAG}
+            onEdit={applyEdits}
+          />
+          <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />
+        </>
       )}
     </>
   )

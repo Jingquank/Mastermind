@@ -9,9 +9,12 @@ const MODES: { id: ViewMode; label: string; enabled: boolean }[] = [
 interface TopBarProps {
   railOpen?: boolean
   onToggleRail?: () => void
+  suggestionCount?: number
+  onAcceptAll?: () => void
+  onRejectAll?: () => void
 }
 
-export function TopBar({ railOpen, onToggleRail }: TopBarProps) {
+export function TopBar({ railOpen, onToggleRail, suggestionCount = 0, onAcceptAll, onRejectAll }: TopBarProps) {
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
@@ -40,6 +43,16 @@ export function TopBar({ railOpen, onToggleRail }: TopBarProps) {
         ))}
       </nav>
       <div className="topbar-right">
+        {suggestionCount > 0 && (
+          <>
+            <button type="button" className="btn-ghost accept-all" onClick={onAcceptAll} title="Apply every suggested edit">
+              Accept all ({suggestionCount})
+            </button>
+            <button type="button" className="btn-ghost reject-all" onClick={onRejectAll} title="Revert every suggested edit">
+              Reject all
+            </button>
+          </>
+        )}
         {onToggleRail && (
           <button type="button" className="btn-ghost" onClick={onToggleRail} title="Toggle comment rail">
             {railOpen ? 'Hide comments' : 'Show comments'}
