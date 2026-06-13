@@ -5,3 +5,6 @@ dist/
 
 # Mastermind's own per-directory workspace (history snapshots, translation cache)
 .mastermind/
+
+# brainstorming visual companion artifacts
+.superpowers/
