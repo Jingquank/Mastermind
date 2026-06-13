@@ -1088,7 +1088,7 @@ mark.critic-hl.critic-anchor:hover {
 
 .theme-chip:hover:not(.active) {
   color: var(--color-text);
-  border-color: var(--color-text-faint);
+  border-color: var(--color-border-hover);
 }
 
 .theme-chip.active {
@@ -1173,7 +1173,7 @@ input[type='checkbox'] {
 
 .trans-comment-btn:hover {
   color: var(--color-text);
-  border-color: var(--color-text-faint);
+  border-color: var(--color-border-hover);
 }
 
 .trans-composer {

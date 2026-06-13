@@ -1,32 +1,57 @@
 [data-theme='sepia'] {
-  /* Swiss International — Sepia (warm paper, ochre). */
+  /* Swiss International — Sepia (warm paper, ochre).
+     v0.4: Radix-rigor 12-step OKLCH scales (anchored to the v0.3 Swiss values),
+     with semantic tokens mapped onto the steps. Marks stay hand-tuned. */
 
-  /* ---- Surfaces & text ---- */
-  --color-bg: #f1ece0;
-  --color-bg-elevated: #f8f4ea;
-  --color-text: #1e1813;
-  --color-text-muted: #6e655a; /* AA on warm paper */
-  --color-text-faint: #9a9082;
-  --color-border: #dcd5c6;
+  /* ---- Layer 1: raw scales (values differ per theme) ---- */
+  --gray-1: oklch(0.944 0.017 88.001);
+  --gray-2: oklch(0.968 0.014 88.683);
+  --gray-3: oklch(0.944 0.004 70.928);
+  --gray-4: oklch(0.921 0.004 70.928);
+  --gray-5: oklch(0.898 0.004 70.928);
+  --gray-6: oklch(0.874 0.022 85.948);
+  --gray-7: oklch(0.82 0.004 70.928);
+  --gray-8: oklch(0.766 0.004 70.928);
+  --gray-9: oklch(0.712 0.004 70.928);
+  --gray-10: oklch(0.658 0.023 76.438);
+  --gray-11: oklch(0.512 0.02 72.867);
+  --gray-12: oklch(0.214 0.014 61.811);
+  --accent-1: oklch(0.984 0.012 70.928);
+  --accent-2: oklch(0.968 0.022 70.928);
+  --accent-3: oklch(0.943 0.038 70.928);
+  --accent-4: oklch(0.913 0.054 70.928);
+  --accent-5: oklch(0.877 0.072 70.928);
+  --accent-6: oklch(0.832 0.09 70.928);
+  --accent-7: oklch(0.776 0.107 70.928);
+  --accent-8: oklch(0.702 0.122 70.928);
+  --accent-9: oklch(0.668 0.136 70.928);
+  --accent-10: oklch(0.552 0.132 70.928);
+  --accent-11: oklch(0.508 0.105 71.812);
+  --accent-12: oklch(0.353 0.101 70.928);
 
-  /* ---- Accent: ochre (CTA falls back to an ink pill — ochre is too light for a button) ---- */
-  --color-accent: #c8841c;
-  --color-accent-dim: #8a5a0c; /* AA text */
-  --color-accent-surface: rgba(200, 132, 28, 0.14);
+  /* ---- Layer 2: semantic mapping (identical names across all themes) ---- */
+  --color-bg: var(--gray-1);
+  --color-bg-elevated: var(--gray-2);
+  --color-text: var(--gray-12);
+  --color-text-muted: var(--gray-11);
+  --color-text-faint: var(--gray-10);
+  --color-border: var(--gray-6);
+  --color-border-hover: var(--gray-7);
+  --color-accent: var(--accent-9);
+  --color-accent-dim: var(--accent-11);
   --color-on-accent: #2a1b06;
-  --color-cta-bg: #1e1813;
-  --color-cta-text: #f1ece0;
-  --focus-ring: #1e1813;
-  --color-selection: rgba(30, 24, 19, 0.12);
-
-  /* ---- Inversion family (dark band device) ---- */
+  --color-cta-bg: var(--gray-12);
+  --color-cta-text: var(--gray-1);
+  --focus-ring: var(--gray-12);
+  --color-selection: color-mix(in oklab, var(--color-text) 12%, transparent);
+  --color-accent-surface: color-mix(in oklab, var(--color-accent) 14%, transparent);
   --color-invert-bg: #1e1813;
   --color-invert-bg-elevated: #2a231b;
   --color-invert-text: #f4efe4;
   --color-invert-text-muted: rgba(244, 239, 228, 0.66);
   --color-invert-border: rgba(244, 239, 228, 0.16);
 
-  /* ---- Review semantics — highlight pulled greener so it reads apart from the ochre accent ---- */
+  /* ---- Layer 3: review / mark semantics (hand-tuned, de-conflicted from accent) ---- */
   --review-insert-text: #2c7a3f;
   --review-insert-bg: rgba(44, 122, 63, 0.12);
   --review-insert-border: #2c7a3f;

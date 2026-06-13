@@ -1,32 +1,57 @@
 [data-theme='nacht'] {
-  /* Swiss International — Nacht (dark, electric blue). */
+  /* Swiss International — Nacht (dark, electric blue).
+     v0.4: Radix-rigor 12-step OKLCH scales (anchored to the v0.3 Swiss values),
+     with semantic tokens mapped onto the steps. Marks stay hand-tuned. */
 
-  /* ---- Surfaces & text ---- */
-  --color-bg: #0e0f12;
-  --color-bg-elevated: #16181c;
-  --color-text: #eceef2;
-  --color-text-muted: rgba(236, 238, 242, 0.62);
-  --color-text-faint: rgba(236, 238, 242, 0.4);
-  --color-border: rgba(236, 238, 242, 0.12);
+  /* ---- Layer 1: raw scales (values differ per theme) ---- */
+  --gray-1: oklch(0.169 0.006 271.014);
+  --gray-2: oklch(0.209 0.009 264.373);
+  --gray-3: oklch(0.228 0.006 262.399);
+  --gray-4: oklch(0.247 0.006 262.399);
+  --gray-5: oklch(0.266 0.006 262.399);
+  --gray-6: oklch(0.285 0.006 271.216);
+  --gray-7: oklch(0.343 0.006 262.399);
+  --gray-8: oklch(0.401 0.006 262.399);
+  --gray-9: oklch(0.459 0.006 262.399);
+  --gray-10: oklch(0.517 0.005 271.321);
+  --gray-11: oklch(0.685 0.004 247.879);
+  --gray-12: oklch(0.949 0.006 264.532);
+  --accent-1: oklch(0.205 0.018 262.399);
+  --accent-2: oklch(0.245 0.033 262.399);
+  --accent-3: oklch(0.3 0.057 262.399);
+  --accent-4: oklch(0.36 0.082 262.399);
+  --accent-5: oklch(0.42 0.109 262.399);
+  --accent-6: oklch(0.485 0.135 262.399);
+  --accent-7: oklch(0.56 0.162 262.399);
+  --accent-8: oklch(0.65 0.184 262.399);
+  --accent-9: oklch(0.62 0.205 262.399);
+  --accent-10: oklch(0.74 0.199 262.399);
+  --accent-11: oklch(0.731 0.138 263.383);
+  --accent-12: oklch(0.93 0.152 262.399);
 
-  /* ---- Accent: electric blue ---- */
-  --color-accent: #3d7dff;
-  --color-accent-dim: #7aa6ff; /* AA on the dark bg */
-  --color-accent-surface: rgba(61, 125, 255, 0.16);
+  /* ---- Layer 2: semantic mapping (identical names across all themes) ---- */
+  --color-bg: var(--gray-1);
+  --color-bg-elevated: var(--gray-2);
+  --color-text: var(--gray-12);
+  --color-text-muted: var(--gray-11);
+  --color-text-faint: var(--gray-10);
+  --color-border: var(--gray-6);
+  --color-border-hover: var(--gray-7);
+  --color-accent: var(--accent-9);
+  --color-accent-dim: var(--accent-11);
   --color-on-accent: #06122e;
-  --color-cta-bg: #3d7dff;
+  --color-cta-bg: var(--accent-9);
   --color-cta-text: #06122e;
-  --focus-ring: #3d7dff;
-  --color-selection: rgba(236, 238, 242, 0.16);
-
-  /* ---- Inversion family (the light band device, for dark-on-light chrome) ---- */
+  --focus-ring: var(--accent-8);
+  --color-selection: color-mix(in oklab, var(--color-text) 16%, transparent);
+  --color-accent-surface: color-mix(in oklab, var(--color-accent) 16%, transparent);
   --color-invert-bg: #f4f4f1;
   --color-invert-bg-elevated: #ffffff;
   --color-invert-text: #141414;
   --color-invert-text-muted: rgba(20, 20, 20, 0.62);
   --color-invert-border: rgba(20, 20, 20, 0.14);
 
-  /* ---- Review semantics — comment is violet (the blue accent owns blue here) ---- */
+  /* ---- Layer 3: review / mark semantics (hand-tuned, de-conflicted from accent) ---- */
   --review-insert-text: #4fc76e;
   --review-insert-bg: rgba(79, 199, 110, 0.16);
   --review-insert-border: #4fc76e;
