@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import pkg from '../../package.json'
-import type { CreateSessionResponse, ServerState } from '../shared/types'
+import type { CreateSessionResponse, CreateWorkspaceResponse, ServerState } from '../shared/types'
 import { serverLogPath } from '../server/paths'
 import { readServerState } from '../server/statefile'
 import { CliError, ensureServer } from './daemon'
@@ -31,6 +31,10 @@ function openBrowser(url: string): void {
 
 async function createSession(port: number, filePath: string): Promise<CreateSessionResponse> {
   return postJson<CreateSessionResponse>(port, '/api/sessions', { path: filePath })
+}
+
+async function createWorkspace(port: number, dir: string): Promise<CreateWorkspaceResponse> {
+  return postJson<CreateWorkspaceResponse>(port, '/api/workspaces', { root: dir })
 }
 
 program
@@ -65,6 +69,30 @@ program
     if (opts.wait) {
       await waitForHandback(port, session.sessionId, { serveAssist: opts.serveAssist })
     }
+    process.exit(0)
+  })
+
+program
+  .command('workspace')
+  .alias('ws')
+  .argument('[dir]', 'directory to browse (default: current directory)')
+  .option('--no-browser', 'print the URL without opening a browser tab')
+  .description('open a file-tree workspace rooted at a directory')
+  .action(async (dirArg: string | undefined, opts: { browser: boolean }) => {
+    const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
+    const abs = path.resolve(dirArg ?? process.cwd())
+    let st: fs.Stats
+    try {
+      st = fs.statSync(abs)
+    } catch {
+      die(2, `directory not found: ${abs}`)
+    }
+    if (!st.isDirectory()) die(2, `not a directory: ${abs}`)
+
+    const port = await ensureServer({ pinnedPort })
+    const ws = await createWorkspace(port, abs)
+    process.stdout.write(`${ws.url}\n`)
+    if (opts.browser) openBrowser(ws.url)
     process.exit(0)
   })
 
