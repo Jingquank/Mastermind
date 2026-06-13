@@ -310,7 +310,8 @@ button:disabled {
    floats over the top padding); only the pill itself is interactive. */
 .translation-pill-anchor {
   position: sticky;
-  top: calc(var(--space-unit) * 2);
+  /* clear the sticky topbar so the pill pins just below it instead of sliding under */
+  top: calc(var(--topbar-h) + var(--space-unit) * 2);
   z-index: var(--z-sticky);
   display: flex;
   justify-content: flex-end;
