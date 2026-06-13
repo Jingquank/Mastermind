@@ -492,7 +492,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           />
           <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />
           <ProposalCard onEdit={applyEdits} />
-          {markTicks.length > 0 && <MarkGutter docRef={articleRef} marks={markTicks} version={externalVersion} />}
+          {markTicks.length > 0 && !showRail && (
+            <MarkGutter docRef={articleRef} marks={markTicks} version={externalVersion} />
+          )}
         </>
       )}
       {handedBack && (
