@@ -1,16 +1,22 @@
 import { useLayoutEffect, useRef } from 'react'
 import { ToggleGroup } from 'radix-ui'
 import { useT } from '../i18n'
-import { ChatIcon, GearIcon } from '../icons'
+import { ChatIcon, GearIcon, SwapIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
 
 interface TopBarProps {
   railOpen?: boolean
   onToggleRail?: () => void
-  suggestionCount?: number
-  onAcceptAll?: () => void
-  onRejectAll?: () => void
   onToggleSettings?: () => void
+  /** Reading-language toggle, rendered beside the centered mode switch. */
+  translation?: {
+    label: string
+    active: boolean
+    loading: boolean
+    disabled?: boolean
+    disabledTitle?: string
+    onToggle: () => void
+  }
   agentWaiting?: boolean
   handbackPulse?: boolean
 }
@@ -18,10 +24,8 @@ interface TopBarProps {
 export function TopBar({
   railOpen,
   onToggleRail,
-  suggestionCount = 0,
-  onAcceptAll,
-  onRejectAll,
   onToggleSettings,
+  translation,
   agentWaiting = false,
   handbackPulse = false,
 }: TopBarProps) {
@@ -65,34 +69,38 @@ export function TopBar({
           </span>
         )}
       </div>
-      <ToggleGroup.Root
-        className="seg"
-        type="single"
-        value={mode}
-        onValueChange={(v) => v && setMode(v as ViewMode)}
-        aria-label={t('viewMode')}
-        title={`⌘E ${t('viewMode')}`}
-      >
-        {MODES.map((m) => (
-          <ToggleGroup.Item key={m.id} value={m.id} className="seg-btn">
-            {m.label}
-          </ToggleGroup.Item>
-        ))}
-      </ToggleGroup.Root>
-      <div className="topbar-right">
-        {suggestionCount > 0 && (
-          <div className="seg review-bulk" role="group" aria-label={`${suggestionCount} ${t('suggestionsLabel')}`}>
-            <span className="bulk-count" title={`${suggestionCount} ${t('suggestionsLabel')}`}>
-              {suggestionCount}
-            </span>
-            <button type="button" className="seg-btn bulk-accept" onClick={onAcceptAll} title={t('acceptAllTitle')}>
-              {t('acceptAll')}
-            </button>
-            <button type="button" className="seg-btn bulk-reject" onClick={onRejectAll} title={t('rejectAllTitle')}>
-              {t('rejectAll')}
-            </button>
-          </div>
+      {/* The mode switch stays absolutely centered in the bar; the translation
+          toggle hangs off its right edge (absolute) so it never shifts center. */}
+      <div className="topbar-center">
+        <ToggleGroup.Root
+          className="seg"
+          type="single"
+          value={mode}
+          onValueChange={(v) => v && setMode(v as ViewMode)}
+          aria-label={t('viewMode')}
+          title={`⌘E ${t('viewMode')}`}
+        >
+          {MODES.map((m) => (
+            <ToggleGroup.Item key={m.id} value={m.id} className="seg-btn">
+              {m.label}
+            </ToggleGroup.Item>
+          ))}
+        </ToggleGroup.Root>
+        {translation && (
+          <button
+            type="button"
+            className={`topbar-trans${translation.active ? ' active' : ''}`}
+            onClick={translation.onToggle}
+            disabled={translation.disabled || translation.loading}
+            aria-pressed={translation.active}
+            title={translation.disabled ? (translation.disabledTitle ?? t('toggleLang')) : t('toggleLang')}
+          >
+            <SwapIcon />
+            <span>{translation.loading ? t('translating') : translation.label}</span>
+          </button>
         )}
+      </div>
+      <div className="topbar-right">
         {onToggleRail && (
           <button
             type="button"
@@ -116,15 +124,17 @@ export function TopBar({
             <GearIcon width={14} height={14} />
           </button>
         )}
-        <button
-          type="button"
-          className="btn-ghost"
-          onClick={() => void save()}
-          disabled={!dirty || saving}
-          title={`${t('save')} (⌘S)`}
-        >
-          {savingKind === 'save' ? t('saving') : dirty ? t('save') : t('saved')}
-        </button>
+        {(dirty || savingKind === 'save') && (
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => void save()}
+            disabled={saving}
+            title={`${t('save')} (⌘S)`}
+          >
+            {savingKind === 'save' ? t('saving') : t('save')}
+          </button>
+        )}
         <button
           type="button"
           className="btn-cta"

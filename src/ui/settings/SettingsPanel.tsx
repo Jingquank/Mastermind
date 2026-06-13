@@ -1,9 +1,25 @@
-import { useState } from 'react'
 import { useConfig, type ConfigPatch } from '../app/configStore'
-import { Checkbox, ToggleGroup } from 'radix-ui'
+import { ToggleGroup } from 'radix-ui'
 import { SlideOver } from '../app/SlideOver'
-import { SwapIcon, CheckIcon } from '../icons'
-import { useT } from '../i18n'
+import { SwapIcon } from '../icons'
+import { useT, type MsgKey } from '../i18n'
+import { TYPE_SETS, MONO_FONTS, displayStack, monoStack } from '../theme/fonts'
+import { GrainOffGlyph, GrainSwatch, INTENSITY_STEPS, TEXTURE_STEPS, resolveGrain } from '../theme/grain'
+import type { GrainIntensity, GrainTexture } from '../../shared/types'
+
+/** Cosmetic opacity for the intensity swatches — louder than the live overlay so the icon reads. */
+const INTENSITY_PREVIEW: Record<Exclude<GrainIntensity, 'off'>, number> = { low: 0.4, medium: 0.7, high: 1 }
+const INTENSITY_LABEL: Record<GrainIntensity, MsgKey> = {
+  off: 'grainOff',
+  low: 'grainLow',
+  medium: 'grainMedium',
+  high: 'grainHigh',
+}
+const TEXTURE_LABEL: Record<GrainTexture, MsgKey> = {
+  fine: 'textureFine',
+  soft: 'textureSoft',
+  coarse: 'textureCoarse',
+}
 
 /** Reading presets — discrete, self-illustrating (the glyph previews its effect). */
 const FONT_OPTS = [
@@ -56,243 +72,225 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const update = useConfig((s) => s.update)
 
   const t = useT()
-  const [apiKey, setApiKey] = useState('')
 
   if (!config) return null
 
   const patch = (p: ConfigPatch): void => void update(p)
-
-  const provider = config.provider
-  const activeTheme = themes.find((t) => t.id === config.theme)
+  const activeTheme = themes.find((th) => th.id === config.theme)
 
   return (
     <SlideOver title={t('settings')} onClose={onClose} ignoreSelector=".topbar-settings">
       <div className="settings-body">
+        {/* ---------- Appearance ---------- */}
         <section>
-          <h4>{t('theme')}</h4>
-        <div className="settings-theme-row">
-          {themes.map((th) => (
-            <button
-              key={th.id}
-              type="button"
-              className={`theme-chip${config.theme === th.id ? ' active' : ''}`}
-              aria-pressed={config.theme === th.id}
-              onClick={() => patch({ theme: th.id })}
-            >
-              {th.name}
-            </button>
-          ))}
-        </div>
-        {activeTheme?.grain && (
-          <div className="settings-row is-toggle">
-            <Checkbox.Root
-              id="filmGrain"
-              className="settings-check"
-              checked={config.grain[config.theme]?.enabled ?? activeTheme.grain.enabled}
-              onCheckedChange={(c) => patch({ grain: { ...config.grain, [config.theme]: { enabled: c === true } } })}
-            >
-              <Checkbox.Indicator>
-                <CheckIcon width={11} height={11} />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
-            <label htmlFor="filmGrain">{t('filmGrain')}</label>
+          <h4>{t('appearanceSection')}</h4>
+          <div className="settings-row">
+            <span>{t('theme')}</span>
+            <div className="settings-theme-row">
+              {themes.map((th) => (
+                <button
+                  key={th.id}
+                  type="button"
+                  className={`theme-chip${config.theme === th.id ? ' active' : ''}`}
+                  aria-pressed={config.theme === th.id}
+                  onClick={() => patch({ theme: th.id })}
+                >
+                  {th.name}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
-      </section>
+          {activeTheme?.grain &&
+            (() => {
+              const override = config.grain[config.theme]
+              const { intensity, texture } = resolveGrain(activeTheme, override)
+              const setGrain = (p: Partial<{ intensity: GrainIntensity; texture: GrainTexture }>) =>
+                patch({ grain: { ...config.grain, [config.theme]: { ...override, ...p } } })
+              return (
+                <>
+                  <div className="settings-row">
+                    <span>{t('filmGrain')}</span>
+                    <ToggleGroup.Root
+                      className="seg preset-seg"
+                      type="single"
+                      value={intensity}
+                      onValueChange={(v) => v && setGrain({ intensity: v as GrainIntensity })}
+                      aria-label={t('filmGrain')}
+                    >
+                      {INTENSITY_STEPS.map((step) => (
+                        <ToggleGroup.Item key={step} value={step} className="seg-btn" aria-label={t(INTENSITY_LABEL[step])}>
+                          {step === 'off' ? (
+                            <GrainOffGlyph />
+                          ) : (
+                            <GrainSwatch id={`grain-int-${step}`} texture={texture} opacity={INTENSITY_PREVIEW[step]} />
+                          )}
+                        </ToggleGroup.Item>
+                      ))}
+                    </ToggleGroup.Root>
+                  </div>
+                  {intensity !== 'off' && (
+                    <div className="settings-row">
+                      <span>{t('grainTexture')}</span>
+                      <ToggleGroup.Root
+                        className="seg preset-seg"
+                        type="single"
+                        value={texture}
+                        onValueChange={(v) => v && setGrain({ texture: v as GrainTexture })}
+                        aria-label={t('grainTexture')}
+                      >
+                        {TEXTURE_STEPS.map((tex) => (
+                          <ToggleGroup.Item key={tex} value={tex} className="seg-btn" aria-label={t(TEXTURE_LABEL[tex])}>
+                            <GrainSwatch id={`grain-tex-${tex}`} texture={tex} opacity={0.7} />
+                          </ToggleGroup.Item>
+                        ))}
+                      </ToggleGroup.Root>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+        </section>
 
-      <section>
-        <h4>{t('readingSection')}</h4>
-        <div className="settings-row">
-          <span>
-            {t('fontSize')} <span className="settings-val">{config.fontSize}px</span>
-          </span>
-          <ToggleGroup.Root
-            className="seg preset-seg"
-            type="single"
-            value={String(nearest(config.fontSize, FONT_OPTS.map((o) => o.v)))}
-            onValueChange={(v) => v && patch({ fontSize: Number(v) })}
-            aria-label={t('fontSize')}
-          >
-            {FONT_OPTS.map((o) => (
-              <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={`${o.v}px`}>
-                <span className="preset-A" style={{ fontSize: `${o.a}px` }}>
-                  A
-                </span>
-              </ToggleGroup.Item>
-            ))}
-          </ToggleGroup.Root>
-        </div>
-        <div className="settings-row">
-          <span>
-            {t('lineHeight')} <span className="settings-val">{config.lineHeight.toFixed(2)}</span>
-          </span>
-          <ToggleGroup.Root
-            className="seg preset-seg"
-            type="single"
-            value={String(nearest(config.lineHeight, LINE_OPTS.map((o) => o.v)))}
-            onValueChange={(v) => v && patch({ lineHeight: Number(v) })}
-            aria-label={t('lineHeight')}
-          >
-            {LINE_OPTS.map((o) => (
-              <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={o.v.toFixed(2)}>
-                <LineGapGlyph gap={o.gap} />
-              </ToggleGroup.Item>
-            ))}
-          </ToggleGroup.Root>
-        </div>
-        <div className="settings-row">
-          <span>
-            {t('contentWidth')} <span className="settings-val">{config.contentWidth}px</span>
-          </span>
-          <ToggleGroup.Root
-            className="seg preset-seg"
-            type="single"
-            value={String(nearest(config.contentWidth, WIDTH_OPTS.map((o) => o.v)))}
-            onValueChange={(v) => v && patch({ contentWidth: Number(v) })}
-            aria-label={t('contentWidth')}
-          >
-            {WIDTH_OPTS.map((o) => (
-              <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={`${o.v}px`}>
-                <WidthGlyph w={o.w} />
-              </ToggleGroup.Item>
-            ))}
-          </ToggleGroup.Root>
-        </div>
-      </section>
+        {/* ---------- Reading ---------- */}
+        <section>
+          <h4>{t('readingSection')}</h4>
+          <div className="settings-row">
+            <span>{t('typeface')}</span>
+            <div className="settings-theme-row">
+              {TYPE_SETS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`theme-chip${config.typeSet === s.id ? ' active' : ''}`}
+                  aria-pressed={config.typeSet === s.id}
+                  style={{ fontFamily: displayStack(s) }}
+                  onClick={() => patch({ typeSet: s.id })}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="settings-row">
+            <span>{t('codeFont')}</span>
+            <div className="settings-theme-row">
+              {MONO_FONTS.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`theme-chip${config.monoFont === m.id ? ' active' : ''}`}
+                  aria-pressed={config.monoFont === m.id}
+                  style={{ fontFamily: monoStack(m) }}
+                  onClick={() => patch({ monoFont: m.id })}
+                >
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="settings-row">
+            <span>
+              {t('fontSize')} <span className="settings-val">{config.fontSize}px</span>
+            </span>
+            <ToggleGroup.Root
+              className="seg preset-seg"
+              type="single"
+              value={String(nearest(config.fontSize, FONT_OPTS.map((o) => o.v)))}
+              onValueChange={(v) => v && patch({ fontSize: Number(v) })}
+              aria-label={t('fontSize')}
+            >
+              {FONT_OPTS.map((o) => (
+                <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={`${o.v}px`}>
+                  <span className="preset-A" style={{ fontSize: `${o.a}px` }}>
+                    A
+                  </span>
+                </ToggleGroup.Item>
+              ))}
+            </ToggleGroup.Root>
+          </div>
+          <div className="settings-row">
+            <span>
+              {t('lineHeight')} <span className="settings-val">{config.lineHeight.toFixed(2)}</span>
+            </span>
+            <ToggleGroup.Root
+              className="seg preset-seg"
+              type="single"
+              value={String(nearest(config.lineHeight, LINE_OPTS.map((o) => o.v)))}
+              onValueChange={(v) => v && patch({ lineHeight: Number(v) })}
+              aria-label={t('lineHeight')}
+            >
+              {LINE_OPTS.map((o) => (
+                <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={o.v.toFixed(2)}>
+                  <LineGapGlyph gap={o.gap} />
+                </ToggleGroup.Item>
+              ))}
+            </ToggleGroup.Root>
+          </div>
+          <div className="settings-row">
+            <span>
+              {t('contentWidth')} <span className="settings-val">{config.contentWidth}px</span>
+            </span>
+            <ToggleGroup.Root
+              className="seg preset-seg"
+              type="single"
+              value={String(nearest(config.contentWidth, WIDTH_OPTS.map((o) => o.v)))}
+              onValueChange={(v) => v && patch({ contentWidth: Number(v) })}
+              aria-label={t('contentWidth')}
+            >
+              {WIDTH_OPTS.map((o) => (
+                <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={`${o.v}px`}>
+                  <WidthGlyph w={o.w} />
+                </ToggleGroup.Item>
+              ))}
+            </ToggleGroup.Root>
+          </div>
+        </section>
 
-      <section>
-        <h4>{t('reviewSection')}</h4>
-        <label className="settings-row">
-          {t('authorTag')}
-          <input
-            type="text"
-            className="settings-input"
-            defaultValue={config.authorTag}
-            onBlur={(e) => {
-              const v = e.target.value.trim().replace(/^@/, '')
-              if (v && v !== config.authorTag) patch({ authorTag: v })
-            }}
-          />
-        </label>
-      </section>
-
-      <section>
-        <h4>{t('languagesSection')}</h4>
-        <label className="settings-row">
-          {t('uiLanguage')}
-          <select
-            className="settings-input"
-            value={config.uiLang}
-            onChange={(e) => patch({ uiLang: e.target.value as 'en' | 'zh-CN' })}
-          >
-            <option value="en">English</option>
-            <option value="zh-CN">简体中文</option>
-          </select>
-        </label>
-        <label className="settings-row">
-          {t('readingPair')}
-          <span className="settings-pair">
+        {/* ---------- Review & language ---------- */}
+        <section>
+          <h4>{t('reviewLangSection')}</h4>
+          <label className="settings-row">
+            <span>{t('authorTag')}</span>
             <input
               type="text"
-              className="settings-input narrow"
-              defaultValue={config.langPair.a}
-              onBlur={(e) => patch({ langPair: { ...config.langPair, a: e.target.value.trim() || 'en' } })}
+              className="settings-input"
+              defaultValue={config.authorTag}
+              onBlur={(e) => {
+                const v = e.target.value.trim().replace(/^@/, '')
+                if (v && v !== config.authorTag) patch({ authorTag: v })
+              }}
             />
-            <SwapIcon />
-            <input
-              type="text"
-              className="settings-input narrow"
-              defaultValue={config.langPair.b}
-              onBlur={(e) => patch({ langPair: { ...config.langPair, b: e.target.value.trim() || 'zh-CN' } })}
-            />
-          </span>
-        </label>
-        <div className="settings-row is-toggle">
-          <Checkbox.Root
-            id="keepOriginal"
-            className="settings-check"
-            checked={config.keepOriginalFeedback}
-            onCheckedChange={(c) => patch({ keepOriginalFeedback: c === true })}
-          >
-            <Checkbox.Indicator>
-              <CheckIcon width={11} height={11} />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
-          <label htmlFor="keepOriginal">{t('keepOriginal')}</label>
-        </div>
-      </section>
-
-      <section>
-        <h4>{t('providerSection')}</h4>
-        <label className="settings-row">
-          {t('providerType')}
-          <select
-            className="settings-input"
-            value={provider?.type ?? 'none'}
-            onChange={(e) => {
-              const v = e.target.value
-              if (v === 'none') patch({ provider: null })
-              else if (v === 'agent-channel') patch({ provider: { type: 'agent-channel' } })
-              else patch({ provider: { type: v as 'anthropic' | 'openai-compatible', baseUrl: provider?.baseUrl, model: provider?.model } })
-            }}
-          >
-            <option value="none">{t('providerNone')}</option>
-            <option value="agent-channel">{t('providerAgent')}</option>
-            <option value="anthropic">{t('providerAnthropic')}</option>
-            <option value="openai-compatible">{t('providerOpenai')}</option>
-          </select>
-        </label>
-        {provider?.type === 'agent-channel' && <p className="settings-hint">{t('providerAgentHint')}</p>}
-        {provider && provider.type !== 'agent-channel' && (
-          <>
-            {provider.type === 'openai-compatible' && (
-              <label className="settings-row">
-                {t('baseUrl')}
-                <input
-                  type="text"
-                  className="settings-input"
-                  placeholder="http://localhost:11434/v1"
-                  defaultValue={provider.baseUrl ?? ''}
-                  onBlur={(e) => patch({ provider: { ...provider, baseUrl: e.target.value.trim() } })}
-                />
-              </label>
-            )}
-            <label className="settings-row">
-              {t('model')}
+          </label>
+          <label className="settings-row">
+            <span>{t('uiLanguage')}</span>
+            <select
+              className="settings-input"
+              value={config.uiLang}
+              onChange={(e) => patch({ uiLang: e.target.value as 'en' | 'zh-CN' })}
+            >
+              <option value="en">English</option>
+              <option value="zh-CN">简体中文</option>
+            </select>
+          </label>
+          <label className="settings-row">
+            <span>{t('readingPair')}</span>
+            <span className="settings-pair">
               <input
                 type="text"
-                className="settings-input"
-                placeholder={provider.type === 'anthropic' ? 'claude-haiku-4-5-20251001' : 'qwen3:8b'}
-                defaultValue={provider.model ?? ''}
-                onBlur={(e) => patch({ provider: { ...provider, model: e.target.value.trim() } })}
+                className="settings-input narrow"
+                defaultValue={config.langPair.a}
+                onBlur={(e) => patch({ langPair: { ...config.langPair, a: e.target.value.trim() || 'en' } })}
               />
-            </label>
-            <label className="settings-row">
-              {t('apiKey')} {provider.configured && <span className="settings-val">{t('keySaved')}</span>}
-              <span className="settings-pair">
-                <input
-                  type="password"
-                  className="settings-input"
-                  placeholder={provider.configured ? '••••••••' : 'sk-…'}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  disabled={!apiKey.trim()}
-                  onClick={() => {
-                    patch({ provider: { ...provider, apiKey: apiKey.trim() } })
-                    setApiKey('')
-                  }}
-                >
-                  {t('saveKey')}
-                </button>
-              </span>
-            </label>
-          </>
-        )}
-      </section>
+              <SwapIcon />
+              <input
+                type="text"
+                className="settings-input narrow"
+                defaultValue={config.langPair.b}
+                onBlur={(e) => patch({ langPair: { ...config.langPair, b: e.target.value.trim() || 'zh-CN' } })}
+              />
+            </span>
+          </label>
+        </section>
       </div>
     </SlideOver>
   )

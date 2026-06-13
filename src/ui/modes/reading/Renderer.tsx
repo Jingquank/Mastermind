@@ -310,6 +310,50 @@ function renderBlock(node: BlockContent | DefinitionContent | RootContent, key: 
   }
 }
 
+/**
+ * Headings whose section gets the elevated "callout" card treatment — the
+ * meta-sections of a plan (decisions made, questions still open, things to do)
+ * that matter more than the surrounding prose. Matched on the heading's leading
+ * words, so "Decisions (resolved in review)" or "Open questions" both qualify.
+ */
+export const CALLOUT_HEADING = /^(decisions?|open\s+questions?|to-?dos?|todos?|risks?)\b/i
+
+function phrasingText(nodes: readonly PhrasingContent[]): string {
+  let out = ''
+  for (const n of nodes) {
+    if ('value' in n && typeof n.value === 'string') out += n.value
+    else if ('children' in n && Array.isArray(n.children)) out += phrasingText(n.children as PhrasingContent[])
+  }
+  return out
+}
+
 export function MarkdownView({ tree, ctx }: { tree: Root; ctx: RenderCtx }) {
-  return <>{tree.children.map((node, i) => renderBlock(node, i, ctx))}</>
+  const children = tree.children
+  const out: ReactNode[] = []
+  let i = 0
+  while (i < children.length) {
+    const node = children[i]!
+    if (node.type === 'heading' && CALLOUT_HEADING.test(phrasingText(node.children).trim())) {
+      // Group this heading with every following block until the next heading of
+      // equal-or-shallower depth, then wrap the run in a card. The wrapper has no
+      // data-ps/data-pe, so selection/commenting still anchors to the inner blocks.
+      const depth = node.depth
+      let j = i + 1
+      while (j < children.length) {
+        const next = children[j]!
+        if (next.type === 'heading' && next.depth <= depth) break
+        j++
+      }
+      out.push(
+        <section key={i} className="md-callout">
+          {children.slice(i, j).map((b, bi) => renderBlock(b, bi, ctx))}
+        </section>,
+      )
+      i = j
+    } else {
+      out.push(renderBlock(node, i, ctx))
+      i++
+    }
+  }
+  return <>{out}</>
 }

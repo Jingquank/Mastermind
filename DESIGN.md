@@ -16,11 +16,11 @@
 - One grotesque carries everything: **Schibsted Grotesk** (variable, OFL). Display = weight 800, line-height ~1.08, sentence case (the Swiss voice is weight + tight tracking, not caps), h1–h3.
 - Body: Schibsted Grotesk, 16px base, line-height 1.6 for long-form; don't go below 14px (`--font-size-sm`); micro = 11px for labels only.
 - Mono: Geist Mono for filenames, code, CriticMarkup source.
-- Letterspacing: tight negative on display (−0.02em), +0.06em caps on buttons/toggles, +0.08em on eyebrow labels.
+- Letterspacing: tight negative on display (−0.02em); +0.08em on the small mono eyebrow labels (`.settings-body h4`, `.ws-section-label`) — the one place ALL-CAPS remains. Buttons, toggles, toolbar verbs, and panel titles read in sentence case.
 
 ## Shape & layout
 
-- Radius ceiling 4px (`--radius-md`); 2px (`--radius-xs`) for chips; `--radius-full` only for circular elements (the 6px dirty dot).
+- Radius (generous on purpose — the interface should feel friendly, not clinical): `--radius-xs` 4px (inline marks, code, checkboxes), `--radius-md` 12px (cards, banners, inputs, menus), `--radius-lg` 20px (large floating panels: slide-over, modal, proposals, the navigator's right edge), `--radius-full` for pills (the CTA, ghost buttons, the segmented control) and circular elements.
 - Reading measure: `--content-max-width` 46rem (~736px), centered. Right margin rail for comment cards.
 - Spacing scale: 4px base, steps ×1,2,3,4,6,8,12,16,24.
 
@@ -31,8 +31,8 @@
 ## Component treatments
 
 - Top bar: elevated surface, bottom hairline; filename in mono sm; dirty indicator = 6px accent dot.
-- Primary CTA ("Save & hand back"): dark pill, green ink, uppercase, `--ls-caps`.
-- Secondary/ghost buttons + view-mode toggle: muted ink, active segment gains text color + elevated fill.
+- Primary CTA ("Save & hand back"): dark pill (`--radius-full`), green ink, sentence case, leading paper-plane (send) icon.
+- Secondary/ghost buttons + view-mode toggle: pill shape, muted ink, sentence case; the active segment gains text color + elevated fill. Each mode segment carries a glyph (eye / pencil / code).
 - Selection toolbar: the dark band device miniaturized (invert-bg surface, invert-text ink).
 - Focus ring: 2px `--color-accent`, offset 2px — the one sanctioned green outline.
 - Optional film grain overlay (feTurbulence, multiply, 0.12) per theme.

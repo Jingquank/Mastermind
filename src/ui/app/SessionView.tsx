@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_AUTHOR_TAG } from '../../shared/constants'
-import { acceptEdit, rejectEdit, resolveAll } from '../../shared/critic/resolve'
+import { acceptEdit, rejectEdit } from '../../shared/critic/resolve'
 import { analyzeMarkdown } from '../../shared/markdown/analyze'
 import { MilkdownEditor } from '../modes/editing/MilkdownEditor'
 import { EditingHoverActions } from '../modes/editing/EditingHoverActions'
 import { MarkdownView } from '../modes/reading/Renderer'
-import { TranslationPill } from '../modes/reading/TranslationPill'
 import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
 import { SourceEditor } from '../modes/source/SourceEditor'
 import { CommentRail } from '../review/CommentRail'
@@ -82,11 +81,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [assistAvailable, setAssistAvailable] = useState(false)
   const [walkIndex, setWalkIndex] = useState<number | null>(null)
   const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
-  const providerConfigured = useConfig((s) => s.config?.provider?.configured) ?? false
-  const providerType = useConfig((s) => s.config?.provider?.type) ?? null
   const langPair = useConfig((s) => s.config?.langPair) ?? { a: 'en', b: 'zh-CN' }
-  // agent-channel needs a live `mastermind assist` listener; API providers are always "available"
-  const translationReady = providerConfigured && (providerType !== 'agent-channel' || assistAvailable)
+  // translation routes to the user's agent, so it's ready iff a `mastermind assist` listener is live
+  const translationReady = assistAvailable
   const transActive = useTranslation((s) => s.active)
   const transLoading = useTranslation((s) => s.loading)
 
@@ -343,25 +340,31 @@ export function SessionView({ sessionId }: { sessionId: string }) {
 
   const hasThreads = analysis?.items.some((i) => i.type === 'thread') ?? false
   const showRail = mode === 'reading' && railOpen && hasThreads
-  const suggestionCount = suggestions.length
-
-  const bulkResolve = (resolveMode: 'accept' | 'reject') => {
-    const s = useDoc.getState()
-    const count = suggestionCount
-    s.setSource(resolveAll(s.source, analysis?.spans ?? [], resolveMode))
-    s.setNotice({ kind: 'ok', msg: resolveMode === 'accept' ? 'bulkAccepted' : 'bulkRejected', count })
-    setWalkIndex(null)
-  }
 
   return (
     <>
       <TopBar
         railOpen={railOpen}
         onToggleRail={mode === 'reading' && hasThreads ? () => setRailOpen((v) => !v) : undefined}
-        suggestionCount={mode === 'reading' && !showTranslated ? suggestionCount : 0}
-        onAcceptAll={() => bulkResolve('accept')}
-        onRejectAll={() => bulkResolve('reject')}
         onToggleSettings={toggleSettings}
+        translation={
+          mode === 'reading'
+            ? {
+                label: transActive
+                  ? t('original')
+                  : (() => {
+                      const target = previewTargetLang(source, langPair)
+                      return /^(zh|中文)/i.test(target) ? '中文' : target
+                    })(),
+                active: transActive,
+                loading: transLoading,
+                // agent-channel toggle is disabled until `mastermind assist` is listening
+                disabled: !translationReady && !transActive,
+                disabledTitle: t('toggleLangNoAgent'),
+                onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
+              }
+            : undefined
+        }
         agentWaiting={agentWaiting}
         handbackPulse={handbackPulse}
       />
@@ -396,24 +399,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       )}
       <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
         <div className="doc-column">
-          {providerConfigured && mode === 'reading' && (
-            <TranslationPill
-              label={
-                transActive
-                  ? t('original')
-                  : (() => {
-                      const target = previewTargetLang(source, langPair)
-                      return /^(zh|中文)/i.test(target) ? '中文' : target
-                    })()
-              }
-              active={transActive}
-              loading={transLoading}
-              // agent-channel toggle is disabled until `mastermind assist` is listening
-              disabled={!translationReady && !transActive}
-              disabledTitle={t('toggleLangNoAgent')}
-              onToggle={() => void useTranslation.getState().toggle(sessionId, source, langPair)}
-            />
-          )}
           {showTranslated && (
             <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
           )}
@@ -463,7 +448,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             spans={analysis.spans}
             authorTag={authorTag}
             onEdit={applyEdits}
-            canSuggest={assistAvailable && providerType === 'agent-channel'}
+            canSuggest={assistAvailable}
             onSuggest={(range, selection) => void useProposals.getState().request(sessionId, range, selection)}
           />
           <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />

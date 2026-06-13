@@ -3,7 +3,6 @@ import { group, reviewCounts, scan } from '../shared/critic/scanner'
 import { codeRanges } from '../shared/markdown/exclusions'
 import { stripSummary, summaryLine, upsertSummary } from '../shared/summary'
 import type { ReviewCounts } from '../shared/types'
-import { readConfig } from './config'
 import { processFeedbackLanguage } from './feedback'
 import { sha256hex } from './files'
 import type { Session } from './sessions'
@@ -35,7 +34,7 @@ export async function performHandback(
     }
   }
 
-  const content = await processFeedbackLanguage(rawContent, readConfig())
+  const content = await processFeedbackLanguage(rawContent)
   const body = stripSummary(content)
   const counts = reviewCounts(group(scan(body, codeRanges(body)), body))
   const final = upsertSummary(content, counts, new Date())

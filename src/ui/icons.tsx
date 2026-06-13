@@ -16,6 +16,8 @@ import {
   EyeOpenIcon,
   CounterClockwiseClockIcon,
   MagnifyingGlassIcon,
+  CodeIcon as RCodeIcon,
+  PaperPlaneIcon as RPaperPlaneIcon,
 } from '@radix-ui/react-icons'
 
 type IconProps = SVGProps<SVGSVGElement>
@@ -69,6 +71,9 @@ export const StrikethroughIcon = radix(RStrikethroughIcon, 14)
 export const EyeIcon = radix(EyeOpenIcon, 14)
 export const HistoryIcon = radix(CounterClockwiseClockIcon, 14)
 export const SearchIcon = radix(MagnifyingGlassIcon, 14)
+/** Source view (code) and the hand-back send glyph. */
+export const CodeIcon = radix(RCodeIcon, 14)
+export const SendIcon = radix(RPaperPlaneIcon, 14)
 
 /* ---- hand-drawn glyphs Radix lacks ---- */
 

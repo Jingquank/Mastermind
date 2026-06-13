@@ -4,8 +4,45 @@ import { analyzeMarkdown } from '../../shared/markdown/analyze'
 import type { TextEdit } from '../../shared/types'
 import { useT } from '../i18n'
 import { AlertIcon, ChatIcon, PendingDot } from '../icons'
-import { MarkdownView } from '../modes/reading/Renderer'
+import { CALLOUT_HEADING, MarkdownView } from '../modes/reading/Renderer'
 import { useTranslation } from './translationStore'
+
+/** Heading depth + callout-ness from a block's SOURCE text (never the translation). */
+function sourceHeading(block: SourceBlock): { depth: number; callout: boolean } | null {
+  if (block.kind !== 'heading') return null
+  const m = block.text.match(/^(#{1,6})\s+([^\n]*)/)
+  if (!m) return null
+  return { depth: m[1]!.length, callout: CALLOUT_HEADING.test(m[2]!.trim()) }
+}
+
+type BlockGroup = { callout: false; block: SourceBlock } | { callout: true; key: string; blocks: SourceBlock[] }
+
+/**
+ * Mirror MarkdownView's callout grouping, but key it on the ORIGINAL source text so
+ * the card survives translation: a callout heading plus every following block until
+ * the next heading of equal-or-shallower depth becomes one md-callout section.
+ */
+function groupBlocks(blocks: SourceBlock[]): BlockGroup[] {
+  const groups: BlockGroup[] = []
+  let i = 0
+  while (i < blocks.length) {
+    const head = sourceHeading(blocks[i]!)
+    if (head?.callout) {
+      let j = i + 1
+      while (j < blocks.length) {
+        const next = sourceHeading(blocks[j]!)
+        if (next && next.depth <= head.depth) break
+        j++
+      }
+      groups.push({ callout: true, key: `${blocks[i]!.hash}-${blocks[i]!.start}`, blocks: blocks.slice(i, j) })
+      i = j
+    } else {
+      groups.push({ callout: false, block: blocks[i]! })
+      i++
+    }
+  }
+  return groups
+}
 
 interface Props {
   sessionId: string
@@ -126,19 +163,29 @@ export function TranslatedView({ sessionId, source, authorTag, onEdit }: Props) 
 
   if (!blocks) return null
 
+  const renderBlock = (b: SourceBlock) => (
+    <TransBlock
+      key={`${b.hash}-${b.start}`}
+      block={b}
+      translated={b.translatable ? map[b.hash] : undefined}
+      failed={Boolean(failed[b.hash])}
+      authorTag={authorTag}
+      onEdit={onEdit}
+    />
+  )
+
   return (
     <article className="trans-view">
       {loading && <div className="trans-loading">{t('translating')}</div>}
-      {blocks.map((b) => (
-        <TransBlock
-          key={`${b.hash}-${b.start}`}
-          block={b}
-          translated={b.translatable ? map[b.hash] : undefined}
-          failed={Boolean(failed[b.hash])}
-          authorTag={authorTag}
-          onEdit={onEdit}
-        />
-      ))}
+      {groupBlocks(blocks).map((g) =>
+        g.callout ? (
+          <section key={g.key} className="md-callout">
+            {g.blocks.map(renderBlock)}
+          </section>
+        ) : (
+          renderBlock(g.block)
+        ),
+      )}
     </article>
   )
 }

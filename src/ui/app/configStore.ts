@@ -1,16 +1,7 @@
 import { create } from 'zustand'
 import type { ClientConfig, ThemeInfo } from '../../shared/types'
 
-export interface ProviderPatch {
-  type: 'anthropic' | 'openai-compatible' | 'agent-channel'
-  baseUrl?: string
-  model?: string
-  apiKey?: string
-}
-
-export type ConfigPatch = Partial<Omit<ClientConfig, 'provider' | 'version'>> & {
-  provider?: ProviderPatch | null
-}
+export type ConfigPatch = Partial<Omit<ClientConfig, 'version'>>
 
 interface ConfigState {
   config: ClientConfig | null
@@ -41,7 +32,7 @@ export const useConfig = create<ConfigState>((set, get) => ({
     // optimistic for snappy sliders; server response settles it
     const current = get().config
     if (current) {
-      set({ config: { ...current, ...patch, provider: current.provider } as ClientConfig })
+      set({ config: { ...current, ...patch } as ClientConfig })
     }
     try {
       const config = await fetchJson<ClientConfig>('/api/config', {

@@ -147,15 +147,45 @@ body {
   flex-shrink: 0;
 }
 
-/* The view-mode toggle (the bar's direct .seg child — NOT the nested review-bulk
-   cluster) stays optically centered in the bar no matter how wide the filename or
-   the action cluster grow. Reverts to normal flow on mobile (see the 900px query). */
-.topbar > .seg {
+/* The view-mode toggle stays optically centered in the bar no matter how wide the
+   filename or the action cluster grow. Its wrapper is the centered element; the
+   translation toggle hangs off the seg's right edge (absolute) so adding/removing
+   it never shifts the mode switch off center. Reverts to flow on mobile (900px). */
+.topbar-center {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+}
+.topbar-center > .seg {
   background: var(--color-bg-elevated);
+}
+
+.topbar-trans {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: calc(var(--space-unit) * 2);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 1.5);
+  white-space: nowrap;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2.5);
+}
+.topbar-trans:hover:not(:disabled) {
+  color: var(--color-text);
+}
+.topbar-trans.active {
+  color: var(--color-accent-dim);
+  border-color: var(--color-accent-dim);
 }
 
 /* topbar tool icons (comments / settings) — ghost buttons that show an icon only */
@@ -305,45 +335,6 @@ button:disabled {
   min-width: 0;
 }
 
-/* Floating translation toggle — sticky at the top-right of the reading column so
-   it stays reachable while scrolling. The anchor reserves no height (the pill
-   floats over the top padding); only the pill itself is interactive. */
-.translation-pill-anchor {
-  position: sticky;
-  /* clear the sticky topbar so the pill pins just below it instead of sliding under */
-  top: calc(var(--topbar-h) + var(--space-unit) * 2);
-  z-index: var(--z-sticky);
-  display: flex;
-  justify-content: flex-end;
-  height: 0;
-  pointer-events: none;
-}
-
-.translation-pill {
-  pointer-events: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--space-unit) * 1.5);
-  background: var(--color-bg-elevated);
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 3);
-  font-size: var(--font-size-sm);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  transition:
-    color var(--dur-fast) ease,
-    border-color var(--dur-fast) ease;
-}
-
-.translation-pill:hover:not(:disabled) {
-  color: var(--color-text);
-}
-
-.translation-pill.active {
-  color: var(--color-accent-dim);
-  border-color: var(--color-accent-dim);
-}
 
 .rail {
   grid-column: 3;
@@ -614,7 +605,11 @@ button:disabled {
 /* Callout card — elevates plan meta-sections (Decisions / Open questions /
    To-do / Risks) above the surrounding prose. Neutral tokens only: the body
    never uses accent color (review marks own that). */
-.md-root .md-callout {
+/* The translated reading view renders block-by-block, so a callout there is the
+   md-callout section wrapping consecutive .trans-block rows (grouped from the
+   source). Both forms share one card + titled-heading treatment below. */
+.md-root .md-callout,
+.trans-view .md-callout {
   margin: calc(var(--space-unit) * 8) 0;
   padding: calc(var(--space-unit) * 5) calc(var(--space-unit) * 6) calc(var(--space-unit) * 6);
   background: var(--color-bg-elevated);
@@ -623,8 +618,10 @@ button:disabled {
 }
 
 /* The section heading becomes a compact uppercase label with a diamond marker
-   and a divider rule, so the card reads as one titled unit. */
-.md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child {
+   and a divider rule, so the card reads as one titled unit. In the translated
+   view the heading is nested one level deeper, inside the first .trans-block. */
+.md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child,
+.trans-view .md-callout > .trans-block:first-child .trans-block-body > :is(h1, h2, h3, h4, h5, h6):first-child {
   display: flex;
   align-items: center;
   gap: calc(var(--space-unit) * 2);
@@ -639,7 +636,8 @@ button:disabled {
   line-height: 1.2;
 }
 
-.md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child::before {
+.md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child::before,
+.trans-view .md-callout > .trans-block:first-child .trans-block-body > :is(h1, h2, h3, h4, h5, h6):first-child::before {
   content: '';
   flex: none;
   width: 7px;
@@ -648,7 +646,8 @@ button:disabled {
   transform: rotate(45deg);
 }
 
-.md-root .md-callout > :last-child {
+.md-root .md-callout > :last-child,
+.trans-view .md-callout > .trans-block:last-child {
   margin-bottom: 0;
 }
 
@@ -1388,29 +1387,6 @@ input[type='checkbox'] {
   }
 }
 
-/* ---------- review bulk cluster ---------- */
-
-.review-bulk {
-  align-items: center;
-}
-
-.bulk-count {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-micro);
-  color: var(--color-text-muted);
-  padding: 0 calc(var(--space-unit) * 1.5);
-  border-right: 1px solid var(--color-border);
-  margin-right: 2px;
-}
-
-.seg-btn.bulk-accept {
-  color: var(--color-accent-dim);
-}
-
-.seg-btn.bulk-reject {
-  color: var(--review-delete-text);
-}
-
 /* ---------- keyboard suggestion walker ---------- */
 
 .kbd-focus {
@@ -1931,9 +1907,14 @@ input[type='checkbox'] {
     z-index: calc(var(--z-overlay) + 1);
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
   }
-  /* mobile: the view-mode toggle rejoins the normal bar flow */
-  .topbar > .seg {
+  /* mobile: the view-mode toggle (and its translation sibling) rejoin bar flow */
+  .topbar-center {
     position: static;
+    transform: none;
+  }
+  .topbar-trans {
+    position: static;
+    left: auto;
     transform: none;
   }
 }

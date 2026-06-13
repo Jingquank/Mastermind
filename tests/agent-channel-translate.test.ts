@@ -5,15 +5,12 @@ import path from 'node:path'
 import { AssistError, AssistRegistry } from '../src/server/assist/index'
 import { SessionRegistry, type Conn } from '../src/server/sessions'
 import { translateBlocks } from '../src/server/translate/index'
-import { DEFAULT_CONFIG } from '../src/server/config'
-import type { AssistRequestEvent, MastermindConfig } from '../src/shared/types'
+import type { AssistRequestEvent } from '../src/shared/types'
 
 let tmp: string
 let file: string
 let sessions: SessionRegistry
 let assist: AssistRegistry
-
-const CONFIG: MastermindConfig = { ...DEFAULT_CONFIG, provider: { type: 'agent-channel' } }
 
 beforeEach(() => {
   tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-ac-'))
@@ -58,7 +55,6 @@ describe('agent-channel translation via translateBlocks (V3)', () => {
       ],
       'en',
       'zh-CN',
-      CONFIG,
       assist,
     )
     expect(results).toEqual([
@@ -76,7 +72,6 @@ describe('agent-channel translation via translateBlocks (V3)', () => {
       [{ hash: 'h1', text: 'Body {++added++} end' }],
       'en',
       'zh-CN',
-      CONFIG,
       assist,
     )
     expect(res).toEqual({ hash: 'h1', error: 'structure', cached: false })
@@ -85,14 +80,14 @@ describe('agent-channel translation via translateBlocks (V3)', () => {
   it('rejects with no-agent when no assist listener is attached', async () => {
     const { session } = sessions.open(file)
     await expect(
-      translateBlocks(session, [{ hash: 'h', text: 'x' }], 'en', 'zh-CN', CONFIG, assist),
+      translateBlocks(session, [{ hash: 'h', text: 'x' }], 'en', 'zh-CN', assist),
     ).rejects.toBeInstanceOf(AssistError)
   })
 
   it('does NOT write the on-disk translation cache (session-scoped only)', async () => {
     const { session } = sessions.open(file)
     autoAgent(session.id, (t) => t)
-    await translateBlocks(session, [{ hash: 'h', text: 'x' }], 'en', 'zh-CN', CONFIG, assist)
+    await translateBlocks(session, [{ hash: 'h', text: 'x' }], 'en', 'zh-CN', assist)
     const cacheDir = path.join(tmp, '.mastermind', 'translations')
     expect(fs.existsSync(cacheDir)).toBe(false)
   })
@@ -100,6 +95,6 @@ describe('agent-channel translation via translateBlocks (V3)', () => {
   it('empty block list short-circuits without bothering the agent', async () => {
     const { session } = sessions.open(file)
     // no agent attached, but empty list must still resolve
-    await expect(translateBlocks(session, [], 'en', 'zh-CN', CONFIG, assist)).resolves.toEqual([])
+    await expect(translateBlocks(session, [], 'en', 'zh-CN', assist)).resolves.toEqual([])
   })
 })

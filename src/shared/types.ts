@@ -114,17 +114,10 @@ export interface ReviewCounts {
 
 /* ---- config ---- */
 
-export type ProviderType = 'anthropic' | 'openai-compatible' | 'agent-channel'
-
-export interface ProviderConfig {
-  /** 'agent-channel' = the user's own coding agent answers via the SSE/--wait channel (no key, no model). */
-  type: ProviderType
-  baseUrl?: string
-  apiKey?: string
-  model?: string
-  /** agent-channel only: how long to wait for the agent to answer a request. */
-  agentTimeoutMs?: number
-}
+/** Film-grain density steps; `off` supersedes the legacy on/off toggle. */
+export type GrainIntensity = 'off' | 'low' | 'medium' | 'high'
+/** Film-grain texture presets (feTurbulence parameter sets). */
+export type GrainTexture = 'fine' | 'soft' | 'coarse'
 
 export interface MastermindConfig {
   version: 1
@@ -135,19 +128,19 @@ export interface MastermindConfig {
   /** px */
   contentWidth: number
   authorTag: string
+  /** id of the chosen curated type set (display + body); see src/ui/theme/fonts.ts */
+  typeSet: string
+  /** id of the chosen monospace face (code, filenames, CriticMarkup source) */
+  monoFont: string
   uiLang: 'en' | 'zh-CN'
-  /** the reading-language toggle pair */
+  /** the reading-language toggle pair (translation always routes to the user's agent) */
   langPair: { a: string; b: string }
-  keepOriginalFeedback: boolean
-  /** per-theme grain overrides */
-  grain: Record<string, { enabled?: boolean }>
-  provider: ProviderConfig | null
+  /** per-theme grain overrides; `enabled` is the legacy on/off, superseded by `intensity` */
+  grain: Record<string, { enabled?: boolean; intensity?: GrainIntensity; texture?: GrainTexture }>
 }
 
-/** What the browser sees — never the API key. */
-export interface ClientConfig extends Omit<MastermindConfig, 'provider'> {
-  provider: { type: ProviderType; baseUrl?: string; model?: string; configured: boolean } | null
-}
+/** What the browser sees. No secrets to redact — translation is agent-only, no keys stored. */
+export type ClientConfig = MastermindConfig
 
 export interface ThemeFontInfo {
   family: string
