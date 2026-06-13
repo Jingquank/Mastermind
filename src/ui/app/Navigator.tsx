@@ -50,6 +50,17 @@ export function Navigator({ workspaceId, openSessionId }: Props) {
 
   const panelOpen = narrow ? mobileOpen : !collapsed
 
+  // Escape closes the off-canvas navigator (narrow only); focus returns to the
+  // reveal button on the next render since it reappears when closed.
+  useEffect(() => {
+    if (!(narrow && mobileOpen)) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') useNav.getState().setMobileOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [narrow, mobileOpen])
+
   const reveal = (): void => {
     if (narrow) useNav.getState().setMobileOpen(true)
     else useNav.getState().setCollapsed(false)
@@ -62,12 +73,24 @@ export function Navigator({ workspaceId, openSessionId }: Props) {
   return (
     <>
       {!panelOpen && (
-        <button type="button" className="nav-reveal" title={t('showFiles')} aria-label={t('showFiles')} onClick={reveal}>
+        <button
+          type="button"
+          className="nav-reveal"
+          title={t('showFiles')}
+          aria-label={t('showFiles')}
+          aria-expanded={false}
+          onClick={reveal}
+        >
           {showFiles ? <FolderIcon /> : <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />}
         </button>
       )}
       {narrow && mobileOpen && <div className="nav-scrim" onClick={hide} aria-hidden />}
-      <aside className={`navigator${panelOpen ? '' : ' off'}`} aria-label={showFiles ? t('files') : t('outline')}>
+      <aside
+        className={`navigator${panelOpen ? '' : ' off'}`}
+        aria-label={showFiles ? t('files') : t('outline')}
+        role={narrow && mobileOpen ? 'dialog' : undefined}
+        aria-modal={narrow && mobileOpen ? true : undefined}
+      >
         <div className="nav-head">
           <span className="nav-title" title={showFiles ? displayName : undefined}>
             {showFiles ? displayName : t('outline')}

@@ -1766,6 +1766,12 @@ input[type='checkbox'] {
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .navigator,
+  .app-content {
+    transition: none;
+  }
+}
 
 .ws-recent {
   padding: 6px 6px 8px;
