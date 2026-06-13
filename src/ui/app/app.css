@@ -59,7 +59,7 @@ body {
   top: 0;
   z-index: var(--z-topbar);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Phase E: a fixed inline set + overflow menu — never wraps */
   align-items: center;
   justify-content: space-between;
   gap: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
@@ -101,6 +101,55 @@ body {
   display: flex;
   align-items: center;
   gap: calc(var(--space-unit) * 2);
+  flex-shrink: 0; /* the action cluster keeps its size; the filename shrinks instead */
+}
+.topbar .seg {
+  flex-shrink: 0;
+}
+
+/* overflow "more" menu (translation / rounds / rail / settings) */
+.topbar-more-wrap {
+  position: relative;
+}
+.topbar-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: var(--z-panel);
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--space-unit) * 1);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+}
+.more-item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+  width: 100%;
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 2);
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-align: left;
+  white-space: nowrap;
+}
+.more-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+.more-item.active {
+  color: var(--color-accent-dim);
+}
+.more-item:disabled {
+  color: var(--color-text-faint);
+  cursor: default;
 }
 
 /* ---------- buttons ---------- */

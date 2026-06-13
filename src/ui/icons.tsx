@@ -106,3 +106,14 @@ export function FileIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+/** Horizontal ellipsis — the overflow / "more actions" trigger. */
+export function MoreIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props, 15)}>
+      <circle cx="3.5" cy="8" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="12.5" cy="8" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}

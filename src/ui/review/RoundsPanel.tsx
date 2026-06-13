@@ -28,7 +28,7 @@ export function RoundsPanel({ onClose }: { onClose: () => void }) {
   const rounds = useDoc((s) => s.rounds)
 
   return (
-    <SlideOver title={t('roundsTitle')} onClose={onClose} ignoreSelector=".rounds-toggle">
+    <SlideOver title={t('roundsTitle')} onClose={onClose} ignoreSelector=".topbar-more">
       {rounds.length === 0 ? (
         <p className="rounds-empty">{t('roundsEmpty')}</p>
       ) : (

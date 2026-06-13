@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useT } from '../i18n'
-import { GearIcon, SwapIcon } from '../icons'
+import { GearIcon, MoreIcon, SwapIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
 
 interface TopBarProps {
@@ -22,6 +22,16 @@ interface TopBarProps {
   handbackPulse?: boolean
   roundCount?: number
   onToggleRounds?: () => void
+}
+
+interface OverflowItem {
+  key: string
+  label: string
+  onClick: () => void
+  icon?: ReactNode
+  active?: boolean
+  disabled?: boolean
+  title?: string
 }
 
 export function TopBar({
@@ -47,14 +57,17 @@ export function TopBar({
   const savingKind = useDoc((s) => s.savingKind)
   const dirty = useDirty()
 
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement | null>(null)
+
   const MODES: { id: ViewMode; label: string }[] = [
     { id: 'reading', label: t('reading') },
     { id: 'editing', label: t('editing') },
     { id: 'source', label: t('source') },
   ]
 
-  // anchored overlays (settings panel, translating pill) position off the
-  // bar's REAL height — which doubles when the bar wraps at narrow widths
+  // The bar never wraps (Phase E), so --topbar-h is effectively constant; keep
+  // the observer so anchored overlays still self-correct if the font size changes.
   useLayoutEffect(() => {
     const el = headerRef.current
     if (!el) return
@@ -64,6 +77,52 @@ export function TopBar({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  // close the overflow menu on outside click / Escape
+  useEffect(() => {
+    if (!moreOpen) return
+    const onDown = (e: MouseEvent): void => {
+      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [moreOpen])
+
+  // translation / rounds / rail / settings live in one overflow menu so the bar
+  // stays a single row at every width; each appears only when its handler exists.
+  const overflow: OverflowItem[] = []
+  if (translation) {
+    overflow.push({
+      key: 'lang',
+      label: translation.loading ? t('translating') : translation.label,
+      onClick: translation.onToggle,
+      icon: <SwapIcon />,
+      active: translation.active,
+      disabled: translation.loading || translation.disabled,
+      title: translation.disabled ? (translation.disabledTitle ?? t('toggleLang')) : t('toggleLang'),
+    })
+  }
+  if (onToggleRounds) {
+    overflow.push({ key: 'rounds', label: `${t('rounds')} ${roundCount}`, onClick: onToggleRounds, title: t('roundsTitle') })
+  }
+  if (onToggleRail) {
+    overflow.push({
+      key: 'rail',
+      label: railOpen ? t('hideComments') : t('showComments'),
+      onClick: onToggleRail,
+      title: t('toggleRail'),
+    })
+  }
+  if (onToggleSettings) {
+    overflow.push({ key: 'settings', label: t('settings'), onClick: onToggleSettings, icon: <GearIcon width={14} height={14} /> })
+  }
 
   return (
     <header className="topbar" ref={headerRef}>
@@ -91,19 +150,6 @@ export function TopBar({
         ))}
       </nav>
       <div className="topbar-right">
-        {translation && (
-          <button
-            type="button"
-            className={`btn-ghost lang-toggle${translation.active ? ' active' : ''}`}
-            aria-pressed={translation.active}
-            onClick={translation.onToggle}
-            disabled={translation.loading || translation.disabled}
-            title={translation.disabled ? (translation.disabledTitle ?? t('toggleLang')) : t('toggleLang')}
-          >
-            <SwapIcon />
-            {translation.loading ? t('translating') : translation.label}
-          </button>
-        )}
         {suggestionCount > 0 && (
           <div className="seg review-bulk" role="group" aria-label={`${suggestionCount} ${t('suggestionsLabel')}`}>
             <span className="bulk-count" title={`${suggestionCount} ${t('suggestionsLabel')}`}>
@@ -116,16 +162,6 @@ export function TopBar({
               {t('rejectAll')}
             </button>
           </div>
-        )}
-        {onToggleRounds && (
-          <button type="button" className="btn-ghost rounds-toggle" onClick={onToggleRounds} title={t('roundsTitle')}>
-            {t('rounds')} {roundCount}
-          </button>
-        )}
-        {onToggleRail && (
-          <button type="button" className="btn-ghost" onClick={onToggleRail} title={t('toggleRail')}>
-            {railOpen ? t('hideComments') : t('showComments')}
-          </button>
         )}
         <button
           type="button"
@@ -145,16 +181,41 @@ export function TopBar({
         >
           {savingKind === 'handback' ? t('handingBack') : t('handBack')}
         </button>
-        {onToggleSettings && (
-          <button
-            type="button"
-            className="btn-ghost settings-gear"
-            onClick={onToggleSettings}
-            title={t('settings')}
-            aria-label={t('settings')}
-          >
-            <GearIcon width={15} height={15} />
-          </button>
+        {overflow.length > 0 && (
+          <div className="topbar-more-wrap" ref={moreRef}>
+            <button
+              type="button"
+              className="btn-ghost topbar-more"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              aria-label={t('moreActions')}
+              title={t('moreActions')}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              <MoreIcon />
+            </button>
+            {moreOpen && (
+              <div className="topbar-more-menu" role="menu">
+                {overflow.map((it) => (
+                  <button
+                    key={it.key}
+                    type="button"
+                    role="menuitem"
+                    className={`more-item${it.active ? ' active' : ''}`}
+                    disabled={it.disabled}
+                    title={it.title}
+                    onClick={() => {
+                      it.onClick()
+                      setMoreOpen(false)
+                    }}
+                  >
+                    {it.icon}
+                    <span>{it.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </header>
