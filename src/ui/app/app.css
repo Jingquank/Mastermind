@@ -1564,6 +1564,167 @@ input[type='checkbox'] {
   opacity: 0.85;
 }
 
+/* ---------- mark-aware find bar ---------- */
+
+.find-bar {
+  position: fixed;
+  top: calc(var(--topbar-h) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2);
+}
+
+.find-input {
+  width: 200px;
+}
+
+.find-filters {
+  display: flex;
+  gap: 2px;
+}
+
+.find-filter {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-micro);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 1.5);
+}
+
+.find-filter.active {
+  color: var(--color-text);
+  border-color: var(--color-accent-dim);
+}
+
+.find-count {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-micro);
+  color: var(--color-text-muted);
+  min-width: 44px;
+  text-align: center;
+}
+
+.find-nav {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2);
+}
+
+.find-nav:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+/* ---------- print / PDF ---------- */
+
+.print-footnotes {
+  display: none;
+}
+
+@media print {
+  /* hide all chrome and floating layers */
+  .topbar,
+  .toast,
+  .banner,
+  .rail,
+  .mark-gutter,
+  .doc-outline,
+  .settings-panel,
+  .rounds-panel,
+  .proposal-card,
+  .sel-toolbar,
+  .hover-actions,
+  .agent-chip,
+  .grain-overlay {
+    display: none !important;
+  }
+
+  /* reviewer-grade: ink on white, light review palette regardless of theme */
+  [data-theme] {
+    --color-bg: #ffffff;
+    --color-bg-elevated: #ffffff;
+    --color-text: #111111;
+    --color-text-muted: #444444;
+    --color-text-faint: #666666;
+    --color-border: #cccccc;
+    --review-insert-text: #00662e;
+    --review-insert-bg: #e9f7ee;
+    --review-delete-text: #9a3b22;
+    --review-delete-bg: #faece7;
+    --review-highlight-bg: #fbf0c8;
+    --review-comment-anchor: #00662e;
+  }
+
+  .doc-shell,
+  .doc-shell.with-rail,
+  .doc-shell.with-outline,
+  .doc-shell.with-outline.with-rail {
+    display: block;
+  }
+
+  .doc-column {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  /* number comment markers and render the bodies as footnotes */
+  .md-root {
+    counter-reset: mm-comment;
+  }
+
+  .critic-comment-marker {
+    counter-increment: mm-comment;
+  }
+
+  .critic-comment-marker svg {
+    display: none;
+  }
+
+  .critic-comment-marker::after {
+    content: counter(mm-comment);
+    font-size: 0.7em;
+    vertical-align: super;
+    color: var(--review-comment-anchor);
+  }
+
+  .print-footnotes {
+    display: block;
+    margin-top: calc(var(--space-unit) * 8);
+    padding-top: calc(var(--space-unit) * 4);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+  }
+
+  .print-footnotes h2 {
+    font-size: 1rem;
+  }
+
+  .print-footnotes ol {
+    padding-left: 1.4em;
+  }
+
+  .print-footnotes li {
+    margin: calc(var(--space-unit) * 1) 0;
+  }
+
+  .print-footnotes .pf-author {
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+  }
+}
+
 /* ---------- grain overlay ---------- */
 
 .grain-overlay {

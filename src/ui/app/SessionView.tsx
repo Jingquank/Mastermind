@@ -13,7 +13,9 @@ import { useProposals } from '../review/proposalStore'
 import { RoundsPanel } from '../review/RoundsPanel'
 import { Outline } from '../review/Outline'
 import { MarkGutter, type MarkTick } from '../review/MarkGutter'
+import { FindBar } from '../review/FindBar'
 import { extractOutline } from '../modes/reading/outline'
+import { parseAuthor } from '../../shared/critic/scanner'
 import { scrollToSpan } from '../util/scroll'
 import { DiffView } from '../diff/DiffView'
 import { formatCounts, useLang, useT } from '../i18n'
@@ -71,6 +73,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [activeSpan, setActiveSpan] = useState<number | null>(null)
   const [railOpen, setRailOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [findOpen, setFindOpen] = useState(false)
   const closeSettings = useCallback(() => {
     setSettingsOpen(false)
     // hand focus back to the invoking control
@@ -173,6 +176,12 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     [analysis],
   )
   const outline = useMemo(() => (analysis ? extractOutline(analysis.tree) : []), [analysis])
+  const commentFootnotes = useMemo(() => {
+    if (!analysis) return []
+    return analysis.spans
+      .filter((s) => s.kind === 'comment')
+      .map((s) => parseAuthor(source.slice(s.innerStart, s.innerEnd)))
+  }, [analysis, source])
   const markTicks = useMemo<MarkTick[]>(() => {
     if (!analysis) return []
     const ticks: MarkTick[] = []
@@ -204,6 +213,16 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         e.preventDefault()
         const s = useDoc.getState()
         s.setMode(MODE_CYCLE[s.mode])
+        return
+      }
+      // ⌘F opens the mark-aware find bar (reading mode, marks present); a second
+      // ⌘F while it's open closes it, leaving native find for the next press
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        const s = useDoc.getState()
+        if (s.mode === 'reading' && !s.diffOpen) {
+          e.preventDefault()
+          setFindOpen((v) => !v)
+        }
         return
       }
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
@@ -376,6 +395,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       />
       {settingsOpen && <SettingsPanel onClose={closeSettings} />}
       {roundsOpen && <RoundsPanel onClose={() => useDoc.getState().setRoundsOpen(false)} />}
+      {findOpen && mode === 'reading' && !showTranslated && analysis && (
+        <FindBar analysis={analysis} source={source} docRef={articleRef} onClose={() => setFindOpen(false)} />
+      )}
       {renamePrompt && <RenameDialog />}
       {conflict && (
         <div className="banner" role="alert">
@@ -424,6 +446,19 @@ export function SessionView({ sessionId }: { sessionId: string }) {
                 tree={analysis.tree}
                 ctx={{ source, onEdit: (edit) => applyEdits([edit]), anchoredHighlights }}
               />
+              {commentFootnotes.length > 0 && (
+                <section className="print-footnotes">
+                  <h2>{t('comments')}</h2>
+                  <ol>
+                    {commentFootnotes.map((c, i) => (
+                      <li key={i}>
+                        {c.author && <span className="pf-author">@{c.author}: </span>}
+                        {c.body}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
             </article>
           )}
           {mode === 'editing' && <MilkdownEditor key={`e${externalVersion}`} />}
