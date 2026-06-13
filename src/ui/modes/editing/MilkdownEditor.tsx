@@ -16,6 +16,7 @@ import { $prose } from '@milkdown/kit/utils'
 import { useEffect, useRef } from 'react'
 import { useDoc } from '../../app/store'
 import { critic } from './critic'
+import { resolveCriticInEditor } from './critic/resolve'
 
 /**
  * Reading mode has live task checkboxes; Editing mode must not lose them.
@@ -122,6 +123,15 @@ export function MilkdownEditor() {
           entryDoc = ctx.get(editorViewCtx).state.doc
         })
         useDoc.getState().registerFlusher(flush)
+        // dirty-doc accept/reject: mutate the live PM doc in place
+        useDoc.getState().registerEditorResolve((spanIndex, kind, mode) => {
+          if (!editor) return
+          try {
+            editor.action((ctx) => resolveCriticInEditor(ctx.get(editorViewCtx), spanIndex, kind, mode))
+          } catch {
+            /* editor mid-teardown */
+          }
+        })
       })
       .catch((err: unknown) => {
         console.error('milkdown init failed', err)
@@ -131,6 +141,7 @@ export function MilkdownEditor() {
       destroyed = true
       flush()
       useDoc.getState().registerFlusher(null)
+      useDoc.getState().registerEditorResolve(null)
       useDoc.getState().setEditorDirty(false)
       void editor?.destroy()
       editor = null

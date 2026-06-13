@@ -3,6 +3,7 @@ import { DEFAULT_AUTHOR_TAG } from '../../shared/constants'
 import { acceptEdit, rejectEdit, resolveAll } from '../../shared/critic/resolve'
 import { analyzeMarkdown } from '../../shared/markdown/analyze'
 import { MilkdownEditor } from '../modes/editing/MilkdownEditor'
+import { EditingHoverActions } from '../modes/editing/EditingHoverActions'
 import { MarkdownView } from '../modes/reading/Renderer'
 import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
 import { SourceEditor } from '../modes/source/SourceEditor'
@@ -462,6 +463,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             </article>
           )}
           {mode === 'editing' && <MilkdownEditor key={`e${externalVersion}`} />}
+          {mode === 'editing' && <EditingHoverActions />}
           {mode === 'source' && <SourceEditor key={`s${externalVersion}`} />}
         </div>
         {showRail && analysis && (

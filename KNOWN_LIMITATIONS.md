@@ -13,9 +13,9 @@ Edge cases punted deliberately, with the behavior you get instead.
 
 ## Editing (WYSIWYG)
 
-- **Byte-exact saves are guaranteed only for unedited documents** (including type-then-undo). Any real edit reserializes the whole document in house style: `-` bullets, `*` emphasis, backtick fences, one-space list indents, `\~`-escaped tildes, normalized table padding. Untouched-block byte preservation is a v0.2 goal.
-- **Substitutions are atomic in Editing mode** — accept/reject or edit their arms in Source mode.
-- **Accept/reject hover actions live in Reading mode**; switch modes to resolve marks while editing.
+- **Byte-exact saves are guaranteed only for unedited documents** (including type-then-undo). Any real edit reserializes the whole document in house style: `-` bullets, `*` emphasis, backtick fences, one-space list indents, `\~`-escaped tildes, normalized table padding. Untouched-block byte preservation is a v0.3 goal.
+- **Substitutions are atomic in Editing mode** — accept/reject works, but to edit a sub's arms use Source mode.
+- **Accept/reject hover actions work in Reading and Editing modes.** On an unedited document the resolve is a byte-exact source splice; once you've typed (a dirty editor) it becomes a ProseMirror edit and the document follows the house-style serialization above.
 - Boundary spaces inside marks (`{++word ++}`) may normalize outward on edited saves (`{++word++} `), which is semantically identical.
 - Typing never creates suggestions — WYSIWYG edits are plain edits. Suggested edits are authored from the Reading-mode toolbar or by hand in Source mode.
 

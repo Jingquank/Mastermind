@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { applyTextEdits } from '../../shared/edits'
 import { detectEol, normalizeToLf, restoreEol, type Eol } from '../../shared/eol'
+import type { CriticKind } from '../../shared/critic/types'
 import type { ReviewCounts, SessionMeta, TextEdit } from '../../shared/types'
 import {
   ApiError,
@@ -43,6 +44,8 @@ export interface DocStore {
   editorDirty: boolean
   /** Registered by the active editor: flush pending edits into `source`. */
   flushEditor: (() => void) | null
+  /** Registered by the WYSIWYG editor: accept/reject a span via a PM transaction (dirty-doc route). */
+  editorResolve: ((spanIndex: number, kind: CriticKind, mode: 'accept' | 'reject') => void) | null
   /** Undo stack for review operations applied outside the editors (cap 50). */
   history: string[]
   /** The file changed on disk under us (banner state). */
@@ -87,6 +90,7 @@ export interface DocStore {
   setSourceFromEditor(source: string): void
   setEditorDirty(dirty: boolean): void
   registerFlusher(fn: (() => void) | null): void
+  registerEditorResolve(fn: DocStore['editorResolve']): void
   applyEdits(edits: TextEdit[]): void
   setMode(mode: ViewMode): void
   save(): Promise<boolean>
@@ -111,6 +115,7 @@ export const useDoc = create<DocStore>((set, get) => ({
   externalVersion: 0,
   editorDirty: false,
   flushEditor: null,
+  editorResolve: null,
   history: [],
   diskChange: null,
   handedBack: null,
@@ -179,6 +184,10 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   registerFlusher(fn) {
     set({ flushEditor: fn })
+  },
+
+  registerEditorResolve(fn) {
+    set({ editorResolve: fn })
   },
 
   applyEdits(edits) {
