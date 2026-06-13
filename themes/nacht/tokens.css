@@ -1,0 +1,70 @@
+[data-theme='nacht'] {
+  /* Swiss International — Nacht (dark, electric blue). */
+
+  /* ---- Surfaces & text ---- */
+  --color-bg: #0e0f12;
+  --color-bg-elevated: #16181c;
+  --color-text: #eceef2;
+  --color-text-muted: rgba(236, 238, 242, 0.62);
+  --color-text-faint: rgba(236, 238, 242, 0.4);
+  --color-border: rgba(236, 238, 242, 0.12);
+
+  /* ---- Accent: electric blue ---- */
+  --color-accent: #3d7dff;
+  --color-accent-dim: #7aa6ff; /* AA on the dark bg */
+  --color-accent-surface: rgba(61, 125, 255, 0.16);
+  --color-on-accent: #06122e;
+  --color-cta-bg: #3d7dff;
+  --color-cta-text: #06122e;
+  --focus-ring: #3d7dff;
+  --color-selection: rgba(236, 238, 242, 0.16);
+
+  /* ---- Inversion family (the light band device, for dark-on-light chrome) ---- */
+  --color-invert-bg: #f4f4f1;
+  --color-invert-bg-elevated: #ffffff;
+  --color-invert-text: #141414;
+  --color-invert-text-muted: rgba(20, 20, 20, 0.62);
+  --color-invert-border: rgba(20, 20, 20, 0.14);
+
+  /* ---- Review semantics — comment is violet (the blue accent owns blue here) ---- */
+  --review-insert-text: #4fc76e;
+  --review-insert-bg: rgba(79, 199, 110, 0.16);
+  --review-insert-border: #4fc76e;
+  --review-delete-text: #f0664a;
+  --review-delete-bg: rgba(240, 102, 74, 0.16);
+  --review-delete-border: rgba(240, 102, 74, 0.5);
+  --review-highlight-bg: rgba(232, 190, 58, 0.2);
+  --review-highlight-border: rgba(232, 190, 58, 0.55);
+  --review-comment-anchor: #9a86ff;
+  --review-comment-active-bg: rgba(154, 134, 255, 0.16);
+
+  /* ---- Typography ---- */
+  --font-display: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --font-size-body: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.08;
+  --lh-title: 1.2;
+  --lh-snug: 1.4;
+  --lh-body: 1.6;
+  --ls-heading: -0.02em;
+  --ls-title: -0.015em;
+  --ls-normal: 0;
+  --ls-caps: 0.06em;
+  --ls-label: 0.08em;
+
+  /* ---- Shape & layout ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 46rem;
+  --space-unit: 4px;
+
+  --display-transform: none;
+  --display-weight: 800;
+
+  color-scheme: dark;
+}

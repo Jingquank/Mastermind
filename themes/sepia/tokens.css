@@ -1,0 +1,70 @@
+[data-theme='sepia'] {
+  /* Swiss International — Sepia (warm paper, ochre). */
+
+  /* ---- Surfaces & text ---- */
+  --color-bg: #f1ece0;
+  --color-bg-elevated: #f8f4ea;
+  --color-text: #1e1813;
+  --color-text-muted: #6e655a; /* AA on warm paper */
+  --color-text-faint: #9a9082;
+  --color-border: #dcd5c6;
+
+  /* ---- Accent: ochre (CTA falls back to an ink pill — ochre is too light for a button) ---- */
+  --color-accent: #c8841c;
+  --color-accent-dim: #8a5a0c; /* AA text */
+  --color-accent-surface: rgba(200, 132, 28, 0.14);
+  --color-on-accent: #2a1b06;
+  --color-cta-bg: #1e1813;
+  --color-cta-text: #f1ece0;
+  --focus-ring: #1e1813;
+  --color-selection: rgba(30, 24, 19, 0.12);
+
+  /* ---- Inversion family (dark band device) ---- */
+  --color-invert-bg: #1e1813;
+  --color-invert-bg-elevated: #2a231b;
+  --color-invert-text: #f4efe4;
+  --color-invert-text-muted: rgba(244, 239, 228, 0.66);
+  --color-invert-border: rgba(244, 239, 228, 0.16);
+
+  /* ---- Review semantics — highlight pulled greener so it reads apart from the ochre accent ---- */
+  --review-insert-text: #2c7a3f;
+  --review-insert-bg: rgba(44, 122, 63, 0.12);
+  --review-insert-border: #2c7a3f;
+  --review-delete-text: #a8431f;
+  --review-delete-bg: rgba(168, 67, 31, 0.12);
+  --review-delete-border: rgba(168, 67, 31, 0.45);
+  --review-highlight-bg: rgba(168, 150, 40, 0.24);
+  --review-highlight-border: rgba(168, 150, 40, 0.6);
+  --review-comment-anchor: #345fc0;
+  --review-comment-active-bg: rgba(52, 95, 192, 0.12);
+
+  /* ---- Typography ---- */
+  --font-display: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --font-size-body: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.08;
+  --lh-title: 1.2;
+  --lh-snug: 1.4;
+  --lh-body: 1.6;
+  --ls-heading: -0.02em;
+  --ls-title: -0.015em;
+  --ls-normal: 0;
+  --ls-caps: 0.06em;
+  --ls-label: 0.08em;
+
+  /* ---- Shape & layout ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 46rem;
+  --space-unit: 4px;
+
+  --display-transform: none;
+  --display-weight: 800;
+
+  color-scheme: light;
+}

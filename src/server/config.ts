@@ -6,7 +6,7 @@ import { configFilePath, ensureConfigDir } from './paths'
 
 export const DEFAULT_CONFIG: MastermindConfig = {
   version: 1,
-  theme: 'pinoc-editorial',
+  theme: 'grid',
   fontSize: 16,
   lineHeight: 1.6,
   contentWidth: 736,

@@ -1,0 +1,70 @@
+[data-theme='grid'] {
+  /* Swiss International — Grid (light, red flagship). The default theme. */
+
+  /* ---- Surfaces & text ---- */
+  --color-bg: #fcfcfa;
+  --color-bg-elevated: #f2f2ef; /* chrome: topbar, nav, panels — a hair cooler than paper */
+  --color-text: #141414;
+  --color-text-muted: #66665f; /* 5.6:1 on bg — carries 11px metadata */
+  --color-text-faint: #9a968c; /* decorative/placeholder only */
+  --color-border: #e2e1db;
+
+  /* ---- Accent: Swiss red (chrome only — CTA / active / focus, never document ink) ---- */
+  --color-accent: #e5241b;
+  --color-accent-dim: #c01a12; /* text-safe red, AA on bg */
+  --color-accent-surface: rgba(229, 36, 27, 0.1);
+  --color-on-accent: #ffffff;
+  --color-cta-bg: #e5241b;
+  --color-cta-text: #ffffff;
+  --focus-ring: #141414;
+  --color-selection: rgba(20, 20, 20, 0.12);
+
+  /* ---- Inversion family (the dark band device: selection toolbar) ---- */
+  --color-invert-bg: #141414;
+  --color-invert-bg-elevated: #1f1f1e;
+  --color-invert-text: #f4f4f1;
+  --color-invert-text-muted: rgba(244, 244, 241, 0.66);
+  --color-invert-border: rgba(244, 244, 241, 0.16);
+
+  /* ---- Review semantics — functional; brick delete kept browner than the accent red ---- */
+  --review-insert-text: #1b7a35;
+  --review-insert-bg: rgba(27, 122, 53, 0.1);
+  --review-insert-border: #1b7a35;
+  --review-delete-text: #a23618;
+  --review-delete-bg: rgba(162, 54, 24, 0.1);
+  --review-delete-border: rgba(162, 54, 24, 0.45);
+  --review-highlight-bg: rgba(224, 176, 18, 0.22);
+  --review-highlight-border: rgba(224, 176, 18, 0.55);
+  --review-comment-anchor: #2f5fd0;
+  --review-comment-active-bg: rgba(47, 95, 208, 0.1);
+
+  /* ---- Typography — one grotesque carries display + body + labels ---- */
+  --font-display: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --font-size-body: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.08;
+  --lh-title: 1.2;
+  --lh-snug: 1.4;
+  --lh-body: 1.6;
+  --ls-heading: -0.02em;
+  --ls-title: -0.015em;
+  --ls-normal: 0;
+  --ls-caps: 0.06em;
+  --ls-label: 0.08em;
+
+  /* ---- Shape & layout ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 46rem;
+  --space-unit: 4px;
+
+  --display-transform: none;
+  --display-weight: 800;
+
+  color-scheme: light;
+}

@@ -5,8 +5,3 @@ dist/
 
 # Mastermind's own per-directory workspace (history snapshots, translation cache)
 .mastermind/
-
-# Ancho is a commercial font — bundled locally for personal use, never committed
-# (this repo is public). Copy Ancho-UltraBold.woff2 into themes/pinoc-editorial/fonts/
-# by hand on other machines; the Outfit fallback covers its absence.
-themes/pinoc-editorial/fonts/Ancho-UltraBold.woff2

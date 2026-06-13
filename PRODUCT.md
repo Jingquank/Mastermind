@@ -16,8 +16,8 @@ A local-first markdown viewer/editor for reviewing and discussing documents with
 ## Brand & Tone
 
 - **"Reviewer-grade reading experience"** is a core principle: typography and rendering quality matter as much as features. This is a tool for *thinking about documents*.
-- Visual identity: P.I.N.O.C. editorial design system. Warm paper, electric-green accent, Ancho UltraBold display caps, Outfit body, Geist Mono for the machine-flavored bits (filenames, code). Confident, editorial, quiet until something needs attention.
-- Review marks use a fixed semantic language: green = insertion, warm brick red = deletion, gold = highlight, green dotted underline = comment anchor.
+- Visual identity: **Swiss International** — one grotesque (Schibsted Grotesk) carries display, body, and labels; Geist Mono for the machine-flavored bits (filenames, code, CriticMarkup source). Flat surfaces, hairline rules, a generous grid, one accent per theme. Three themes: **Grid** (light, Swiss-red, the default), **Nacht** (dark, electric blue), **Sepia** (warm paper, ochre). Restrained Swiss *in service of reading* — precision, not poster maximalism. Quiet until something needs attention.
+- Review marks use a fixed semantic language: green = insertion, brick = deletion, gold = highlight, blue dotted underline = comment anchor — tuned per theme so the accent never collides with a mark hue. The accent is chrome-only (CTA / active / focus), never document ink.
 
 ## Anti-references
 

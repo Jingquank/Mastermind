@@ -1,23 +1,22 @@
 # Mastermind design system
 
-> Distilled from docs/spec/mastermind-theme-pinoc-editorial.md (the reference theme; its token set is the schema every theme satisfies). Components reference `var(--*)` only — no hardcoded values outside themes/*/tokens.css.
+> Swiss International, in service of reading. The token NAMES are the schema every theme satisfies; components reference `var(--*)` only — no hardcoded values outside themes/*/tokens.css. **Grid** (light) is the reference theme.
 
-## Tokens (PINOC Editorial, the reference)
+## Tokens (Grid, the reference)
 
-- Surfaces: `--color-bg #F3F0EB` (warm paper), `--color-bg-elevated #FAF9F6` (cards, popovers, top bar), hairline `--color-border #D5D3CE`.
-- Text: `--color-text #1A1A1A`, muted `#6C675E` (AA at 11px metadata), faint `#918D85` (**decorative/placeholders only** — below AA for text).
-- Accent family: `--color-accent #00E05A` (electric green — fills/washes/CTA ink only, never text on paper), text-safe `--color-accent-dim #006E30` (AA on bg and on the insert wash; the spec's original `#00B848` measured 2.32:1 and was retuned in the round-1 critique), wash `--color-accent-surface`, CTA = dark pill (`#1A1A1A`) with green ink.
-- `--focus-ring`: ink on light themes, accent on Night (the green outline measured 1.56:1 on paper). `--color-selection`: neutral ink wash — selected text must not read as an insertion.
-- Inversion family (dark-band devices, seeds the Night theme): `--color-invert-bg #0E0D0B` etc.
-- Review semantics: `--review-insert-*` (green), `--review-delete-*` (warm brick `#A03E22`, AA on its wash), `--review-highlight-*` (gold `rgba(212,160,23,…)`), `--review-comment-anchor` (accent-dim dotted underline), `--review-comment-active-bg`.
-- Green's jobs are scoped: review semantics + brand moments. Chrome affordances de-greened in round 1 (blockquote rule → faint ink, focus ring → ink, selection → neutral).
+- Surfaces: `--color-bg #FCFCFA` (off-white paper), `--color-bg-elevated #F2F2EF` (chrome: top bar, navigator, panels — a hair cooler than paper), hairline `--color-border #E2E1DB`.
+- Text: `--color-text #141414`, muted `#66665F` (AA at 11px metadata), faint `#9A968C` (**decorative/placeholders only** — below AA for text).
+- Accent family (**chrome only** — CTA / active / focus, never document ink): `--color-accent #E5241B` (Swiss red), text-safe `--color-accent-dim #C01A12` (AA on bg), wash `--color-accent-surface`, CTA = red pill with white ink. Per theme: Nacht = electric blue, Sepia = ochre (ink-pill CTA).
+- `--focus-ring`: ink on light themes, the accent on Nacht. `--color-selection`: neutral ink wash — selected text must not read as an insertion.
+- Inversion family (the dark-band device — the selection toolbar): `--color-invert-bg #141414` etc. (light themes invert to dark; Nacht inverts to light).
+- Review semantics: `--review-insert-*` (green), `--review-delete-*` (brick, kept browner than the accent red), `--review-highlight-*` (gold), `--review-comment-anchor` (blue dotted underline; **violet on Nacht** so it doesn't collide with the blue accent), `--review-comment-active-bg`. Marks are the only color in the document; the accent stays in the chrome.
 
 ## Typography
 
-- Display: Ancho UltraBold — weight 800 ONLY, line-height ≥1.05, ALL-CAPS by nature (no lowercase), h1–h3 only. Long headings wrap multi-line caps: that's the editorial voice.
-- Body: Outfit variable, 16px base, line-height 1.6 for long-form; don't go below 14px (`--font-size-sm`); micro = 11px for labels only.
+- One grotesque carries everything: **Schibsted Grotesk** (variable, OFL). Display = weight 800, line-height ~1.08, sentence case (the Swiss voice is weight + tight tracking, not caps), h1–h3.
+- Body: Schibsted Grotesk, 16px base, line-height 1.6 for long-form; don't go below 14px (`--font-size-sm`); micro = 11px for labels only.
 - Mono: Geist Mono for filenames, code, CriticMarkup source.
-- Letterspacing: tight negative on display (−0.03em), +0.06em caps on buttons/toggles, +0.08em on eyebrow labels.
+- Letterspacing: tight negative on display (−0.02em), +0.06em caps on buttons/toggles, +0.08em on eyebrow labels.
 
 ## Shape & layout
 
@@ -40,4 +39,4 @@
 
 ## Themes
 
-Theme = `themes/<id>/theme.json` + `tokens.css`; the token names above are the contract. Ships: pinoc-editorial (reference), paper (warm serif), night (dark, from the inversion family).
+Theme = `themes/<id>/theme.json` + `tokens.css`; the token names above are the contract. Ships: **grid** (light, Swiss red — the reference/default), **nacht** (dark, electric blue), **sepia** (warm paper, ochre). All flat (grain off by default). Fonts live in `themes/grid/fonts/` and the other themes reference them by absolute `/themes/grid/fonts/…` URL.

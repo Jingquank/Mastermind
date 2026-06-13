@@ -9,7 +9,7 @@ export function ThemeEffects() {
   const config = useConfig((s) => s.config)
   const themes = useConfig((s) => s.themes)
 
-  const themeId = config?.theme ?? 'pinoc-editorial'
+  const themeId = config?.theme ?? 'grid'
   const theme = themes.find((t) => t.id === themeId) ?? themes[0]
 
   // tokens.css swap + data-theme attribute
@@ -60,7 +60,7 @@ export function ThemeEffects() {
 export function GrainOverlay() {
   const config = useConfig((s) => s.config)
   const themes = useConfig((s) => s.themes)
-  const themeId = config?.theme ?? 'pinoc-editorial'
+  const themeId = config?.theme ?? 'grid'
   const theme = themes.find((t) => t.id === themeId)
 
   const enabledByTheme = theme?.grain?.enabled ?? false
