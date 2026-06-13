@@ -1186,6 +1186,14 @@ input[type='checkbox'] {
   }
 }
 
+/* The file tree (264px) eats into the outline's gutter, so collapse the outline
+   earlier when the sidebar is open — viewport 1180 of room now needs 1180+264. */
+@media (max-width: 1444px) {
+  .ws-layout:not(.collapsed) .doc-outline {
+    display: none;
+  }
+}
+
 /* ---------- mark gutter / minimap ---------- */
 
 .mark-gutter {

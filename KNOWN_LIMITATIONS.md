@@ -1,4 +1,4 @@
-# Known limitations (v0.1)
+# Known limitations (v0.2)
 
 Edge cases punted deliberately, with the behavior you get instead.
 
@@ -31,6 +31,19 @@ Edge cases punted deliberately, with the behavior you get instead.
 - The comment rail, selection toolbar, and accept/reject are hidden while translated view is active.
 - Reading-language direction uses a CJK-vs-Latin script heuristic; same-script pairs (e.g. en ⇄ fr) translate toward `langPair.b`.
 - The mastermind summary block's blockquote is translated like any other block.
+
+## Workspaces (file tree)
+
+- **The tree is read-only and strictly contained.** Listing and per-file metadata go through one resolver (`resolveWithin`) that rejects absolute paths and `..` lexically, then realpath-resolves and requires the result to stay under the root. A symlink is followed only if its target resolves back inside the root; one pointing outside is dropped from the tree, not an error.
+- **The tree is not a live filesystem mirror.** Mark badges and open/agent dots update over the workspace SSE channel (save, hand-back, agent attach) and on window-focus; a file created or deleted *outside* Mastermind appears/disappears on the next focus or directory refresh, not instantly.
+- **Opening a file is still a single-file session.** A workspace is a directory context, not a multi-document editor — there is one active document at a time, and a file opened with `mastermind open` outside any root is a plain session that never joins a tree.
+- `.git`, `.mastermind`, `node_modules`, and all dotfiles are hidden from the tree (they can still be opened directly with `mastermind open`).
+
+## Agent-channel provider & inline suggestions
+
+- **A plain `--wait` agent is not a provider.** Answering translate/suggest requests needs an assist-capable listener: `mastermind assist <file>` or `mastermind open --wait --serve-assist`. Without one the reading toggle is disabled (with a tooltip) and a suggest request fails fast rather than hanging; requests time out after 120s.
+- **Agent-channel translations are session-scoped and never written to the on-disk cache** — one agent's answers must not masquerade as another's cache hit. Switching back to an API provider repopulates the persistent cache.
+- **Inline suggestions are a staging gate.** Proposed marks live in the browser only; the server validates that returned markup contains only ins/del/sub *and* reduces (all-rejected) back to the exact original selection, so a "suggestion" can never smuggle a silent rewrite to disk. Nothing is written until you accept, and what lands is plain user-approved text.
 
 ## Files & platform
 
