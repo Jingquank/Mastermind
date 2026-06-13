@@ -12,7 +12,7 @@ import { HoverActions } from '../review/HoverActions'
 import { ProposalCard } from '../review/ProposalCard'
 import { useProposals } from '../review/proposalStore'
 import { RoundsPanel } from '../review/RoundsPanel'
-import { Outline } from '../review/Outline'
+import { useNav } from './navStore'
 import { MarkGutter, type MarkTick } from '../review/MarkGutter'
 import { FindBar } from '../review/FindBar'
 import { extractOutline } from '../modes/reading/outline'
@@ -193,6 +193,12 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     [analysis],
   )
   const outline = useMemo(() => (analysis ? extractOutline(analysis.tree) : []), [analysis])
+  // publish the outline + article element to the shared navigator (it lives
+  // outside SessionView); clears when leaving reading mode or unmounting
+  useEffect(() => {
+    useNav.getState().publish(outline, articleRef.current)
+    return () => useNav.getState().publish([], null)
+  }, [outline, mode, externalVersion])
   const commentFootnotes = useMemo(() => {
     if (!analysis) return []
     return analysis.spans
@@ -379,7 +385,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
 
   const hasThreads = analysis?.items.some((i) => i.type === 'thread') ?? false
   const showRail = mode === 'reading' && railOpen && hasThreads
-  const showOutline = mode === 'reading' && !showTranslated && outline.length >= 2
   const suggestionCount = suggestions.length
 
   const bulkResolve = (resolveMode: 'accept' | 'reject') => {
@@ -463,8 +468,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           </button>
         </div>
       )}
-      <div className={`doc-shell${showRail ? ' with-rail' : ''}${showOutline ? ' with-outline' : ''}`}>
-        {showOutline && <Outline items={outline} docRef={articleRef} />}
+      <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
         <div className="doc-column">
           {showTranslated && (
             <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />

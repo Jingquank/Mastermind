@@ -13,11 +13,9 @@ interface Props {
 /** A shared IntersectionObserver registrar passed down to file rows. */
 type Observe = (el: Element | null, rel: string) => void
 
-export function Tree({ openSessionId }: Props) {
+/** The file-tree body (Recent + lazy tree). Chrome (header/collapse/sections) lives in Navigator. */
+export function FilesList({ openSessionId }: Props) {
   const t = useT()
-  const displayName = useWorkspace((s) => s.displayName)
-  const collapsed = useWorkspace((s) => s.collapsed)
-  const setCollapsed = useWorkspace((s) => s.setCollapsed)
   const recent = useWorkspace((s) => s.recent)
   const sessions = useWorkspace((s) => s.sessions)
   // one subscription for the open file's dirty state (only the active row uses it)
@@ -66,25 +64,8 @@ export function Tree({ openSessionId }: Props) {
     [observer],
   )
 
-  if (collapsed) {
-    return (
-      <button type="button" className="ws-reveal" title={t('showFiles')} onClick={() => setCollapsed(false)}>
-        <FolderIcon />
-      </button>
-    )
-  }
-
   return (
-    <aside className="ws-sidebar" aria-label={t('files')}>
-      <div className="ws-head">
-        <span className="ws-title" title={displayName}>
-          {displayName}
-        </span>
-        <button type="button" className="btn-ghost ws-collapse" title={t('hideFiles')} onClick={() => setCollapsed(true)}>
-          ‹
-        </button>
-      </div>
-
+    <>
       {recent.length > 0 && (
         <div className="ws-recent">
           <div className="ws-section-label">{t('recent')}</div>
@@ -116,7 +97,7 @@ export function Tree({ openSessionId }: Props) {
           unobserve={unobserve}
         />
       </div>
-    </aside>
+    </>
   )
 }
 

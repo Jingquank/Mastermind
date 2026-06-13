@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useT } from '../i18n'
 import { SessionView } from './SessionView'
-import { Tree } from './Tree'
 import { useWorkspace } from './workspaceStore'
 
 interface Props {
@@ -10,16 +9,15 @@ interface Props {
 }
 
 /**
- * Workspace shell: a file-tree sidebar plus the document content. A file open in
- * a workspace is still an ordinary session, so SessionView is reused verbatim —
- * keyed by sessionId so switching files remounts it cleanly.
+ * Workspace content: owns the workspace store lifecycle and renders the open
+ * file (an ordinary session) or the empty state. The file tree now lives in the
+ * shared Navigator (mounted by AppFrame), so this is just the right-hand content.
  */
 export function WorkspaceView({ workspaceId, sessionId }: Props) {
   const t = useT()
   const init = useWorkspace((s) => s.init)
   const status = useWorkspace((s) => s.status)
   const displayName = useWorkspace((s) => s.displayName)
-  const collapsed = useWorkspace((s) => s.collapsed)
 
   useEffect(() => {
     void init(workspaceId)
@@ -41,19 +39,12 @@ export function WorkspaceView({ workspaceId, sessionId }: Props) {
     )
   }
 
+  if (sessionId) return <SessionView key={sessionId} sessionId={sessionId} />
+
   return (
-    <div className={`ws-layout${collapsed ? ' collapsed' : ''}`}>
-      <Tree openSessionId={sessionId} />
-      <div className="ws-content">
-        {sessionId ? (
-          <SessionView key={sessionId} sessionId={sessionId} />
-        ) : (
-          <div className="center-note">
-            <h1>{displayName || 'MASTERMIND'}</h1>
-            <p>{t('workspaceEmpty')}</p>
-          </div>
-        )}
-      </div>
+    <div className="center-note">
+      <h1>{displayName || 'MASTERMIND'}</h1>
+      <p>{t('workspaceEmpty')}</p>
     </div>
   )
 }

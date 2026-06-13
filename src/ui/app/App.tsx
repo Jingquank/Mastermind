@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useT } from '../i18n'
 import { GrainOverlay, ThemeEffects } from '../theme/ThemeProvider'
 import { useConfig } from './configStore'
+import { Navigator, useIsNarrow } from './Navigator'
+import { useNav } from './navStore'
 import { useRoute } from './route'
 import { SessionView } from './SessionView'
 import { WorkspaceView } from './WorkspaceView'
@@ -16,12 +18,45 @@ export function App() {
   return (
     <>
       <ThemeEffects />
-      {route.kind === 'doc' && <SessionView key={route.sessionId} sessionId={route.sessionId} />}
+      {route.kind === 'doc' && (
+        <AppFrame sessionId={route.sessionId}>
+          <SessionView key={route.sessionId} sessionId={route.sessionId} />
+        </AppFrame>
+      )}
       {route.kind === 'workspace' && (
-        <WorkspaceView key={route.workspaceId} workspaceId={route.workspaceId} sessionId={route.sessionId} />
+        <AppFrame workspaceId={route.workspaceId} sessionId={route.sessionId}>
+          <WorkspaceView key={route.workspaceId} workspaceId={route.workspaceId} sessionId={route.sessionId} />
+        </AppFrame>
       )}
       {route.kind === 'home' && <HomeView />}
       <GrainOverlay />
+    </>
+  )
+}
+
+/**
+ * The shared frame: the single left navigator (when a workspace is open OR the
+ * current doc has an outline) + the routed content. The navigator is in-flow on
+ * wide screens (content gets a left margin) and off-canvas on narrow ones.
+ */
+function AppFrame({
+  workspaceId = null,
+  sessionId,
+  children,
+}: {
+  workspaceId?: string | null
+  sessionId: string | null
+  children: ReactNode
+}) {
+  const outlineCount = useNav((s) => s.outline.length)
+  const collapsed = useNav((s) => s.collapsed)
+  const narrow = useIsNarrow()
+  const navPresent = !!workspaceId || outlineCount >= 2
+  const withNav = navPresent && !narrow && !collapsed
+  return (
+    <>
+      {navPresent && <Navigator workspaceId={workspaceId} openSessionId={sessionId} />}
+      <div className={`app-content${withNav ? ' with-nav' : ''}`}>{children}</div>
     </>
   )
 }

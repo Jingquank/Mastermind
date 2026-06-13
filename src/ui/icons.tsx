@@ -90,6 +90,15 @@ export function ChevronIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/** A left-pointing chevron (collapse the navigator). */
+export function ChevronLeftIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props, 13)}>
+      <path d="m10 4-4 4 4 4" />
+    </svg>
+  )
+}
+
 export function FolderIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...base(props, 13)}>
