@@ -64,6 +64,8 @@ export class SessionRegistry {
   onSessionOpened: ((session: Session) => void) | null = null
   /** Hook for cleanup when a session closes (stop file watcher). */
   onSessionClosed: ((session: Session, reason: SessionCloseReason) => void) | null = null
+  /** Hook when a session's tree-visible state changes (agent attach/detach) — lets workspaces refresh badges. */
+  onSessionActivity: ((session: Session) => void) | null = null
 
   open(realPath: string, opts: { isDraft?: boolean } = {}): { session: Session; created: boolean } {
     const existing = this.byPath.get(realPath)
@@ -143,6 +145,7 @@ export class SessionRegistry {
       if (conn.assistCapable) {
         this.broadcast(sessionId, 'assist-availability', { available: true }, ['ui'])
       }
+      this.onSessionActivity?.(session)
     }
     return true
   }
@@ -164,6 +167,7 @@ export class SessionRegistry {
       if (conn.assistCapable) {
         this.broadcast(sessionId, 'assist-availability', { available: this.hasAssistListener(session) }, ['ui'])
       }
+      this.onSessionActivity?.(session)
     }
     if (conn.role === 'ui' && session.uiConns.size === 0 && session.everConnected && !session.closed) {
       this.armGrace(session)

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import path from 'node:path'
 import type { SseEventName } from '../shared/types'
+import { relWithin } from './contain'
 import { log } from './log'
 import type { Conn } from './sessions'
 
@@ -70,6 +71,21 @@ export class WorkspaceRegistry {
     if (!ws) return
     for (const conn of ws.uiConns) {
       conn.send(event, data).catch(() => this.detach(workspaceId, conn))
+    }
+  }
+
+  /**
+   * Tell every workspace that contains `realPath` that something about that file
+   * changed (mark counts, open/agent state). The relative path is injected into
+   * the event data so the tree can target the right row. Skips workspaces with
+   * no live tree connection.
+   */
+  notifyForPath(realPath: string, event: SseEventName, dataBase: Record<string, unknown> = {}): void {
+    for (const ws of this.byId.values()) {
+      if (ws.uiConns.size === 0) continue
+      const rel = relWithin(ws.root, realPath)
+      if (rel === null) continue
+      this.broadcast(ws.id, event, { ...dataBase, rel })
     }
   }
 }

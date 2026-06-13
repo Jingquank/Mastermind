@@ -60,10 +60,17 @@ async function main(): Promise<void> {
   registry.onChange = () => {
     lastActivity = Date.now()
   }
-  registry.onSessionOpened = (session) => startWatcher(session, registry)
+  // tree dots: a session opening/closing or an agent attaching changes the
+  // open/agent state of a file that a workspace tree may be showing
+  registry.onSessionActivity = (session) => workspaces.notifyForPath(session.path, 'file-badge-changed')
+  registry.onSessionOpened = (session) => {
+    startWatcher(session, registry)
+    workspaces.notifyForPath(session.path, 'file-badge-changed')
+  }
   registry.onSessionClosed = (session) => {
     assist.cancelForSession(session.id)
     void stopWatcher(session)
+    workspaces.notifyForPath(session.path, 'file-badge-changed')
     if (session.isDraft) {
       // abandoned blank draft → remove the placeholder
       void fsp

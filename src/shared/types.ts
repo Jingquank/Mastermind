@@ -95,6 +95,15 @@ export interface FileMeta {
   mtimeMs: number
 }
 
+/** An open session whose file lives under a workspace root (drives tree dots). */
+export interface WorkspaceSessionInfo {
+  rel: string
+  sessionId: string
+  agentWaiting: boolean
+  assistAvailable: boolean
+  isDraft: boolean
+}
+
 export type SessionCloseReason = 'tabs-closed' | 'never-opened' | 'shutdown'
 
 export interface ReviewCounts {

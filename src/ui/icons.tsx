@@ -80,3 +80,29 @@ export function PendingDot(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+/** A right-pointing chevron; CSS rotates it 90° when its row is expanded. */
+export function ChevronIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props, 12)}>
+      <path d="m6 4 4 4-4 4" />
+    </svg>
+  )
+}
+
+export function FolderIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props, 13)}>
+      <path d="M2 4.5h4l1.2 1.4H14v6.1H2z" />
+    </svg>
+  )
+}
+
+export function FileIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base(props, 13)}>
+      <path d="M4 2.2h5l3 3v8.6H4z" />
+      <path d="M9 2.2v3h3" />
+    </svg>
+  )
+}

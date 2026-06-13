@@ -38,3 +38,14 @@ export async function resolveWithin(rootReal: string, rel: string): Promise<stri
   if (real !== rootReal && !real.startsWith(rootReal + path.sep)) return null
   return real
 }
+
+/**
+ * If `realPath` is inside `rootReal`, return its forward-slashed path relative
+ * to the root ('' for the root itself); otherwise null. Both inputs must be
+ * already-realpath'd. Used to map an open session back onto a workspace's tree.
+ */
+export function relWithin(rootReal: string, realPath: string): string | null {
+  if (realPath === rootReal) return ''
+  if (!realPath.startsWith(rootReal + path.sep)) return null
+  return realPath.slice(rootReal.length + 1).split(path.sep).join('/')
+}
