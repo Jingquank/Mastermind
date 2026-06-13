@@ -50,7 +50,7 @@ Three views over the same buffer (`Cmd+E` cycles, `Cmd+S` saves):
 
 All five CriticMarkup marks are supported, inline anywhere: `{++ins++}`, `{--del--}`, `{~~old~>new~~}`, `{==highlight==}`, `{>>comment<<}`. A highlight immediately followed by a comment (`{==span==}{>>note<<}`) anchors the comment to that span; consecutive comments form a thread; comments carry `@author:` tags.
 
-**Reading at scale.** A heading **outline** (left gutter, scroll-spy) and a **mark minimap** (right edge, one tick per review item) help you move through long documents; `Cmd+F` opens a mark-aware find that filters by kind (comments / edits / highlights) and cycles matches, augmenting the browser's own find. **Print / PDF** (`Cmd+P`) hides all chrome, prints ink-on-white regardless of theme, and renders comments as numbered footnotes.
+**Reading at scale.** The left **navigator** carries both the file tree and the current document's **heading outline** (scroll-spy), switchable by a Files/Outline toggle; a **mark minimap** (right edge, one tick per review item) appears when the comment rail is closed. `Cmd+F` opens a mark-aware find that filters by kind (comments / edits / highlights) and cycles matches, augmenting the browser's own find. **Print / PDF** (`Cmd+P`) hides all chrome, prints ink-on-white regardless of theme, and renders comments as numbered footnotes.
 
 **Inline AI suggestions (opt-in, staging gate).** With an agent listening (`mastermind assist`), select text and choose **Suggest edits**. The agent's proposed marks render distinctly on-screen only — nothing reaches disk until you Accept (or Edit, or Dismiss) each one. The file only ever gains edits you approved; marks still flow one direction, user → agent.
 
@@ -60,13 +60,11 @@ Every **Save & hand back** snapshots the file to `.mastermind/history/` next to 
 
 ## Workspaces (file tree)
 
-`mastermind workspace .` (alias `ws`) opens a directory as a collapsible file tree at `/w/:id` — markdown files show a live review-mark badge, the file you're reviewing is highlighted, and a per-file dot marks anything open or with an agent waiting on it (even in another tab). Clicking a file opens it as an ordinary session, so `--wait`, hand-back, snapshots, and every reviewing feature work unchanged. The tree is **strictly contained**: it lists only files under the root, follows symlinks only when they resolve back inside it, and hides `.git` / `.mastermind` / `node_modules` / dotfiles. A file opened directly with `mastermind open` (outside any root) stays a plain single-file session.
+`mastermind workspace .` (alias `ws`) opens a directory as a collapsible file tree at `/w/:id` (the Files tab of the left navigator) — markdown files show a live review-mark badge, the file you're reviewing is highlighted, and a per-file dot marks anything open or with an agent waiting on it (even in another tab). On narrow windows the navigator collapses to an off-canvas overlay so the document keeps its full measure. Clicking a file opens it as an ordinary session, so `--wait`, hand-back, snapshots, and every reviewing feature work unchanged. The tree is **strictly contained**: it lists only files under the root, follows symlinks only when they resolve back inside it, and hides `.git` / `.mastermind` / `node_modules` / dotfiles. A file opened directly with `mastermind open` (outside any root) stays a plain single-file session.
 
 ## Themes
 
-`themes/<id>/{theme.json,tokens.css}` — drop a folder in and it appears in the settings panel. Ships with **PINOC Editorial** (the reference theme), **Paper** (warm serif), and **Night** (dark). Settings (gear icon) cover theme, font size, line height, content width, author tag, languages, and the translation provider; persisted to `~/.config/mastermind/config.json`.
-
-> The Editorial/Night display font (Ancho) is commercial and not in this repo — drop `Ancho-UltraBold.woff2` into `themes/pinoc-editorial/fonts/` if you have it; the Outfit fallback covers its absence.
+`themes/<id>/{theme.json,tokens.css}` — drop a folder in and it appears in the navigator's Settings. A **Swiss International** set ships: **Grid** (light, Swiss red — the default), **Nacht** (dark, electric blue), and **Sepia** (warm paper, ochre). One grotesque (Schibsted Grotesk, OFL) carries display + body + labels; Geist Mono for code. Settings (in the `⋯` menu) cover theme, font size, line height, content width, author tag, languages, and the translation provider; persisted to `~/.config/mastermind/config.json`.
 
 ## Reading-language toggle (optional, off until configured)
 

@@ -1640,9 +1640,8 @@ input[type='checkbox'] {
 :root {
   --nav-w: 260px;
 }
-.app-content {
-  transition: margin-left 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
+/* margin (a layout property) is NOT transitioned — it snaps while the
+   navigator itself slides via transform; animating margin causes layout thrash. */
 .app-content.with-nav {
   margin-left: var(--nav-w);
 }
