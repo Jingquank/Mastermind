@@ -5,20 +5,19 @@ import { analyzeMarkdown } from '../../shared/markdown/analyze'
 import { MilkdownEditor } from '../modes/editing/MilkdownEditor'
 import { EditingHoverActions } from '../modes/editing/EditingHoverActions'
 import { MarkdownView } from '../modes/reading/Renderer'
+import { TranslationPill } from '../modes/reading/TranslationPill'
 import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
 import { SourceEditor } from '../modes/source/SourceEditor'
 import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { ProposalCard } from '../review/ProposalCard'
 import { useProposals } from '../review/proposalStore'
-import { RoundsPanel } from '../review/RoundsPanel'
 import { useNav } from './navStore'
 import { MarkGutter, type MarkTick } from '../review/MarkGutter'
 import { FindBar } from '../review/FindBar'
 import { extractOutline } from '../modes/reading/outline'
 import { parseAuthor } from '../../shared/critic/scanner'
 import { scrollToSpan } from '../util/scroll'
-import { DiffView } from '../diff/DiffView'
 import { formatCounts, useLang, useT } from '../i18n'
 import { CheckIcon } from '../icons'
 import { RenameDialog } from './RenameDialog'
@@ -53,11 +52,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const diskChange = useDoc((s) => s.diskChange)
   const handedBack = useDoc((s) => s.handedBack)
   const notice = useDoc((s) => s.notice)
-  const diffOpen = useDoc((s) => s.diffOpen)
-  const diffLeftSnapshotId = useDoc((s) => s.diffLeftSnapshotId)
-  const diffOffer = useDoc((s) => s.diffOffer)
-  const roundsOpen = useDoc((s) => s.roundsOpen)
-  const rounds = useDoc((s) => s.rounds)
   const handbackPulse = useDoc((s) => s.handbackPulse)
   const renamePrompt = useDoc((s) => s.renamePrompt)
   const meta = useDoc((s) => s.meta)
@@ -75,25 +69,13 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [railOpen, setRailOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [findOpen, setFindOpen] = useState(false)
-  // the three transient panels share one home and are mutually exclusive:
-  // opening any one closes the others (SlideOver handles Escape/click-out/focus).
+  // settings and find share one home and are mutually exclusive:
+  // opening one closes the other (SlideOver handles Escape/click-out/focus).
   const toggleSettings = useCallback(() => {
     setSettingsOpen((v) => {
-      if (!v) {
-        setFindOpen(false)
-        useDoc.getState().setRoundsOpen(false)
-      }
+      if (!v) setFindOpen(false)
       return !v
     })
-  }, [])
-  const toggleRounds = useCallback(() => {
-    const s = useDoc.getState()
-    const next = !s.roundsOpen
-    s.setRoundsOpen(next)
-    if (next) {
-      setSettingsOpen(false)
-      setFindOpen(false)
-    }
   }, [])
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const [agentWaiting, setAgentWaiting] = useState(false)
@@ -111,7 +93,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     void load(sessionId)
     useTranslation.getState().reset()
-    void useDoc.getState().loadRounds()
   }, [sessionId, load])
 
   useEffect(() => {
@@ -242,13 +223,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       // ⌘F while it's open closes it, leaving native find for the next press
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
         const s = useDoc.getState()
-        if (s.mode === 'reading' && !s.diffOpen) {
+        if (s.mode === 'reading') {
           e.preventDefault()
           setFindOpen((v) => {
-            if (!v) {
-              setSettingsOpen(false)
-              useDoc.getState().setRoundsOpen(false)
-            }
+            if (!v) setSettingsOpen(false)
             return !v
           })
         }
@@ -264,7 +242,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       }
       if (e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e)) return
       const s = useDoc.getState()
-      if (s.mode !== 'reading' || s.diffOpen) return
+      if (s.mode !== 'reading') return
       const key = e.key.toLowerCase()
       if (key === 'n' || key === 'j' || key === 'p' || key === 'k') {
         e.preventDefault()
@@ -288,13 +266,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           applyEdits([edit])
           setWalkIndex((prev) => (prev === null ? null : suggestions.length - 1 <= 0 ? null : Math.min(prev, suggestions.length - 2)))
         }
-      } else if (
-        e.key === 'Escape' &&
-        !settingsOpen &&
-        !findOpen &&
-        !renamePrompt &&
-        !useDoc.getState().roundsOpen
-      ) {
+      } else if (e.key === 'Escape' && !settingsOpen && !findOpen && !renamePrompt) {
         // layered dismissal: overlays consume Escape before the walker does
         setWalkIndex(null)
       }
@@ -369,20 +341,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     return <div className="center-note loading-note">{t('loadingDocument')}</div>
   }
 
-  if (diffOpen) {
-    return (
-      <>
-        <TopBar agentWaiting={agentWaiting} onToggleSettings={toggleSettings} />
-        {settingsOpen && <SettingsPanel onClose={closeSettings} />}
-        <DiffView
-          sessionId={sessionId}
-          onClose={() => useDoc.getState().setDiffOpen(false)}
-          left={diffLeftSnapshotId ? { kind: 'snapshot', id: diffLeftSnapshotId } : { kind: 'latest' }}
-        />
-      </>
-    )
-  }
-
   const hasThreads = analysis?.items.some((i) => i.type === 'thread') ?? false
   const showRail = mode === 'reading' && railOpen && hasThreads
   const suggestionCount = suggestions.length
@@ -406,29 +364,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         onToggleSettings={toggleSettings}
         agentWaiting={agentWaiting}
         handbackPulse={handbackPulse}
-        roundCount={rounds.length}
-        onToggleRounds={rounds.length > 0 ? toggleRounds : undefined}
-        translation={
-          providerConfigured && mode === 'reading'
-            ? {
-                label: transActive
-                  ? t('original')
-                  : (() => {
-                      const target = previewTargetLang(source, langPair)
-                      return /^(zh|中文)/i.test(target) ? '中文' : target
-                    })(),
-                active: transActive,
-                loading: transLoading,
-                // agent-channel toggle is disabled until `mastermind assist` is listening
-                disabled: !translationReady && !transActive,
-                disabledTitle: t('toggleLangNoAgent'),
-                onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
-              }
-            : undefined
-        }
       />
       {settingsOpen && <SettingsPanel onClose={closeSettings} />}
-      {roundsOpen && <RoundsPanel onClose={() => useDoc.getState().setRoundsOpen(false)} />}
       {findOpen && mode === 'reading' && !showTranslated && analysis && (
         <FindBar analysis={analysis} source={source} docRef={articleRef} onClose={() => setFindOpen(false)} />
       )}
@@ -457,19 +394,26 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           </button>
         </div>
       )}
-      {!conflict && !diskChange && diffOffer && (
-        <div className="banner" role="status">
-          <span className="banner-text">{t('reloaded')}</span>
-          <button type="button" className="btn-ghost" onClick={() => useDoc.getState().setDiffOpen(true)}>
-            {t('showWhatChanged')}
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => useDoc.getState().dismissDiffOffer()}>
-            {t('dismiss')}
-          </button>
-        </div>
-      )}
       <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
         <div className="doc-column">
+          {providerConfigured && mode === 'reading' && (
+            <TranslationPill
+              label={
+                transActive
+                  ? t('original')
+                  : (() => {
+                      const target = previewTargetLang(source, langPair)
+                      return /^(zh|中文)/i.test(target) ? '中文' : target
+                    })()
+              }
+              active={transActive}
+              loading={transLoading}
+              // agent-channel toggle is disabled until `mastermind assist` is listening
+              disabled={!translationReady && !transActive}
+              disabledTitle={t('toggleLangNoAgent')}
+              onToggle={() => void useTranslation.getState().toggle(sessionId, source, langPair)}
+            />
+          )}
           {showTranslated && (
             <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
           )}

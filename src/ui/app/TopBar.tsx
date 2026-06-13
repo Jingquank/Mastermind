@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { DropdownMenu, ToggleGroup } from 'radix-ui'
+import { useLayoutEffect, useRef } from 'react'
+import { ToggleGroup } from 'radix-ui'
 import { useT } from '../i18n'
-import { GearIcon, MoreIcon, SwapIcon } from '../icons'
+import { ChatIcon, GearIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
 
 interface TopBarProps {
@@ -11,28 +11,8 @@ interface TopBarProps {
   onAcceptAll?: () => void
   onRejectAll?: () => void
   onToggleSettings?: () => void
-  translation?: {
-    label: string
-    active: boolean
-    loading: boolean
-    disabled?: boolean
-    disabledTitle?: string
-    onToggle: () => void
-  }
   agentWaiting?: boolean
   handbackPulse?: boolean
-  roundCount?: number
-  onToggleRounds?: () => void
-}
-
-interface OverflowItem {
-  key: string
-  label: string
-  onClick: () => void
-  icon?: ReactNode
-  active?: boolean
-  disabled?: boolean
-  title?: string
 }
 
 export function TopBar({
@@ -42,11 +22,8 @@ export function TopBar({
   onAcceptAll,
   onRejectAll,
   onToggleSettings,
-  translation,
   agentWaiting = false,
   handbackPulse = false,
-  roundCount = 0,
-  onToggleRounds,
 }: TopBarProps) {
   const t = useT()
   const headerRef = useRef<HTMLElement | null>(null)
@@ -75,35 +52,6 @@ export function TopBar({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-
-  // translation / rounds / rail / settings live in one overflow menu so the bar
-  // stays a single row at every width; each appears only when its handler exists.
-  const overflow: OverflowItem[] = []
-  if (translation) {
-    overflow.push({
-      key: 'lang',
-      label: translation.loading ? t('translating') : translation.label,
-      onClick: translation.onToggle,
-      icon: <SwapIcon />,
-      active: translation.active,
-      disabled: translation.loading || translation.disabled,
-      title: translation.disabled ? (translation.disabledTitle ?? t('toggleLang')) : t('toggleLang'),
-    })
-  }
-  if (onToggleRounds) {
-    overflow.push({ key: 'rounds', label: `${t('rounds')} ${roundCount}`, onClick: onToggleRounds, title: t('roundsTitle') })
-  }
-  if (onToggleRail) {
-    overflow.push({
-      key: 'rail',
-      label: railOpen ? t('hideComments') : t('showComments'),
-      onClick: onToggleRail,
-      title: t('toggleRail'),
-    })
-  }
-  if (onToggleSettings) {
-    overflow.push({ key: 'settings', label: t('settings'), onClick: onToggleSettings, icon: <GearIcon width={14} height={14} /> })
-  }
 
   return (
     <header className="topbar" ref={headerRef}>
@@ -145,6 +93,29 @@ export function TopBar({
             </button>
           </div>
         )}
+        {onToggleRail && (
+          <button
+            type="button"
+            className={`btn-ghost topbar-icon-btn${railOpen ? ' active' : ''}`}
+            onClick={onToggleRail}
+            aria-label={railOpen ? t('hideComments') : t('showComments')}
+            aria-pressed={railOpen}
+            title={t('toggleRail')}
+          >
+            <ChatIcon />
+          </button>
+        )}
+        {onToggleSettings && (
+          <button
+            type="button"
+            className="btn-ghost topbar-icon-btn topbar-settings"
+            onClick={onToggleSettings}
+            aria-label={t('settings')}
+            title={t('settings')}
+          >
+            <GearIcon width={14} height={14} />
+          </button>
+        )}
         <button
           type="button"
           className="btn-ghost"
@@ -163,31 +134,6 @@ export function TopBar({
         >
           {savingKind === 'handback' ? t('handingBack') : t('handBack')}
         </button>
-        {overflow.length > 0 && (
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button type="button" className="btn-ghost topbar-more" aria-label={t('moreActions')} title={t('moreActions')}>
-                <MoreIcon />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content className="topbar-more-menu" align="end" sideOffset={6}>
-                {overflow.map((it) => (
-                  <DropdownMenu.Item
-                    key={it.key}
-                    className={`more-item${it.active ? ' active' : ''}`}
-                    disabled={it.disabled}
-                    title={it.title}
-                    onSelect={it.onClick}
-                  >
-                    {it.icon}
-                    <span>{it.label}</span>
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        )}
       </div>
     </header>
   )

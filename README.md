@@ -56,11 +56,11 @@ All five CriticMarkup marks are supported, inline anywhere: `{++ins++}`, `{--del
 
 ## Multi-round reviews
 
-Every **Save & hand back** snapshots the file to `.mastermind/history/` next to it (last 20 kept). When the agent revises the file on disk, a banner offers a reload — and afterwards, **"Show what changed since your last review"**: a word-level diff against your last hand-back. A **Rounds** panel (top bar) lists every hand-back with its mark counts and a signed delta from the previous round; click one to diff it against the current document. You may want `.mastermind/` in your project's `.gitignore`.
+Reviews are multi-round: user comments → agent revises → user reviews again. When the agent revises the file on disk while it's open, a banner offers a reload so you pick up the new version in place, then comment again and hand back for the next round.
 
 ## Workspaces (file tree)
 
-`mastermind workspace .` (alias `ws`) opens a directory as a collapsible file tree at `/w/:id` (the Files tab of the left navigator) — markdown files show a live review-mark badge, the file you're reviewing is highlighted, and a per-file dot marks anything open or with an agent waiting on it (even in another tab). On narrow windows the navigator collapses to an off-canvas overlay so the document keeps its full measure. Clicking a file opens it as an ordinary session, so `--wait`, hand-back, snapshots, and every reviewing feature work unchanged. The tree is **strictly contained**: it lists only files under the root, follows symlinks only when they resolve back inside it, and hides `.git` / `.mastermind` / `node_modules` / dotfiles. A file opened directly with `mastermind open` (outside any root) stays a plain single-file session.
+`mastermind workspace .` (alias `ws`) opens a directory as a collapsible file tree at `/w/:id` (the Files tab of the left navigator) — markdown files show a live review-mark badge, the file you're reviewing is highlighted, and a per-file dot marks anything open or with an agent waiting on it (even in another tab). On narrow windows the navigator collapses to an off-canvas overlay so the document keeps its full measure. Clicking a file opens it as an ordinary session, so `--wait`, hand-back, and every reviewing feature work unchanged. The tree is **strictly contained**: it lists only files under the root, follows symlinks only when they resolve back inside it, and hides `.git` / `.mastermind` / `node_modules` / dotfiles. A file opened directly with `mastermind open` (outside any root) stays a plain single-file session.
 
 ## Themes
 

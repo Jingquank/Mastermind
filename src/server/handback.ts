@@ -7,23 +7,21 @@ import { readConfig } from './config'
 import { processFeedbackLanguage } from './feedback'
 import { sha256hex } from './files'
 import type { Session } from './sessions'
-import { writeSnapshot } from './snapshots'
 
 export interface HandbackResult {
   ok: true
   mtimeMs: number
   counts: ReviewCounts
   summaryLine: string
-  snapshotId: string
 }
 
 export type HandbackOutcome = HandbackResult | { ok: false; currentMtimeMs: number }
 
 /**
  * The hand-back contract: strip any stale summary, count marks with the same
- * scanner the UI uses, write content + fresh summary block, snapshot the
- * saved bytes, and report the one-line summary the CLI prints. The in-file
- * block and the --wait stdout line always agree by construction.
+ * scanner the UI uses, write content + fresh summary block, and report the
+ * one-line summary the CLI prints. The in-file block and the --wait stdout
+ * line always agree by construction.
  */
 export async function performHandback(
   session: Session,
@@ -45,7 +43,6 @@ export async function performHandback(
   session.lastSelfWriteHash = sha256hex(final)
   await fs.writeFile(session.path, final)
   const st = await fs.stat(session.path)
-  const snapshotId = await writeSnapshot(session.path, final)
 
-  return { ok: true, mtimeMs: st.mtimeMs, counts, summaryLine: summaryLine(counts), snapshotId }
+  return { ok: true, mtimeMs: st.mtimeMs, counts, summaryLine: summaryLine(counts) }
 }

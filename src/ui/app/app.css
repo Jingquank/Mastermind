@@ -16,7 +16,7 @@
   --z-rail: 15; /* mark gutter / minimap */
   --z-nav: 30; /* left navigator / file tree + its reveal button */
   --z-topbar: 40; /* sticky top bar */
-  --z-panel: 50; /* slide-overs: settings, rounds, find */
+  --z-panel: 50; /* slide-overs: settings, find */
   --z-popover: 60; /* selection toolbar, hover actions, proposal card */
   --z-overlay: 65; /* off-canvas scrim for nav/rail at narrow widths */
   --z-toast: 70; /* toasts */
@@ -47,9 +47,10 @@
   --weight-bold: 800; /* display headings */
 
   /* ---- Shape & layout (theme-invariant) ---- */
-  --radius-xs: 2px;
-  --radius-md: 4px;
-  --radius-full: 9999px;
+  --radius-xs: 4px; /* inline marks, code, checkboxes */
+  --radius-md: 12px; /* cards, banners, inputs, menus — the friendlier baseline */
+  --radius-lg: 20px; /* large floating panels: slide-over, modal, proposals, nav */
+  --radius-full: 9999px; /* pills: CTA, ghost buttons, the segmented control */
   --content-max-width: 46rem; /* per-user overridable */
   --space-unit: 4px;
 
@@ -146,46 +147,30 @@ body {
   flex-shrink: 0;
 }
 
-/* overflow "more" menu (translation / rounds / rail / settings) — Radix DropdownMenu, portalled */
-.topbar-more-menu {
-  z-index: var(--z-popover);
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  padding: calc(var(--space-unit) * 1);
+/* The view-mode toggle (the bar's direct .seg child — NOT the nested review-bulk
+   cluster) stays optically centered in the bar no matter how wide the filename or
+   the action cluster grow. Reverts to normal flow on mobile (see the 900px query). */
+.topbar > .seg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
 }
-.more-item {
-  display: flex;
+
+/* topbar tool icons (comments / settings) — ghost buttons that show an icon only */
+.topbar-icon-btn {
+  display: inline-flex;
   align-items: center;
-  gap: calc(var(--space-unit) * 2);
-  width: 100%;
-  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 2);
-  border: 0;
-  background: none;
-  cursor: pointer;
-  border-radius: var(--radius-xs);
-  font: inherit;
-  font-size: var(--font-size-sm);
+  justify-content: center;
+  padding: calc(var(--space-unit) * 1.5);
+  color: var(--color-text-muted);
+}
+.topbar-icon-btn:hover:not(:disabled) {
   color: var(--color-text);
-  text-align: left;
-  white-space: nowrap;
 }
-.more-item:hover:not([data-disabled]),
-.more-item[data-highlighted] {
-  background: color-mix(in srgb, var(--color-text) 6%, transparent);
-  outline: none;
-}
-.more-item.active {
+.topbar-icon-btn.active {
   color: var(--color-accent-dim);
-}
-.more-item[data-disabled] {
-  color: var(--color-text-faint);
-  cursor: default;
-  pointer-events: none;
 }
 
 /* ---------- buttons ---------- */
@@ -201,16 +186,17 @@ button:disabled {
 }
 
 .btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 1.5);
   white-space: nowrap;
   background: var(--color-cta-bg);
   color: var(--color-cta-text);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-weight: var(--weight-medium);
   font-size: var(--font-size-sm);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
-  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 3.5);
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
   transition: background-color var(--dur-fast) ease;
 }
 
@@ -227,10 +213,8 @@ button:disabled {
   background: transparent;
   color: var(--color-text-muted);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
   padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 2.5);
 }
 
@@ -248,18 +232,20 @@ button:disabled {
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
 }
 
 .seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--space-unit) * 1.5);
   white-space: nowrap;
   background: transparent;
   border: none;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-full);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
   padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2.5);
 }
 
@@ -317,6 +303,45 @@ button:disabled {
   max-width: var(--content-max-width);
   padding: calc(var(--space-unit) * 8) calc(var(--space-unit) * 4) calc(var(--space-unit) * 24);
   min-width: 0;
+}
+
+/* Floating translation toggle — sticky at the top-right of the reading column so
+   it stays reachable while scrolling. The anchor reserves no height (the pill
+   floats over the top padding); only the pill itself is interactive. */
+.translation-pill-anchor {
+  position: sticky;
+  top: calc(var(--space-unit) * 2);
+  z-index: var(--z-sticky);
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  pointer-events: none;
+}
+
+.translation-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 1.5);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 3);
+  font-size: var(--font-size-sm);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  transition:
+    color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
+}
+
+.translation-pill:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.translation-pill.active {
+  color: var(--color-accent-dim);
+  border-color: var(--color-accent-dim);
 }
 
 .rail {
@@ -585,6 +610,47 @@ button:disabled {
   color: var(--color-text-muted);
 }
 
+/* Callout card — elevates plan meta-sections (Decisions / Open questions /
+   To-do / Risks) above the surrounding prose. Neutral tokens only: the body
+   never uses accent color (review marks own that). */
+.md-root .md-callout {
+  margin: calc(var(--space-unit) * 8) 0;
+  padding: calc(var(--space-unit) * 5) calc(var(--space-unit) * 6) calc(var(--space-unit) * 6);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* The section heading becomes a compact uppercase label with a diamond marker
+   and a divider rule, so the card reads as one titled unit. */
+.md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+  margin: 0 0 calc(var(--space-unit) * 4);
+  padding: 0 0 calc(var(--space-unit) * 3);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--color-text);
+  transform: rotate(45deg);
+}
+
+.md-root .md-callout > :last-child {
+  margin-bottom: 0;
+}
+
 .md-root hr {
   border: none;
   border-top: 1px solid var(--color-border);
@@ -815,63 +881,6 @@ mark.critic-hl.critic-anchor:hover {
   color: var(--review-delete-text);
 }
 
-/* ---------- revision diff ---------- */
-
-.diff-view {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
-  padding: calc(var(--space-unit) * 6) calc(var(--space-unit) * 4) calc(var(--space-unit) * 24);
-}
-
-.diff-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(var(--space-unit) * 3);
-  margin-bottom: calc(var(--space-unit) * 4);
-}
-
-.diff-title {
-  font-family: var(--font-body);
-  font-weight: var(--weight-medium);
-}
-
-.diff-meta {
-  color: var(--color-text-muted);
-  font-weight: var(--weight-regular);
-  font-size: var(--font-size-sm);
-}
-
-.diff-error {
-  color: var(--color-text-muted);
-}
-
-.diff-body {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: calc(var(--space-unit) * 4);
-}
-
-.diff-ins {
-  color: var(--review-insert-text);
-  background: var(--review-insert-bg);
-  text-decoration: none;
-  border-radius: var(--radius-xs);
-}
-
-.diff-del {
-  color: var(--review-delete-text);
-  background: var(--review-delete-bg);
-  text-decoration: line-through;
-  border-radius: var(--radius-xs);
-}
-
 /* ---------- toast ---------- */
 
 .toast {
@@ -917,7 +926,7 @@ mark.critic-hl.critic-anchor:hover {
   overflow-y: auto;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
   animation: slide-over-in var(--dur-base) var(--ease-standard);
 }
@@ -1239,7 +1248,7 @@ input[type='checkbox'] {
   width: 360px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: calc(var(--space-unit) * 4);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
 }
@@ -1378,57 +1387,6 @@ input[type='checkbox'] {
   }
 }
 
-/* ---------- rounds timeline ---------- */
-
-.rounds-empty {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.rounds-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rounds-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--color-border);
-  padding: calc(var(--space-unit) * 2) 0;
-  cursor: pointer;
-}
-
-.rounds-row:hover {
-  background: var(--color-bg);
-}
-
-.rounds-stamp {
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-}
-
-.rounds-date {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-micro);
-  color: var(--color-text-muted);
-}
-
-.rounds-counts {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.rounds-delta {
-  font-family: var(--font-mono);
-  color: var(--color-text-faint);
-}
-
 /* ---------- review bulk cluster ---------- */
 
 .review-bulk {
@@ -1562,7 +1520,7 @@ input[type='checkbox'] {
   overflow-y: auto;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
   padding: calc(var(--space-unit) * 3);
 }
@@ -1684,7 +1642,7 @@ input[type='checkbox'] {
   gap: calc(var(--space-unit) * 2);
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2);
 }
@@ -1843,26 +1801,31 @@ input[type='checkbox'] {
 :root {
   --nav-w: 260px;
 }
-/* margin (a layout property) is NOT transitioned — it snaps while the
-   navigator itself slides via transform; animating margin causes layout thrash. */
+/* The navigator floats ON TOP of the page (position: fixed) and no longer pushes
+   the content aside — so there is no margin to manage or animate. */
 .app-content.with-nav {
-  margin-left: var(--nav-w);
+  margin-left: 0;
 }
 
 .navigator {
   position: fixed;
-  inset: 0 auto 0 0;
+  inset: var(--topbar-h) auto 0 0; /* tucked below the bar; floats OVER the page, never pushes it */
   width: var(--nav-w);
   display: flex;
   flex-direction: column;
   background: var(--color-bg-elevated);
   border-right: 1px solid var(--color-border);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.12);
   z-index: var(--z-nav);
   overflow: hidden;
-  transition: transform var(--dur-base) var(--ease-standard);
+  transition:
+    transform var(--dur-base) var(--ease-standard),
+    box-shadow var(--dur-base) var(--ease-standard);
 }
 .navigator.off {
-  transform: translateX(-100%);
+  transform: translateX(-105%); /* clears the right-side shadow off-screen when hidden */
+  box-shadow: none;
 }
 
 .nav-head {
@@ -1966,6 +1929,11 @@ input[type='checkbox'] {
   .navigator {
     z-index: calc(var(--z-overlay) + 1);
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+  }
+  /* mobile: the view-mode toggle rejoins the normal bar flow */
+  .topbar > .seg {
+    position: static;
+    transform: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2190,4 +2158,25 @@ input[type='checkbox'] {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xs);
   padding: 0.08em 0.35em;
+}
+
+/* ---------- copy: sentence-case chrome ----------
+   Caps are reserved for the small mono eyebrow labels only (.settings-body h4 and
+   .ws-section-label). Every interactive control, toolbar verb, and panel title
+   reads in sentence case — calmer and more legible, fewer shouted words. The
+   prominent CTA / ghost / segmented controls drop their caps at their own rules. */
+.rail-author,
+.rail-actions button,
+.sel-toolbar > button,
+.sel-composer-actions button,
+.hover-actions button,
+.slide-over-title,
+.tooltip,
+.modal h4,
+.agent-chip,
+.proposal-title,
+.proposal-btn,
+.find-filter {
+  text-transform: none;
+  letter-spacing: var(--ls-normal);
 }

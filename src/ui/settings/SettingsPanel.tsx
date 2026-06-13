@@ -66,7 +66,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const activeTheme = themes.find((t) => t.id === config.theme)
 
   return (
-    <SlideOver title={t('settings')} onClose={onClose} ignoreSelector=".topbar-more">
+    <SlideOver title={t('settings')} onClose={onClose} ignoreSelector=".topbar-settings">
       <div className="settings-body">
         <section>
           <h4>{t('theme')}</h4>

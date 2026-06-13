@@ -167,7 +167,7 @@ export type SseEvent =
   | { event: 'ping'; data: Record<string, never> }
   | { event: 'file-changed'; data: { mtimeMs: number } }
   | { event: 'file-deleted'; data: Record<string, never> }
-  | { event: 'handback'; data: { summaryLine: string; counts: ReviewCounts; snapshotId: string } }
+  | { event: 'handback'; data: { summaryLine: string; counts: ReviewCounts } }
   | { event: 'session-closed'; data: { reason: SessionCloseReason } }
   | { event: 'config-changed'; data: Record<string, never> }
   | { event: 'waiters-changed'; data: { count: number } }

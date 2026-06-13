@@ -38,7 +38,7 @@ next round until the user approves.
   Delete it while revising — Mastermind treats its absence as normal and rewrites it on the next hand-back.
 
 - Comment threads are consecutive comment marks with author tags: `{==span==}{>>@ke: question<<}{>>@agent: answer<<}`. To reply in a thread, append another `{>>@agent: …<<}` immediately after — but prefer revising the document directly.
-- While the file is open in a tab, your on-disk edits surface as a "file changed on disk" banner with a reload + revision diff, so edit freely between rounds.
+- While the file is open in a tab, your on-disk edits surface as a "file changed on disk" banner with a reload, so edit freely between rounds.
 
 ## Acting as Mastermind's LLM provider (agent-channel)
 

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs/promises'
 import crypto from 'node:crypto'
 import {
   SESSION_CLOSE_GRACE_MS,
@@ -8,6 +9,24 @@ import type { SessionCloseReason, SseEventName } from '../shared/types'
 import { log } from './log'
 
 export type ConnRole = 'ui' | 'cli'
+
+/**
+ * Rounds was removed: clear any `.mastermind/history/<file>` snapshots written by
+ * older versions so no orphaned history lingers. Best-effort — ignore every error
+ * (missing dir, permissions). Prunes the now-empty `.mastermind/{history,}` too.
+ */
+async function pruneStaleHistory(realPath: string): Promise<void> {
+  const dir = path.dirname(realPath)
+  const mastermind = path.join(dir, '.mastermind')
+  try {
+    await fs.rm(path.join(mastermind, 'history', path.basename(realPath)), { recursive: true, force: true })
+    // rmdir only succeeds when empty — leaves shared dirs alone if other files remain.
+    await fs.rmdir(path.join(mastermind, 'history')).catch(() => {})
+    await fs.rmdir(mastermind).catch(() => {})
+  } catch {
+    // best-effort cleanup; never block opening a session on it
+  }
+}
 
 export interface Conn {
   readonly role: ConnRole
@@ -97,6 +116,7 @@ export class SessionRegistry {
     }, this.neverOpenedMs)
     this.byPath.set(realPath, session)
     this.byId.set(session.id, session)
+    if (!session.isDraft) void pruneStaleHistory(realPath)
     log(`session ${session.id} opened for ${realPath}`)
     this.onSessionOpened?.(session)
     this.onChange?.()

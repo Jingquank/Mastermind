@@ -47,30 +47,10 @@ export interface HandbackResponse {
   mtimeMs: number
   counts: { comments: number; edits: number; highlights: number }
   summaryLine: string
-  snapshotId: string
 }
 
 export function postHandback(sessionId: string, content: string, baseMtimeMs: number): Promise<HandbackResponse> {
   return request<HandbackResponse>(`/api/sessions/${sessionId}/handback`, jsonInit('POST', { content, baseMtimeMs }))
-}
-
-export function getLatestSnapshot(sessionId: string): Promise<{ id: string; content: string }> {
-  return request<{ id: string; content: string }>(`/api/sessions/${sessionId}/snapshots/latest`)
-}
-
-export function getSnapshot(sessionId: string, snapId: string): Promise<{ id: string; content: string }> {
-  return request<{ id: string; content: string }>(`/api/sessions/${sessionId}/snapshots/${snapId}`)
-}
-
-export interface RoundInfo {
-  id: string
-  mtimeMs: number
-  size: number
-  counts: { comments: number; edits: number; highlights: number }
-}
-
-export function getRounds(sessionId: string): Promise<RoundInfo[]> {
-  return request<RoundInfo[]>(`/api/sessions/${sessionId}/snapshots`)
 }
 
 export function postRename(sessionId: string, filename: string): Promise<{ path: string; displayName: string }> {

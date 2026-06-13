@@ -107,8 +107,6 @@ describe.skipIf(!hasDist)('mastermind open --wait (e2e)', () => {
     const saved = fs.readFileSync(file, 'utf8')
     expect(saved).toContain('<!-- mastermind:summary -->')
     expect(saved).toContain('1 comment, 1 suggested edit')
-    const histDir = path.join(path.dirname(file), '.mastermind', 'history', 'doc.md')
-    expect(fs.readdirSync(histDir).length).toBe(1)
   }, 20000)
 
   it('exits 130 on SIGINT', async () => {

@@ -6,13 +6,10 @@ import type { ReviewCounts, SessionMeta, TextEdit } from '../../shared/types'
 import {
   ApiError,
   getFile,
-  getLatestSnapshot,
-  getRounds,
   getSession,
   postHandback,
   postRename,
   putFile,
-  type RoundInfo,
 } from './api'
 
 export type ViewMode = 'reading' | 'editing' | 'source'
@@ -52,22 +49,10 @@ export interface DocStore {
   diskChange: { mtimeMs: number; deleted: boolean } | null
   /** Toast after a successful hand-back (counts, localized at render). */
   handedBack: ReviewCounts | null
-  /** Revision diff view open? */
-  diffOpen: boolean
-  /** When the diff is opened from a specific round, its snapshot id (null = latest). */
-  diffLeftSnapshotId: string | null
-  /** Offer "show what changed" after a reload when a snapshot exists. */
-  diffOffer: boolean
-  /** Review-rounds timeline. */
-  rounds: RoundInfo[]
-  roundsOpen: boolean
   /** One-shot flag: pulse the agent chip right after a local hand-back. */
   handbackPulse: boolean
 
   load(sessionId: string): Promise<void>
-  loadRounds(): Promise<void>
-  setRoundsOpen(open: boolean): void
-  openRoundDiff(snapshotId: string): void
   undo(): void
   notifyDiskChange(mtimeMs: number, deleted?: boolean): void
   dismissDiskChange(): void
@@ -78,8 +63,6 @@ export interface DocStore {
   handback(): Promise<boolean>
   clearHandedBack(): void
   setNotice(notice: DocStore['notice']): void
-  setDiffOpen(open: boolean): void
-  dismissDiffOffer(): void
   /** Draft naming: first save prompts for a filename. */
   renamePrompt: boolean
   renameError: string | null
@@ -119,11 +102,6 @@ export const useDoc = create<DocStore>((set, get) => ({
   history: [],
   diskChange: null,
   handedBack: null,
-  diffOpen: false,
-  diffLeftSnapshotId: null,
-  diffOffer: false,
-  rounds: [],
-  roundsOpen: false,
   handbackPulse: false,
   renamePrompt: false,
   renameError: null,
@@ -200,7 +178,6 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   setMode(mode) {
     const s = get()
-    if (s.diffOpen) set({ diffOpen: false })
     if (mode === s.mode) return
     s.flushEditor?.()
     set({ mode })
@@ -274,25 +251,6 @@ export const useDoc = create<DocStore>((set, get) => ({
     if (!sessionId) return
     const file = await getFile(sessionId)
     get().adoptDiskContent(file.content, file.mtimeMs)
-    // spec: after reload, offer the revision diff when a snapshot exists
-    try {
-      await getLatestSnapshot(sessionId)
-      set({ diffOffer: true })
-    } catch {
-      set({ diffOffer: false })
-    }
-  },
-
-  setDiffOpen(open) {
-    set({
-      diffOpen: open,
-      diffOffer: open ? false : get().diffOffer,
-      diffLeftSnapshotId: open ? get().diffLeftSnapshotId : null, // reset to latest on close
-    })
-  },
-
-  dismissDiffOffer() {
-    set({ diffOffer: false })
   },
 
   async saveForce() {
@@ -319,7 +277,6 @@ export const useDoc = create<DocStore>((set, get) => ({
       const file = await getFile(sessionId)
       get().adoptDiskContent(file.content, file.mtimeMs)
       set({ handedBack: res.counts, handbackPulse: true })
-      void get().loadRounds() // a new round just landed — refresh the timeline
       return true
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -335,25 +292,6 @@ export const useDoc = create<DocStore>((set, get) => ({
 
   clearHandedBack() {
     set({ handedBack: null, handbackPulse: false })
-  },
-
-  async loadRounds() {
-    const { sessionId } = get()
-    if (!sessionId) return
-    try {
-      set({ rounds: await getRounds(sessionId) })
-    } catch {
-      /* no snapshots yet, or daemon hiccup */
-    }
-  },
-
-  setRoundsOpen(open) {
-    if (open) void get().loadRounds()
-    set({ roundsOpen: open })
-  },
-
-  openRoundDiff(snapshotId) {
-    set({ diffLeftSnapshotId: snapshotId, diffOpen: true, roundsOpen: false })
   },
 
   cancelRename() {
