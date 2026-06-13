@@ -38,33 +38,5 @@
   --review-comment-anchor: #345fc0;
   --review-comment-active-bg: rgba(52, 95, 192, 0.12);
 
-  /* ---- Typography ---- */
-  --font-display: 'Schibsted Grotesk', system-ui, sans-serif;
-  --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
-
-  --font-size-body: 1rem;
-  --font-size-sm: 0.875rem;
-  --font-size-micro: 0.6875rem;
-  --lh-display: 1.08;
-  --lh-title: 1.2;
-  --lh-snug: 1.4;
-  --lh-body: 1.6;
-  --ls-heading: -0.02em;
-  --ls-title: -0.015em;
-  --ls-normal: 0;
-  --ls-caps: 0.06em;
-  --ls-label: 0.08em;
-
-  /* ---- Shape & layout ---- */
-  --radius-xs: 2px;
-  --radius-md: 4px;
-  --radius-full: 9999px;
-  --content-max-width: 46rem;
-  --space-unit: 4px;
-
-  --display-transform: none;
-  --display-weight: 800;
-
   color-scheme: light;
 }

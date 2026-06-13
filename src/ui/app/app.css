@@ -22,6 +22,41 @@
   --z-toast: 70; /* toasts */
   --z-modal: 80; /* rename dialog / modal backdrop */
   --z-grain: 100; /* film-grain overlay — always on top */
+
+  /* ---- Typography (theme-invariant; per-theme tokens.css carries only color) ---- */
+  --font-display: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-size-body: 1rem; /* per-user overridable via ThemeProvider inline style */
+  --font-size-sm: 0.875rem;
+  --font-size-micro: 0.6875rem;
+  --lh-display: 1.08;
+  --lh-title: 1.2;
+  --lh-snug: 1.4;
+  --lh-body: 1.6; /* per-user overridable */
+  --ls-heading: -0.02em;
+  --ls-title: -0.015em;
+  --ls-normal: 0;
+  --ls-caps: 0.06em;
+  --ls-label: 0.08em;
+  --display-transform: none;
+  --display-weight: 800;
+
+  /* ---- Shape & layout (theme-invariant) ---- */
+  --radius-xs: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+  --content-max-width: 46rem; /* per-user overridable */
+  --space-unit: 4px;
+
+  /* ---- Motion system (theme-invariant; consumed by transitions + Phase N) ---- */
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 300ms;
+  --dur-draw: 520ms;
 }
 
 * {
@@ -89,7 +124,7 @@ body {
   border-radius: var(--radius-full);
   background: var(--color-accent-dim);
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--dur-fast) ease;
   flex: none;
 }
 
@@ -175,7 +210,7 @@ button:disabled {
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 3.5);
-  transition: background-color 120ms ease;
+  transition: background-color var(--dur-fast) ease;
 }
 
 .btn-cta:hover:not(:disabled) {
@@ -298,7 +333,7 @@ button:disabled {
   font-size: var(--font-size-sm);
   transition:
     top 160ms ease,
-    border-color 120ms ease;
+    border-color var(--dur-fast) ease;
   cursor: pointer;
 }
 
@@ -876,7 +911,7 @@ mark.critic-hl.critic-anchor:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
-  animation: slide-over-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: slide-over-in var(--dur-base) var(--ease-standard);
 }
 @keyframes slide-over-in {
   from {
@@ -1060,7 +1095,7 @@ input[type='checkbox'] {
   gap: calc(var(--space-unit) * 1);
   align-items: center;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--dur-fast) ease;
 }
 
 .trans-block:hover .trans-block-side {
@@ -1656,7 +1691,7 @@ input[type='checkbox'] {
   border-right: 1px solid var(--color-border);
   z-index: var(--z-nav);
   overflow: hidden;
-  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--dur-base) var(--ease-standard);
 }
 .navigator.off {
   transform: translateX(-100%);
@@ -1823,7 +1858,7 @@ input[type='checkbox'] {
 .ws-chevron {
   flex: none;
   opacity: 0.55;
-  transition: transform 0.12s ease;
+  transition: transform var(--dur-fast) ease;
 }
 .ws-chevron.open {
   transform: rotate(90deg);
