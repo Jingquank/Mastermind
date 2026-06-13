@@ -1120,6 +1120,72 @@ input[type='checkbox'] {
   }
 }
 
+/* ---------- document outline (left gutter) ---------- */
+
+.doc-shell.with-outline {
+  grid-template-columns: minmax(0, 1fr) minmax(auto, var(--content-max-width)) minmax(0, 1fr);
+}
+
+.doc-shell.with-outline.with-rail {
+  grid-template-columns: minmax(0, 0.6fr) minmax(auto, var(--content-max-width)) 320px minmax(0, 0.4fr);
+}
+
+.doc-outline {
+  grid-column: 1;
+  justify-self: end;
+  align-self: start;
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--space-unit) * 4);
+  max-width: 220px;
+  max-height: calc(100vh - var(--topbar-h) - var(--space-unit) * 8);
+  overflow-y: auto;
+  padding: calc(var(--space-unit) * 8) calc(var(--space-unit) * 5) 0 calc(var(--space-unit) * 3);
+  font-size: var(--font-size-sm);
+}
+
+.doc-outline ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--color-border);
+}
+
+.doc-outline li {
+  margin: 0;
+}
+
+.doc-outline li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2);
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: var(--lh-snug);
+}
+
+.doc-outline li button:hover {
+  color: var(--color-text);
+}
+
+.doc-outline li.active button {
+  color: var(--color-text);
+  border-left-color: var(--color-accent-dim);
+}
+
+/* below the rail breakpoint, the gutter is too tight — hide the outline */
+@media (max-width: 1180px) {
+  .doc-outline {
+    display: none;
+  }
+}
+
 /* ---------- rounds timeline ---------- */
 
 .rounds-panel {

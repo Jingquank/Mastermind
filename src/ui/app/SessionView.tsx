@@ -11,6 +11,9 @@ import { HoverActions } from '../review/HoverActions'
 import { ProposalCard } from '../review/ProposalCard'
 import { useProposals } from '../review/proposalStore'
 import { RoundsPanel } from '../review/RoundsPanel'
+import { Outline } from '../review/Outline'
+import { extractOutline } from '../modes/reading/outline'
+import { scrollToSpan } from '../util/scroll'
 import { DiffView } from '../diff/DiffView'
 import { formatCounts, useLang, useT } from '../i18n'
 import { CheckIcon } from '../icons'
@@ -168,6 +171,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         : [],
     [analysis],
   )
+  const outline = useMemo(() => (analysis ? extractOutline(analysis.tree) : []), [analysis])
 
   // keyboard suggestion walker: n/p (or j/k) step, Enter accepts, Backspace rejects
   useEffect(() => {
@@ -234,12 +238,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     if (walkIndex === null) return
     const spanIdx = suggestions[walkIndex]
     if (spanIdx === undefined) return
-    const el = doc.querySelector(`[data-span-index="${spanIdx}"]`)
-    if (el) {
-      el.classList.add('kbd-focus')
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
-    }
+    const el = scrollToSpan(articleRef, spanIdx)
+    el?.classList.add('kbd-focus')
   }, [walkIndex, suggestions, analysis])
 
   // clicking an anchored highlight or comment marker activates its rail card
@@ -312,6 +312,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
 
   const hasThreads = analysis?.items.some((i) => i.type === 'thread') ?? false
   const showRail = mode === 'reading' && railOpen && hasThreads
+  const showOutline = mode === 'reading' && !showTranslated && outline.length >= 2
   const suggestionCount = suggestions.length
 
   const bulkResolve = (resolveMode: 'accept' | 'reject') => {
@@ -392,7 +393,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           </button>
         </div>
       )}
-      <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
+      <div className={`doc-shell${showRail ? ' with-rail' : ''}${showOutline ? ' with-outline' : ''}`}>
+        {showOutline && <Outline items={outline} docRef={articleRef} />}
         <div className="doc-column">
           {showTranslated && (
             <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
