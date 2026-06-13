@@ -38,7 +38,7 @@ mastermind: review complete — 3 comments, 2 suggested edits
 
 and exits 0 when you hand back. See **[AGENT_SETUP.md](AGENT_SETUP.md)** for a paste-ready block for your `CLAUDE.md` / agent instructions, and the exit-code contract.
 
-Your agent can also *be* the LLM provider. Run `mastermind open --wait --serve-assist plan.md` (one listener that both waits for your hand-back and answers requests) and the reading-language toggle and inline edit-suggestions route to your agent over the same file-is-the-protocol channel — no API key. See AGENT_SETUP.md for the request/response protocol.
+Your agent can also *be* the LLM provider. Run `mastermind open --serve-assist plan.md` (add `--wait` to also block until hand-back) and the reading-language toggle and inline edit-suggestions route to your agent over the same file-is-the-protocol channel — no API key. The listener binds to that file's session and auto-reconnects, so the toggle stays live for the whole review. See AGENT_SETUP.md for the request/response protocol.
 
 ## Reviewing
 
@@ -64,11 +64,11 @@ Every **Save & hand back** snapshots the file to `.mastermind/history/` next to 
 
 ## Themes
 
-`themes/<id>/{theme.json,tokens.css}` — drop a folder in and it appears in the navigator's Settings. A **Swiss International** set ships: **Grid** (light, Swiss red — the default), **Nacht** (dark, electric blue), and **Sepia** (warm paper, ochre). One grotesque (Schibsted Grotesk, OFL) carries display + body + labels; Geist Mono for code. Settings (in the `⋯` menu) cover theme, font size, line height, content width, author tag, languages, and the translation provider; persisted to `~/.config/mastermind/config.json`.
+`themes/<id>/{theme.json,tokens.css}` — drop a folder in and it appears in the navigator's Settings. A **Swiss International** set ships: **Grid** (light, Swiss red — the default), **Nacht** (dark, electric blue), and **Sepia** (warm paper, ochre). One grotesque (Schibsted Grotesk, OFL) carries display + body + labels; Geist Mono for code. Each palette is a 12-step OKLCH scale (Radix-style steps) generated from the theme's Swiss hue, so neutrals and accents stay perceptually even and AA-legible. Settings (in the `⋯` menu) cover theme, reading presets (font size / line height / width, as discrete glyph toggles), author tag, languages, and the translation provider; persisted to `~/.config/mastermind/config.json`.
 
 ## Reading-language toggle (optional, off until configured)
 
-Configure a translation provider in settings — **your own coding agent** (no API key; it answers over the `mastermind assist` channel), an Anthropic API key, or any OpenAI-compatible endpoint (Ollama and LM Studio work, keeping translation fully on-machine). A toggle then appears that switches the rendered document between its language and your configured pair (default EN ⇄ 中文), block by block with a per-document cache (`.mastermind/translations/`), so the second toggle is instant and editing one paragraph re-translates only that paragraph. CriticMarkup survives translation; blocks that fail validation fall back to the original with an indicator. (Agent-channel translations are session-scoped and not written to the on-disk cache.)
+Configure a translation provider in settings — **your own coding agent** (no API key; serve it with `mastermind open --serve-assist <file>`), an Anthropic API key, or any OpenAI-compatible endpoint (Ollama and LM Studio work, keeping translation fully on-machine). A toggle then appears that switches the rendered document between its language and your configured pair (default EN ⇄ 中文), block by block with a per-document cache (`.mastermind/translations/`), so the second toggle is instant and editing one paragraph re-translates only that paragraph. CriticMarkup survives translation; blocks that fail validation fall back to the original with an indicator. (Agent-channel translations are session-scoped and not written to the on-disk cache.)
 
 Comments you type in the "wrong" language are translated into the document's language on save (the agent reads feedback in the language it's working in); a settings toggle keeps your original text alongside.
 
