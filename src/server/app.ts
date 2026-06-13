@@ -22,6 +22,7 @@ import { clearCache } from './translate/cache'
 import { providerConfigured, translateBlocks, type TranslateRequestBlock } from './translate/index'
 import { startWatcher, stopWatcher } from './watch'
 import { AssistError, type AssistRegistry } from './assist/index'
+import { validateSuggestion } from '../shared/critic/suggest'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -300,7 +301,46 @@ export function createApp(deps: AppDeps): Hono {
     return c.json(latest)
   })
 
-  // --- agent-channel (assist) --- (POST /api/assist for suggestions lands in V5)
+  // --- agent-channel (assist) ---
+
+  // validated proposed-suggestion markup, keyed by request id (one-shot fetch by the UI)
+  const suggestions = new Map<string, { markup: string }>()
+
+  app.post('/api/assist', async (c) => {
+    let body: { sessionId?: string; kind?: string; scope?: string; selection?: string; context?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    if (!body.sessionId || body.kind !== 'suggest' || typeof body.selection !== 'string') {
+      return c.json({ error: 'sessionId, kind:suggest, selection required' }, 400)
+    }
+    const session = registry.get(body.sessionId)
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    if (!assist.hasListener(session)) return c.json({ error: 'no-agent' }, 409)
+    const scope = body.scope === 'section' || body.scope === 'document' ? body.scope : 'selection'
+    const selection = body.selection
+    const { id, result } = assist.enqueueWithId(session, { kind: 'suggest', scope, selection, context: body.context })
+    result
+      .then((payload) => {
+        const ok = payload.kind === 'suggest' && validateSuggestion(payload.markup, selection).ok
+        if (ok && payload.kind === 'suggest') suggestions.set(id, { markup: payload.markup })
+        registry.broadcast(session.id, 'assist-result', { id, kind: 'suggest', ok }, ['ui'])
+      })
+      .catch((err: unknown) => {
+        log(`assist suggest ${id.slice(0, 8)} failed: ${err instanceof AssistError ? err.code : 'error'}`)
+        registry.broadcast(session.id, 'assist-result', { id, kind: 'suggest', ok: false }, ['ui'])
+      })
+    return c.json({ requestId: id })
+  })
+
+  app.get('/api/assist/:id/suggestion', (c) => {
+    const s = suggestions.get(c.req.param('id'))
+    if (!s) return c.json({ error: 'not found' }, 404)
+    suggestions.delete(c.req.param('id')) // one-shot
+    return c.json({ markup: s.markup })
+  })
 
   app.get('/api/assist/pending', (c) => {
     const sessionId = c.req.query('sessionId')

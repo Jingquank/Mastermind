@@ -51,10 +51,19 @@ export class AssistRegistry {
   }
 
   enqueue(session: Session, request: AssistRequest, opts: { timeoutMs?: number } = {}): Promise<AssistResultPayload> {
-    if (!this.hasListener(session)) return Promise.reject(new AssistError('no-agent'))
+    return this.enqueueWithId(session, request, opts).result
+  }
+
+  /** Like enqueue, but exposes the request id synchronously (the suggest route returns it now, settles later). */
+  enqueueWithId(
+    session: Session,
+    request: AssistRequest,
+    opts: { timeoutMs?: number } = {},
+  ): { id: string; result: Promise<AssistResultPayload> } {
+    if (!this.hasListener(session)) return { id: '', result: Promise.reject(new AssistError('no-agent')) }
     const id = crypto.randomUUID()
     const timeoutMs = opts.timeoutMs ?? this.timeoutMs
-    return new Promise<AssistResultPayload>((resolve, reject) => {
+    const result = new Promise<AssistResultPayload>((resolve, reject) => {
       const timer = setTimeout(() => {
         if (this.pending.delete(id)) {
           session.pendingAssist.delete(id)
@@ -67,6 +76,7 @@ export class AssistRegistry {
       this.sessions.broadcast(session.id, 'assist-request', event, ['cli'])
       log(`assist: enqueued ${request.kind} ${id.slice(0, 8)} for session ${session.id}`)
     })
+    return { id, result }
   }
 
   /** Agent delivered a result. Returns false if the id is unknown (expired / dup). */

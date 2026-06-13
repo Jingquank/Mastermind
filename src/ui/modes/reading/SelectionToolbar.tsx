@@ -10,6 +10,9 @@ interface Props {
   spans: readonly CriticSpan[]
   authorTag: string
   onEdit: (edits: TextEdit[]) => void
+  /** show "Suggest edits" (agent-channel provider with a live assist listener) */
+  canSuggest?: boolean
+  onSuggest?: (range: { from: number; to: number }, selection: string) => void
 }
 
 interface Active {
@@ -22,7 +25,7 @@ function sanitizeComment(text: string): string {
   return text.trim().replace(/\n[ \t]*\n+/g, '\n').replaceAll('<<}', '<< }')
 }
 
-export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdit }: Props) {
+export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdit, canSuggest, onSuggest }: Props) {
   const t = useT()
   const [active, setActive] = useState<Active | null>(null)
   const [composing, setComposing] = useState(false)
@@ -131,6 +134,19 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
           <button type="button" onClick={() => apply(`{==${slice}==}`)}>
             {t('highlight')}
           </button>
+          {canSuggest && onSuggest && (
+            <button
+              type="button"
+              className="sel-suggest"
+              onClick={() => {
+                onSuggest({ from: active.sel.from, to: active.sel.to }, slice)
+                window.getSelection()?.removeAllRanges()
+                setActive(null)
+              }}
+            >
+              {t('suggestEdits')}
+            </button>
+          )}
         </>
       ) : (
         <div className="sel-composer">

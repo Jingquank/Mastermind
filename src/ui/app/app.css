@@ -1215,6 +1215,131 @@ input[type='checkbox'] {
   }
 }
 
+/* ---------- agent suggestions (staging gate) ---------- */
+
+.sel-suggest {
+  color: var(--color-cta-text) !important;
+}
+
+.proposal-card {
+  position: fixed;
+  right: calc(var(--space-unit) * 4);
+  bottom: calc(var(--space-unit) * 4);
+  z-index: 55;
+  width: 360px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  padding: calc(var(--space-unit) * 3);
+}
+
+.proposal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(var(--space-unit) * 2);
+}
+
+.proposal-title {
+  font-weight: 600;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+}
+
+.proposal-status {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: calc(var(--space-unit) * 2) 0;
+}
+
+.proposal-failed {
+  color: var(--review-delete-text);
+}
+
+.proposal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.proposal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 2);
+  padding: calc(var(--space-unit) * 2) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.proposal-row.rejected {
+  opacity: 0.5;
+}
+
+.proposal-diff {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  word-break: break-word;
+}
+
+.proposal-edit {
+  display: inline-block;
+  width: auto;
+  min-width: 120px;
+}
+
+.proposal-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.proposal-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-micro);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 1.5);
+}
+
+.proposal-btn:hover {
+  color: var(--color-text);
+}
+
+.proposal-btn.accept.on {
+  color: var(--color-accent-dim);
+  border-color: var(--color-accent-dim);
+}
+
+.proposal-btn.reject.on {
+  color: var(--review-delete-text);
+  border-color: var(--review-delete-border);
+}
+
+.proposal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 2);
+  margin-top: calc(var(--space-unit) * 3);
+  padding-top: calc(var(--space-unit) * 2);
+  border-top: 1px solid var(--color-border);
+}
+
+/* proposed marks (rendered in place) read as draft, not committed */
+.critic.proposed {
+  outline: 1px dashed var(--review-insert-border);
+  outline-offset: 1px;
+  opacity: 0.85;
+}
+
 /* ---------- grain overlay ---------- */
 
 .grain-overlay {

@@ -8,6 +8,8 @@ import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
 import { SourceEditor } from '../modes/source/SourceEditor'
 import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
+import { ProposalCard } from '../review/ProposalCard'
+import { useProposals } from '../review/proposalStore'
 import { DiffView } from '../diff/DiffView'
 import { formatCounts, useLang, useT } from '../i18n'
 import { CheckIcon } from '../icons'
@@ -125,6 +127,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     es.addEventListener('assist-availability', (e) => {
       const { available } = JSON.parse((e as MessageEvent).data) as { available: boolean }
       setAssistAvailable(available)
+    })
+    es.addEventListener('assist-result', (e) => {
+      const { id, kind, ok } = JSON.parse((e as MessageEvent).data) as { id: string; kind: string; ok: boolean }
+      if (kind === 'suggest') void useProposals.getState().onResult(id, ok)
     })
     return () => es.close()
   }, [sessionId])
@@ -409,8 +415,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             spans={analysis.spans}
             authorTag={authorTag}
             onEdit={applyEdits}
+            canSuggest={assistAvailable && providerType === 'agent-channel'}
+            onSuggest={(range, selection) => void useProposals.getState().request(sessionId, range, selection)}
           />
           <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />
+          <ProposalCard onEdit={applyEdits} />
         </>
       )}
       {handedBack && (
