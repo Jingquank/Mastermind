@@ -7,8 +7,8 @@ import type { CreateSessionResponse, ServerState } from '../shared/types'
 import { serverLogPath } from '../server/paths'
 import { readServerState } from '../server/statefile'
 import { CliError, ensureServer } from './daemon'
-import { postJson, probeHealth, requestShutdown, sleep } from './http'
-import { waitForHandback } from './wait'
+import { postJson, postNoContent, probeHealth, requestShutdown, sleep } from './http'
+import { serveAssist, waitForHandback } from './wait'
 
 const program = new Command()
 
@@ -43,9 +43,10 @@ program
   .command('open')
   .argument('<file>', 'markdown file to open')
   .option('--wait', 'block until the user clicks "Save & hand back", then exit 0')
+  .option('--serve-assist', 'also answer translation/suggestion requests (implies the agent is the provider)')
   .option('--no-browser', 'print the URL without opening a browser tab')
   .description('start the server if not running and open a browser tab for this file')
-  .action(async (file: string, opts: { wait?: boolean; browser: boolean }) => {
+  .action(async (file: string, opts: { wait?: boolean; serveAssist?: boolean; browser: boolean }) => {
     const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
     const abs = path.resolve(file)
     let st: fs.Stats
@@ -62,9 +63,69 @@ program
     if (opts.browser) openBrowser(session.url)
 
     if (opts.wait) {
-      await waitForHandback(port, session.sessionId)
+      await waitForHandback(port, session.sessionId, { serveAssist: opts.serveAssist })
     }
     process.exit(0)
+  })
+
+program
+  .command('assist')
+  .argument('<file>', 'markdown file under review')
+  .description('listen for translation/suggestion requests and stream them as JSON lines (agent-channel)')
+  .action(async (file: string) => {
+    const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
+    const abs = path.resolve(file)
+    if (!fs.existsSync(abs)) die(2, `file not found: ${abs}`)
+    const port = await ensureServer({ pinnedPort })
+    const session = await createSession(port, abs)
+    await serveAssist(port, session.sessionId)
+  })
+
+program
+  .command('assist-result')
+  .argument('<id>', 'the request id from the assist-request line')
+  .option('--blocks <json>', 'translate result: JSON [{hash,text}]')
+  .option('--markup <md>', 'suggest result: the selection rewritten with CriticMarkup')
+  .description('deliver an agent-channel result back to Mastermind')
+  .action(async (id: string, opts: { blocks?: string; markup?: string }) => {
+    const state = readServerState()
+    if (!state) die(1, 'no daemon running')
+    let payload: unknown
+    if (opts.blocks !== undefined) {
+      let blocks: unknown
+      try {
+        blocks = JSON.parse(opts.blocks)
+      } catch {
+        die(2, '--blocks must be valid JSON')
+      }
+      payload = { kind: 'translate', blocks }
+    } else if (opts.markup !== undefined) {
+      payload = { kind: 'suggest', markup: opts.markup }
+    } else {
+      die(2, 'provide --blocks or --markup')
+    }
+    try {
+      await postNoContent(state.port, `/api/assist/${id}/result`, payload)
+      process.exit(0)
+    } catch (err) {
+      die(1, `result rejected: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  })
+
+program
+  .command('assist-error')
+  .argument('<id>', 'the request id')
+  .option('--reason <text>', 'why the request could not be fulfilled')
+  .description('decline an agent-channel request')
+  .action(async (id: string, opts: { reason?: string }) => {
+    const state = readServerState()
+    if (!state) die(1, 'no daemon running')
+    try {
+      await postNoContent(state.port, `/api/assist/${id}/error`, { reason: opts.reason ?? 'declined' })
+      process.exit(0)
+    } catch (err) {
+      die(1, `error rejected: ${err instanceof Error ? err.message : String(err)}`)
+    }
   })
 
 program

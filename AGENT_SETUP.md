@@ -39,3 +39,32 @@ next round until the user approves.
 
 - Comment threads are consecutive comment marks with author tags: `{==span==}{>>@ke: question<<}{>>@agent: answer<<}`. To reply in a thread, append another `{>>@agent: …<<}` immediately after — but prefer revising the document directly.
 - While the file is open in a tab, your on-disk edits surface as a "file changed on disk" banner with a reload + revision diff, so edit freely between rounds.
+
+## Acting as Mastermind's LLM provider (agent-channel)
+
+If the user sets the translation provider to **"Your coding agent"** in Settings, Mastermind routes translation (and inline edit-suggestions) to *you* through the file channel — no API key, no cloud.
+
+Run a listener alongside the review (a background process is ideal — it streams one JSON line per task to stdout):
+
+```
+mastermind assist <plan-file>.md
+```
+
+Each task line is prefixed `mastermind-assist: ` followed by JSON. Two kinds:
+
+1. **translate** — `mastermind-assist: {"id":"…","kind":"translate","sourceLang":"…","targetLang":"…","blocks":[{"hash":"…","text":"…"}]}`
+   Translate each block's text. **Preserve all Markdown and CriticMarkup syntax exactly** (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`); translate only the human-readable text, and keep `@name:` author tags untranslated. Reply:
+   ```
+   mastermind assist-result <id> --blocks '[{"hash":"…","text":"<translated>"}]'
+   ```
+
+2. **suggest** — `mastermind-assist: {"id":"…","kind":"suggest","scope":"selection|section|document","selection":"<raw md>","context":"<surrounding>"}`
+   Propose improvements **as CriticMarkup over the selection only** — insertions `{++…++}`, deletions `{--…--}`, substitutions `{~~old~>new~~}`. Do **not** add comments or highlights, and do not rewrite text outside the marks (Mastermind rejects any markup whose rejected form differs from the original selection). Return the selection with your marks inline. Reply:
+   ```
+   mastermind assist-result <id> --markup '<selection-with-criticmarkup>'
+   ```
+   The user reviews every proposed mark and accepts/edits/dismisses each before it enters the document — your suggestions never touch the file directly.
+
+If you can't fulfill a task: `mastermind assist-error <id> --reason "…"`. Tasks expire after ~2 minutes; a late reply is ignored.
+
+Single-command alternative: `mastermind open --wait --serve-assist <file>` makes the same blocking review process also answer assist tasks (it prints the same `mastermind-assist:` lines).
