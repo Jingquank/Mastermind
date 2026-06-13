@@ -68,6 +68,10 @@ program
 
     if (opts.wait) {
       await waitForHandback(port, session.sessionId, { serveAssist: opts.serveAssist })
+    } else if (opts.serveAssist) {
+      // serve the agent-channel (translation / inline suggestions) for this exact
+      // session without blocking on hand-back, so the reading-language toggle goes live
+      await serveAssist(port, session.sessionId)
     }
     process.exit(0)
   })

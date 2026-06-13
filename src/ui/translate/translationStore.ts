@@ -37,11 +37,12 @@ async function fetchTranslations(
   sourceLang: string,
   targetLang: string,
   known: Record<string, string>,
-): Promise<{ map: Record<string, string>; failed: Record<string, true> }> {
+): Promise<{ map: Record<string, string>; failed: Record<string, true>; error?: string }> {
   const blocks = await segmentBlocks(source)
   const misses = blocks.filter((b) => b.translatable && known[b.hash] === undefined)
   const map: Record<string, string> = {}
   const failed: Record<string, true> = {}
+  let error: string | undefined
   for (let i = 0; i < misses.length; i += 20) {
     const chunk = misses.slice(i, i + 20)
     const res = await fetch('/api/translate', {
@@ -56,6 +57,11 @@ async function fetchTranslations(
     })
     if (!res.ok) {
       for (const b of chunk) failed[b.hash] = true
+      try {
+        error = ((await res.json()) as { error?: string }).error ?? `http-${res.status}`
+      } catch {
+        error = `http-${res.status}`
+      }
       continue
     }
     const json = (await res.json()) as TranslateResponse
@@ -64,7 +70,7 @@ async function fetchTranslations(
       else failed[r.hash] = true
     }
   }
-  return { map, failed }
+  return { map, failed, error }
 }
 
 export const useTranslation = create<TransState>((set, get) => ({
@@ -82,7 +88,13 @@ export const useTranslation = create<TransState>((set, get) => ({
     const { sourceLang, targetLang } = pickTarget(source, langPair)
     set({ loading: true, targetLang })
     try {
-      const { map, failed } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map)
+      const { map, failed, error } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map)
+      if (Object.keys(map).length === 0 && error) {
+        // nothing came back — surface the reason instead of a silently blank translated view
+        const { useDoc } = await import('../app/store')
+        useDoc.getState().setNotice({ kind: 'error', msg: error === 'no-agent' ? 'translateNoAgent' : 'translateFailed' })
+        return
+      }
       set((s) => ({ active: true, map: { ...s.map, ...map }, failed }))
     } finally {
       set({ loading: false })

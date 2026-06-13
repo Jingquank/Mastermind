@@ -67,4 +67,12 @@ Each task line is prefixed `mastermind-assist: ` followed by JSON. Two kinds:
 
 If you can't fulfill a task: `mastermind assist-error <id> --reason "…"`. Tasks expire after ~2 minutes; a late reply is ignored.
 
-Single-command alternative: `mastermind open --wait --serve-assist <file>` makes the same blocking review process also answer assist tasks (it prints the same `mastermind-assist:` lines).
+### Serving assist alongside an open document
+
+Prefer opening the document with assist already attached — that's what lights up the reading-language toggle (it stays disabled until an agent is listening on *that* session):
+
+- `mastermind open --serve-assist <file>` — opens the doc for review **and** answers assist tasks **without blocking** on hand-back. Use this whenever you want translation / inline suggestions to just work while the user reads.
+- `mastermind open --wait --serve-assist <file>` — the blocking review loop that *also* answers assist tasks.
+- `mastermind assist <file>` — a standalone listener (no browser tab of its own).
+
+All three bind to the same session by the file's real path, print the same `mastermind-assist:` lines, and auto-reconnect across transient drops so the toggle stays live for the whole review. If the toggle shows "Run `mastermind open --serve-assist`", no agent is currently serving that session.

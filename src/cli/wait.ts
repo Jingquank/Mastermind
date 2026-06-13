@@ -48,18 +48,16 @@ export async function serveAssist(port: number, sessionId: string): Promise<neve
         }
       }
     } catch {
-      /* connection dropped — retry */
+      /* connection dropped — retry as long as the daemon is alive */
     }
     attempts++
-    if (attempts > 3) {
-      process.stderr.write('mastermind: lost connection to the daemon\n')
-      process.exit(1)
-    }
-    await sleep(1000 * attempts)
+    // Only give up if the daemon is truly gone; otherwise keep the listener alive
+    // across transient drops (a dropped SSE used to silently kill translation).
     if ((await probeHealth(port)) === 'free') {
       process.stderr.write('mastermind: daemon is gone\n')
       process.exit(1)
     }
+    await sleep(Math.min(1000 * attempts, 10000)) // capped backoff
   }
 }
 
