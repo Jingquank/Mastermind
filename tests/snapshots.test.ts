@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { listSnapshots, readLatestSnapshot, writeSnapshot } from '../src/server/snapshots'
+import { listRounds, listSnapshots, readLatestSnapshot, readSnapshot, writeSnapshot } from '../src/server/snapshots'
 
 let dir: string
 let file: string
@@ -47,5 +47,23 @@ describe('snapshots', () => {
     const ids = list.map((s) => s.id)
     expect(ids).not.toContain('20260101T080000')
     expect(ids).not.toContain('20260101T080002')
+  })
+
+  it('readSnapshot fetches by id and refuses traversal-ish ids', async () => {
+    const id = await writeSnapshot(file, 'content', new Date(2026, 0, 1, 9, 0, 0))
+    expect((await readSnapshot(file, id))?.content).toBe('content')
+    expect(await readSnapshot(file, '../escape')).toBeNull()
+    expect(await readSnapshot(file, 'nonexistent')).toBeNull()
+  })
+
+  it('listRounds recounts marks from each snapshot body (not the prose summary)', async () => {
+    const body =
+      'A {++ins++} B {--del--} C {~~x~>y~~} D {==hl==} E {>>@ke: note<<} F\n\n' +
+      '<!-- mastermind:summary -->\n> **Review summary** (2026-01-01 09:00)\n> wildly wrong prose counts\n<!-- /mastermind:summary -->\n'
+    await writeSnapshot(file, body, new Date(2026, 0, 1, 9, 0, 0))
+    const rounds = await listRounds(file)
+    expect(rounds).toHaveLength(1)
+    // recounted from the marks, ignoring the bogus prose summary
+    expect(rounds[0]!.counts).toEqual({ comments: 1, edits: 3, highlights: 1 })
   })
 })

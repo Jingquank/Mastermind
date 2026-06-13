@@ -1,6 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { SNAPSHOT_KEEP } from '../shared/constants'
+import { group, reviewCounts, scan } from '../shared/critic/scanner'
+import type { ReviewCountsDetail } from '../shared/critic/types'
+import { codeRanges } from '../shared/markdown/exclusions'
+import { stripSummary } from '../shared/summary'
 
 /** Compact local stamp — lexically sortable, no colons (macOS-hostile). */
 function snapshotStamp(date: Date): string {
@@ -70,10 +74,37 @@ export async function listSnapshots(filePath: string): Promise<SnapshotInfo[]> {
 export async function readLatestSnapshot(filePath: string): Promise<{ id: string; content: string } | null> {
   const [latest] = await listSnapshots(filePath)
   if (!latest) return null
+  return readSnapshot(filePath, latest.id)
+}
+
+/** Read one snapshot by id. Id is validated to a bare stamp (no traversal). */
+export async function readSnapshot(filePath: string, id: string): Promise<{ id: string; content: string } | null> {
+  if (!/^[0-9T-]+$/.test(id)) return null
   try {
-    const content = await fs.readFile(path.join(historyDir(filePath), `${latest.id}.md`), 'utf8')
-    return { id: latest.id, content }
+    const content = await fs.readFile(path.join(historyDir(filePath), `${id}.md`), 'utf8')
+    return { id, content }
   } catch {
     return null
   }
+}
+
+export interface RoundInfo extends SnapshotInfo {
+  counts: ReviewCountsDetail
+}
+
+/**
+ * Snapshots enriched with mark counts — recomputed from the marks themselves
+ * (the same scan→group→reviewCounts pipeline handback uses), NOT parsed from
+ * the localized prose summary block. Robust to translation and summary drift.
+ */
+export async function listRounds(filePath: string): Promise<RoundInfo[]> {
+  const snaps = await listSnapshots(filePath)
+  const out: RoundInfo[] = []
+  for (const snap of snaps) {
+    const read = await readSnapshot(filePath, snap.id)
+    const body = read ? stripSummary(read.content) : ''
+    const counts = reviewCounts(group(scan(body, codeRanges(body)), body))
+    out.push({ ...snap, counts })
+  }
+  return out
 }

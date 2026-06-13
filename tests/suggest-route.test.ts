@@ -60,7 +60,7 @@ async function post(path: string, body: unknown): Promise<Response> {
   })
 }
 
-function get(path: string): Promise<Response> {
+async function get(path: string): Promise<Response> {
   return app.request(path, { headers: HOST })
 }
 

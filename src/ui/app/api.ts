@@ -58,6 +58,21 @@ export function getLatestSnapshot(sessionId: string): Promise<{ id: string; cont
   return request<{ id: string; content: string }>(`/api/sessions/${sessionId}/snapshots/latest`)
 }
 
+export function getSnapshot(sessionId: string, snapId: string): Promise<{ id: string; content: string }> {
+  return request<{ id: string; content: string }>(`/api/sessions/${sessionId}/snapshots/${snapId}`)
+}
+
+export interface RoundInfo {
+  id: string
+  mtimeMs: number
+  size: number
+  counts: { comments: number; edits: number; highlights: number }
+}
+
+export function getRounds(sessionId: string): Promise<RoundInfo[]> {
+  return request<RoundInfo[]>(`/api/sessions/${sessionId}/snapshots`)
+}
+
 export function postRename(sessionId: string, filename: string): Promise<{ path: string; displayName: string }> {
   return request<{ path: string; displayName: string }>(
     `/api/sessions/${sessionId}/rename`,

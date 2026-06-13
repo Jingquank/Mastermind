@@ -1,32 +1,49 @@
 import { diffWords } from 'diff'
 import { useEffect, useMemo, useState } from 'react'
-import { useT } from '../i18n'
 import { stripSummary } from '../../shared/summary'
-import { getLatestSnapshot } from '../app/api'
+import { useT } from '../i18n'
+import { getLatestSnapshot, getSnapshot } from '../app/api'
 import { useDoc } from '../app/store'
 
-interface Loaded {
-  snapshotId: string
-  oldText: string
+/** One side of the diff: a saved snapshot, or the live buffer. */
+export type DiffSide = { kind: 'snapshot'; id: string } | { kind: 'latest' } | { kind: 'current' }
+
+/** Pure word diff with the summary block stripped from both sides. */
+export function computeWordDiff(oldText: string, newText: string) {
+  return diffWords(stripSummary(oldText), stripSummary(newText))
 }
 
-/**
- * Read-only word-level diff between the latest hand-back snapshot and the
- * current buffer — "what did the agent change since my last review?".
- * The summary block is stripped from both sides (its timestamp is pure noise);
- * CriticMarkup stays visible — how the agent handled marks IS the content.
- */
-export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+interface Props {
+  sessionId: string
+  onClose: () => void
+  left?: DiffSide
+  right?: DiffSide
+}
+
+export function DiffView({ sessionId, onClose, left = { kind: 'latest' }, right = { kind: 'current' } }: Props) {
   const source = useDoc((s) => s.source)
-  const [loaded, setLoaded] = useState<Loaded | null>(null)
+  const [leftText, setLeftText] = useState<string | null>(null)
+  const [rightText, setRightText] = useState<string | null>(null)
+  const [leftId, setLeftId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const t = useT()
 
   useEffect(() => {
     let cancelled = false
-    getLatestSnapshot(sessionId)
-      .then((snap) => {
-        if (!cancelled) setLoaded({ snapshotId: snap.id, oldText: stripSummary(snap.content) })
+    const resolveSide = async (side: DiffSide): Promise<{ text: string; id: string | null }> => {
+      if (side.kind === 'current') return { text: source, id: null }
+      const snap = side.kind === 'latest' ? await getLatestSnapshot(sessionId) : await getSnapshot(sessionId, side.id)
+      return { text: snap.content, id: snap.id }
+    }
+    setError(null)
+    setLeftText(null)
+    setRightText(null)
+    Promise.all([resolveSide(left), resolveSide(right)])
+      .then(([l, r]) => {
+        if (cancelled) return
+        setLeftText(l.text)
+        setLeftId(l.id)
+        setRightText(r.text)
       })
       .catch(() => {
         if (!cancelled) setError(t('noSnapshot'))
@@ -34,7 +51,9 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
     return () => {
       cancelled = true
     }
-  }, [sessionId])
+    // re-resolve when the sides change; `source` only matters for the 'current' side and is read at resolve time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, left.kind, right.kind, left.kind === 'snapshot' ? left.id : '', right.kind === 'snapshot' ? right.id : ''])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -44,10 +63,12 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // the 'current' side tracks live edits
+  const effectiveRight = right.kind === 'current' ? source : rightText
   const parts = useMemo(() => {
-    if (!loaded) return null
-    return diffWords(loaded.oldText, stripSummary(source))
-  }, [loaded, source])
+    if (leftText === null || effectiveRight === null) return null
+    return computeWordDiff(leftText, effectiveRight)
+  }, [leftText, effectiveRight])
 
   const changeCount = useMemo(() => parts?.filter((p) => p.added || p.removed).length ?? 0, [parts])
 
@@ -57,8 +78,9 @@ export function DiffView({ sessionId, onClose }: { sessionId: string; onClose: (
         <span className="diff-title">
           {t('changesSince')}
           {parts && (
-            <span className="diff-meta" title={loaded ? `snapshot ${loaded.snapshotId}` : undefined}>
-              {' '}· {changeCount === 0 ? t('noChanges') : `${changeCount} ${t('editsCount')}`}
+            <span className="diff-meta" title={leftId ? `snapshot ${leftId}` : undefined}>
+              {' '}
+              · {changeCount === 0 ? t('noChanges') : `${changeCount} ${t('editsCount')}`}
             </span>
           )}
         </span>

@@ -16,7 +16,7 @@ import { readConfig, redactConfig, updateConfig, type ConfigPatch } from './conf
 import { processFeedbackLanguage } from './feedback'
 import { writeSessionFile } from './files'
 import { performHandback } from './handback'
-import { listSnapshots, readLatestSnapshot } from './snapshots'
+import { listRounds, readLatestSnapshot, readSnapshot } from './snapshots'
 import { scanThemes } from './themes'
 import { clearCache } from './translate/cache'
 import { providerConfigured, translateBlocks, type TranslateRequestBlock } from './translate/index'
@@ -290,7 +290,8 @@ export function createApp(deps: AppDeps): Hono {
   app.get('/api/sessions/:id/snapshots', async (c) => {
     const session = registry.get(c.req.param('id'))
     if (!session) return c.json({ error: 'session not found' }, 404)
-    return c.json(await listSnapshots(session.path))
+    // rounds: snapshots enriched with mark counts (the timeline data)
+    return c.json(await listRounds(session.path))
   })
 
   app.get('/api/sessions/:id/snapshots/latest', async (c) => {
@@ -299,6 +300,14 @@ export function createApp(deps: AppDeps): Hono {
     const latest = await readLatestSnapshot(session.path)
     if (!latest) return c.json({ error: 'no snapshots' }, 404)
     return c.json(latest)
+  })
+
+  app.get('/api/sessions/:id/snapshots/:snapId', async (c) => {
+    const session = registry.get(c.req.param('id'))
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    const snap = await readSnapshot(session.path, c.req.param('snapId'))
+    if (!snap) return c.json({ error: 'snapshot not found' }, 404)
+    return c.json(snap)
   })
 
   // --- agent-channel (assist) ---
