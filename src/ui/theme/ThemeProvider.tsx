@@ -12,19 +12,50 @@ export function ThemeEffects() {
   const themeId = config?.theme ?? 'grid'
   const theme = themes.find((t) => t.id === themeId) ?? themes[0]
 
-  // tokens.css swap + data-theme attribute
+  // tokens.css swap + data-theme attribute, with a crossfade veil that hides the
+  // brief flash while the new tokens.css <link> parses (the old sheet lingers).
   useEffect(() => {
     const id = theme?.id ?? themeId
-    document.documentElement.dataset.theme = id
-    let link = document.getElementById(TOKENS_LINK_ID) as HTMLLinkElement | null
+    const root = document.documentElement
+    const prev = root.dataset.theme
     const href = `/themes/${id}/tokens.css`
+    let link = document.getElementById(TOKENS_LINK_ID) as HTMLLinkElement | null
+    const firstLoad = !link
     if (!link) {
       link = document.createElement('link')
       link.id = TOKENS_LINK_ID
       link.rel = 'stylesheet'
       document.head.appendChild(link)
     }
+    if (prev === id && link.href.endsWith(href)) return // unchanged
+
+    const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    let veil: HTMLDivElement | null = null
+    if (!firstLoad && prev && prev !== id && !reduce) {
+      veil = document.createElement('div')
+      veil.className = 'theme-veil'
+      veil.style.background = getComputedStyle(document.body).backgroundColor // the OLD theme's bg
+      document.body.appendChild(veil)
+    }
+    root.dataset.theme = id
+
+    let settled = false
+    const reveal = (): void => {
+      if (settled) return
+      settled = true
+      if (!veil) return
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (!veil) return
+          veil.style.opacity = '0'
+          setTimeout(() => veil?.remove(), 360)
+        }),
+      )
+    }
+    link.onload = reveal
     if (!link.href.endsWith(href)) link.href = href
+    else reveal()
+    if (veil) setTimeout(reveal, 220) // fallback if onload doesn't fire (cached sheet)
   }, [theme?.id, themeId])
 
   // @font-face injection from the theme manifest

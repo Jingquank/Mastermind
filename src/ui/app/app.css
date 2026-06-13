@@ -1734,6 +1734,105 @@ input[type='checkbox'] {
   color: var(--color-text);
 }
 
+/* ---------- motion (Phase N) — meaningful moments only, reduced-motion aware ---------- */
+@keyframes mm-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes mm-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+@keyframes mm-card-flash {
+  from {
+    background: var(--color-accent-surface);
+  }
+  to {
+    background: var(--color-bg-elevated);
+  }
+}
+
+/* entrances on discrete events (each element mounts on its trigger, so no replay) */
+.toast {
+  animation: mm-toast-in var(--dur-base) var(--ease-out);
+}
+.sel-toolbar,
+.hover-actions {
+  animation: mm-pop-in var(--dur-fast) var(--ease-out);
+}
+/* comment-thread activation: the landed card flashes the accent wash, then settles */
+.rail-card.active {
+  animation: mm-card-flash var(--dur-slow) var(--ease-out);
+}
+
+/* the segmented active state eases between options (view-mode, Files/Outline, presets) */
+.seg-btn {
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+
+/* tactile: a small press-scale on the action buttons (not idle/nav chrome) */
+.btn-cta {
+  transition:
+    background-color var(--dur-fast) ease,
+    transform var(--dur-fast) var(--ease-standard);
+}
+.hover-actions button,
+.sel-toolbar > button {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.btn-cta:active:not(:disabled),
+.hover-actions button:active,
+.sel-toolbar > button:active {
+  transform: scale(0.96);
+}
+
+/* theme crossfade veil (painted with the OLD bg, faded out once the new tokens load) */
+.theme-veil {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity var(--dur-slow) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .sel-toolbar,
+  .hover-actions,
+  .rail-card.active {
+    animation: none;
+  }
+  .seg-btn,
+  .btn-cta,
+  .hover-actions button,
+  .sel-toolbar > button {
+    transition: none;
+  }
+  .btn-cta:active:not(:disabled),
+  .hover-actions button:active,
+  .sel-toolbar > button:active {
+    transform: none;
+  }
+  .theme-veil {
+    display: none;
+  }
+}
+
 /* ---------- print / PDF ---------- */
 
 .print-footnotes {
