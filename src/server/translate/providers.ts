@@ -80,7 +80,14 @@ export function translateBlock(
   sourceLang: string,
   targetLang: string,
 ): Promise<string> {
-  return provider.type === 'anthropic'
-    ? anthropicTranslate(provider, text, sourceLang, targetLang)
-    : openaiCompatTranslate(provider, text, sourceLang, targetLang)
+  switch (provider.type) {
+    case 'anthropic':
+      return anthropicTranslate(provider, text, sourceLang, targetLang)
+    case 'openai-compatible':
+      return openaiCompatTranslate(provider, text, sourceLang, targetLang)
+    case 'agent-channel':
+      // agent-channel routes through the assist registry, not a fetch — handled
+      // by translateBlocks' batched branch (V3). Reaching here is a wiring bug.
+      return Promise.reject(new Error('agent-channel must route through the assist registry'))
+  }
 }

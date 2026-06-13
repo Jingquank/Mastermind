@@ -185,15 +185,18 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             onChange={(e) => {
               const v = e.target.value
               if (v === 'none') patch({ provider: null })
+              else if (v === 'agent-channel') patch({ provider: { type: 'agent-channel' } })
               else patch({ provider: { type: v as 'anthropic' | 'openai-compatible', baseUrl: provider?.baseUrl, model: provider?.model } })
             }}
           >
             <option value="none">{t('providerNone')}</option>
+            <option value="agent-channel">{t('providerAgent')}</option>
             <option value="anthropic">{t('providerAnthropic')}</option>
             <option value="openai-compatible">{t('providerOpenai')}</option>
           </select>
         </label>
-        {provider && (
+        {provider?.type === 'agent-channel' && <p className="settings-hint">{t('providerAgentHint')}</p>}
+        {provider && provider.type !== 'agent-channel' && (
           <>
             {provider.type === 'openai-compatible' && (
               <label className="settings-row">

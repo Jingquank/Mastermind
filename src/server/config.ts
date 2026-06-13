@@ -66,9 +66,11 @@ export function updateConfig(patch: ConfigPatch): MastermindConfig {
 
 export function redactConfig(config: MastermindConfig): ClientConfig {
   const { provider, ...rest } = config
-  // openai-compatible endpoints (Ollama, LM Studio) work keyless
+  // agent-channel needs no key/model; openai-compatible (Ollama, LM Studio) works keyless
   const configured = Boolean(
-    provider && provider.model && (provider.type === 'openai-compatible' || provider.apiKey),
+    provider &&
+      (provider.type === 'agent-channel' ||
+        (provider.model && (provider.type === 'openai-compatible' || provider.apiKey))),
   )
   return {
     ...rest,

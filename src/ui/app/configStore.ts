@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { ClientConfig, ThemeInfo } from '../../shared/types'
 
 export interface ProviderPatch {
-  type: 'anthropic' | 'openai-compatible'
+  type: 'anthropic' | 'openai-compatible' | 'agent-channel'
   baseUrl?: string
   model?: string
   apiKey?: string

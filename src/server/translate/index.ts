@@ -19,7 +19,9 @@ export interface TranslateResult {
 
 export function providerConfigured(config: MastermindConfig): boolean {
   const p = config.provider
-  if (!p || !p.model) return false
+  if (!p) return false
+  if (p.type === 'agent-channel') return true // the agent is the provider; no key/model
+  if (!p.model) return false
   return p.type === 'openai-compatible' || Boolean(p.apiKey)
 }
 

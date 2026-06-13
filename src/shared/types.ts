@@ -60,11 +60,16 @@ export interface ReviewCounts {
 
 /* ---- config ---- */
 
+export type ProviderType = 'anthropic' | 'openai-compatible' | 'agent-channel'
+
 export interface ProviderConfig {
-  type: 'anthropic' | 'openai-compatible'
+  /** 'agent-channel' = the user's own coding agent answers via the SSE/--wait channel (no key, no model). */
+  type: ProviderType
   baseUrl?: string
   apiKey?: string
   model?: string
+  /** agent-channel only: how long to wait for the agent to answer a request. */
+  agentTimeoutMs?: number
 }
 
 export interface MastermindConfig {
@@ -87,7 +92,7 @@ export interface MastermindConfig {
 
 /** What the browser sees — never the API key. */
 export interface ClientConfig extends Omit<MastermindConfig, 'provider'> {
-  provider: { type: ProviderConfig['type']; baseUrl?: string; model?: string; configured: boolean } | null
+  provider: { type: ProviderType; baseUrl?: string; model?: string; configured: boolean } | null
 }
 
 export interface ThemeFontInfo {

@@ -836,6 +836,13 @@ mark.critic-hl.critic-anchor:hover {
   padding: calc(var(--space-unit) * 3) 0;
 }
 
+.settings-hint {
+  margin: 0 0 calc(var(--space-unit) * 2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--lh-snug);
+}
+
 .settings-panel h4 {
   margin: 0 0 calc(var(--space-unit) * 2);
   font-size: var(--font-size-micro);
