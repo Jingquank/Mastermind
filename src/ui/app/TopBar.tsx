@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { DropdownMenu, ToggleGroup } from 'radix-ui'
 import { useT } from '../i18n'
 import { GearIcon, MoreIcon, SwapIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
@@ -57,9 +58,6 @@ export function TopBar({
   const savingKind = useDoc((s) => s.savingKind)
   const dirty = useDirty()
 
-  const [moreOpen, setMoreOpen] = useState(false)
-  const moreRef = useRef<HTMLDivElement | null>(null)
-
   const MODES: { id: ViewMode; label: string }[] = [
     { id: 'reading', label: t('reading') },
     { id: 'editing', label: t('editing') },
@@ -77,23 +75,6 @@ export function TopBar({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-
-  // close the overflow menu on outside click / Escape
-  useEffect(() => {
-    if (!moreOpen) return
-    const onDown = (e: MouseEvent): void => {
-      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false)
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setMoreOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [moreOpen])
 
   // translation / rounds / rail / settings live in one overflow menu so the bar
   // stays a single row at every width; each appears only when its handler exists.
@@ -136,19 +117,20 @@ export function TopBar({
           </span>
         )}
       </div>
-      <nav className="seg" aria-label={t('viewMode')} title={`⌘E ${t('viewMode')}`}>
+      <ToggleGroup.Root
+        className="seg"
+        type="single"
+        value={mode}
+        onValueChange={(v) => v && setMode(v as ViewMode)}
+        aria-label={t('viewMode')}
+        title={`⌘E ${t('viewMode')}`}
+      >
         {MODES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            className={`seg-btn${mode === m.id ? ' active' : ''}`}
-            aria-pressed={mode === m.id}
-            onClick={() => setMode(m.id)}
-          >
+          <ToggleGroup.Item key={m.id} value={m.id} className="seg-btn">
             {m.label}
-          </button>
+          </ToggleGroup.Item>
         ))}
-      </nav>
+      </ToggleGroup.Root>
       <div className="topbar-right">
         {suggestionCount > 0 && (
           <div className="seg review-bulk" role="group" aria-label={`${suggestionCount} ${t('suggestionsLabel')}`}>
@@ -182,40 +164,29 @@ export function TopBar({
           {savingKind === 'handback' ? t('handingBack') : t('handBack')}
         </button>
         {overflow.length > 0 && (
-          <div className="topbar-more-wrap" ref={moreRef}>
-            <button
-              type="button"
-              className="btn-ghost topbar-more"
-              aria-haspopup="menu"
-              aria-expanded={moreOpen}
-              aria-label={t('moreActions')}
-              title={t('moreActions')}
-              onClick={() => setMoreOpen((v) => !v)}
-            >
-              <MoreIcon />
-            </button>
-            {moreOpen && (
-              <div className="topbar-more-menu" role="menu">
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button type="button" className="btn-ghost topbar-more" aria-label={t('moreActions')} title={t('moreActions')}>
+                <MoreIcon />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="topbar-more-menu" align="end" sideOffset={6}>
                 {overflow.map((it) => (
-                  <button
+                  <DropdownMenu.Item
                     key={it.key}
-                    type="button"
-                    role="menuitem"
                     className={`more-item${it.active ? ' active' : ''}`}
                     disabled={it.disabled}
                     title={it.title}
-                    onClick={() => {
-                      it.onClick()
-                      setMoreOpen(false)
-                    }}
+                    onSelect={it.onClick}
                   >
                     {it.icon}
                     <span>{it.label}</span>
-                  </button>
+                  </DropdownMenu.Item>
                 ))}
-              </div>
-            )}
-          </div>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         )}
       </div>
     </header>

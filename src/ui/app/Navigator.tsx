@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { ToggleGroup } from 'radix-ui'
 import { ChevronLeftIcon, FolderIcon } from '../icons'
+import { Tip } from './Tip'
 import { useT } from '../i18n'
 import { scrollToOffset } from '../util/scroll'
 import { FilesList } from './Tree'
@@ -73,16 +75,17 @@ export function Navigator({ workspaceId, openSessionId }: Props) {
   return (
     <>
       {!panelOpen && (
-        <button
-          type="button"
-          className="nav-reveal"
-          title={t('showFiles')}
-          aria-label={t('showFiles')}
-          aria-expanded={false}
-          onClick={reveal}
-        >
-          {showFiles ? <FolderIcon /> : <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />}
-        </button>
+        <Tip label={t('showFiles')}>
+          <button
+            type="button"
+            className="nav-reveal"
+            aria-label={t('showFiles')}
+            aria-expanded={false}
+            onClick={reveal}
+          >
+            {showFiles ? <FolderIcon /> : <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />}
+          </button>
+        </Tip>
       )}
       {narrow && mobileOpen && <div className="nav-scrim" onClick={hide} aria-hidden />}
       <aside
@@ -95,30 +98,28 @@ export function Navigator({ workspaceId, openSessionId }: Props) {
           <span className="nav-title" title={showFiles ? displayName : undefined}>
             {showFiles ? displayName : t('outline')}
           </span>
-          <button type="button" className="btn-ghost nav-collapse" title={t('hideFiles')} aria-label={t('hideFiles')} onClick={hide}>
-            <ChevronLeftIcon />
-          </button>
+          <Tip label={t('hideFiles')}>
+            <button type="button" className="btn-ghost nav-collapse" aria-label={t('hideFiles')} onClick={hide}>
+              <ChevronLeftIcon />
+            </button>
+          </Tip>
         </div>
 
         {showFiles && showOutline && (
-          <nav className="seg nav-seg" aria-label={t('files')}>
-            <button
-              type="button"
-              className={`seg-btn${section === 'files' ? ' active' : ''}`}
-              aria-pressed={section === 'files'}
-              onClick={() => useNav.getState().setSection('files')}
-            >
+          <ToggleGroup.Root
+            className="seg nav-seg"
+            type="single"
+            value={section}
+            onValueChange={(v) => v && useNav.getState().setSection(v as 'files' | 'outline')}
+            aria-label={t('files')}
+          >
+            <ToggleGroup.Item value="files" className="seg-btn">
               {t('files')}
-            </button>
-            <button
-              type="button"
-              className={`seg-btn${section === 'outline' ? ' active' : ''}`}
-              aria-pressed={section === 'outline'}
-              onClick={() => useNav.getState().setSection('outline')}
-            >
+            </ToggleGroup.Item>
+            <ToggleGroup.Item value="outline" className="seg-btn">
               {t('outline')}
-            </button>
-          </nav>
+            </ToggleGroup.Item>
+          </ToggleGroup.Root>
         )}
 
         <div className="nav-body">{section === 'files' ? <FilesList openSessionId={openSessionId} /> : <OutlineList />}</div>

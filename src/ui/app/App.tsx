@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { Tooltip } from 'radix-ui'
 import { useT } from '../i18n'
 import { GrainOverlay, ThemeEffects } from '../theme/ThemeProvider'
 import { useConfig } from './configStore'
@@ -16,7 +17,7 @@ export function App() {
   }, [load])
 
   return (
-    <>
+    <Tooltip.Provider delayDuration={500} skipDelayDuration={300}>
       <ThemeEffects />
       {route.kind === 'doc' && (
         <AppFrame sessionId={route.sessionId}>
@@ -30,7 +31,7 @@ export function App() {
       )}
       {route.kind === 'home' && <HomeView />}
       <GrainOverlay />
-    </>
+    </Tooltip.Provider>
   )
 }
 

@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { useConfig, type ConfigPatch } from '../app/configStore'
+import { Checkbox } from 'radix-ui'
 import { SlideOver } from '../app/SlideOver'
-import { SwapIcon } from '../icons'
+import { SwapIcon, CheckIcon } from '../icons'
 import { useT } from '../i18n'
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -43,16 +44,19 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           ))}
         </div>
         {activeTheme?.grain && (
-          <label className="settings-row">
-            <input
-              type="checkbox"
+          <div className="settings-row is-toggle">
+            <Checkbox.Root
+              id="filmGrain"
+              className="settings-check"
               checked={config.grain[config.theme]?.enabled ?? activeTheme.grain.enabled}
-              onChange={(e) =>
-                patch({ grain: { ...config.grain, [config.theme]: { enabled: e.target.checked } } })
-              }
-            />
-            {t('filmGrain')}
-          </label>
+              onCheckedChange={(c) => patch({ grain: { ...config.grain, [config.theme]: { enabled: c === true } } })}
+            >
+              <Checkbox.Indicator>
+                <CheckIcon width={11} height={11} />
+              </Checkbox.Indicator>
+            </Checkbox.Root>
+            <label htmlFor="filmGrain">{t('filmGrain')}</label>
+          </div>
         )}
       </section>
 
@@ -140,14 +144,19 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             />
           </span>
         </label>
-        <label className="settings-row">
-          <input
-            type="checkbox"
+        <div className="settings-row is-toggle">
+          <Checkbox.Root
+            id="keepOriginal"
+            className="settings-check"
             checked={config.keepOriginalFeedback}
-            onChange={(e) => patch({ keepOriginalFeedback: e.target.checked })}
-          />
-          {t('keepOriginal')}
-        </label>
+            onCheckedChange={(c) => patch({ keepOriginalFeedback: c === true })}
+          >
+            <Checkbox.Indicator>
+              <CheckIcon width={11} height={11} />
+            </Checkbox.Indicator>
+          </Checkbox.Root>
+          <label htmlFor="keepOriginal">{t('keepOriginal')}</label>
+        </div>
       </section>
 
       <section>

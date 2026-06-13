@@ -34,6 +34,7 @@
     "diff": "^9.0.0",
     "hono": "^4.12.25",
     "mdast-util-to-markdown": "^2.1.2",
+    "radix-ui": "^1.5.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "remark-gfm": "^4.0.1",
