@@ -1,9 +1,54 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useConfig, type ConfigPatch } from '../app/configStore'
-import { Checkbox } from 'radix-ui'
+import { Checkbox, ToggleGroup } from 'radix-ui'
 import { SlideOver } from '../app/SlideOver'
 import { SwapIcon, CheckIcon } from '../icons'
 import { useT } from '../i18n'
+
+/** Reading presets — discrete, self-illustrating (the glyph previews its effect). */
+const FONT_OPTS = [
+  { v: 14, a: 10 },
+  { v: 16, a: 12.5 },
+  { v: 18, a: 15 },
+  { v: 20, a: 18 },
+]
+const LINE_OPTS = [
+  { v: 1.45, gap: 2 },
+  { v: 1.6, gap: 3.3 },
+  { v: 1.8, gap: 4.6 },
+]
+const WIDTH_OPTS = [
+  { v: 640, w: 6 },
+  { v: 736, w: 9.5 },
+  { v: 860, w: 13 },
+]
+
+function nearest(value: number, opts: number[]): number {
+  return opts.reduce((a, b) => (Math.abs(b - value) < Math.abs(a - value) ? b : a))
+}
+
+/** Stacked rules whose vertical gap previews the line height. */
+function LineGapGlyph({ gap }: { gap: number }) {
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden focusable={false}>
+      {[8 - gap, 8, 8 + gap].map((y, i) => (
+        <rect key={i} x={3} y={y - 0.6} width={10} height={1.2} rx={0.6} fill="currentColor" />
+      ))}
+    </svg>
+  )
+}
+
+/** Centered rules whose width previews the content measure. */
+function WidthGlyph({ w }: { w: number }) {
+  const x = (16 - w) / 2
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden focusable={false}>
+      {[5, 8, 11].map((y, i) => (
+        <rect key={i} x={x} y={y - 0.6} width={w} height={1.2} rx={0.6} fill="currentColor" />
+      ))}
+    </svg>
+  )
+}
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const config = useConfig((s) => s.config)
@@ -12,15 +57,10 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   const t = useT()
   const [apiKey, setApiKey] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   if (!config) return null
 
   const patch = (p: ConfigPatch): void => void update(p)
-  const patchDebounced = (p: ConfigPatch): void => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => void update(p), 300)
-  }
 
   const provider = config.provider
   const activeTheme = themes.find((t) => t.id === config.theme)
@@ -62,39 +102,62 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 
       <section>
         <h4>{t('readingSection')}</h4>
-        <label className="settings-row">
-          {t('fontSize')} <span className="settings-val">{config.fontSize}px</span>
-          <input
-            type="range"
-            min={14}
-            max={20}
-            step={1}
-            defaultValue={config.fontSize}
-            onChange={(e) => patchDebounced({ fontSize: Number(e.target.value) })}
-          />
-        </label>
-        <label className="settings-row">
-          {t('lineHeight')} <span className="settings-val">{config.lineHeight.toFixed(2)}</span>
-          <input
-            type="range"
-            min={1.4}
-            max={1.9}
-            step={0.05}
-            defaultValue={config.lineHeight}
-            onChange={(e) => patchDebounced({ lineHeight: Number(e.target.value) })}
-          />
-        </label>
-        <label className="settings-row">
-          {t('contentWidth')} <span className="settings-val">{config.contentWidth}px</span>
-          <input
-            type="range"
-            min={600}
-            max={920}
-            step={8}
-            defaultValue={config.contentWidth}
-            onChange={(e) => patchDebounced({ contentWidth: Number(e.target.value) })}
-          />
-        </label>
+        <div className="settings-row">
+          <span>
+            {t('fontSize')} <span className="settings-val">{config.fontSize}px</span>
+          </span>
+          <ToggleGroup.Root
+            className="seg preset-seg"
+            type="single"
+            value={String(nearest(config.fontSize, FONT_OPTS.map((o) => o.v)))}
+            onValueChange={(v) => v && patch({ fontSize: Number(v) })}
+            aria-label={t('fontSize')}
+          >
+            {FONT_OPTS.map((o) => (
+              <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={`${o.v}px`}>
+                <span className="preset-A" style={{ fontSize: `${o.a}px` }}>
+                  A
+                </span>
+              </ToggleGroup.Item>
+            ))}
+          </ToggleGroup.Root>
+        </div>
+        <div className="settings-row">
+          <span>
+            {t('lineHeight')} <span className="settings-val">{config.lineHeight.toFixed(2)}</span>
+          </span>
+          <ToggleGroup.Root
+            className="seg preset-seg"
+            type="single"
+            value={String(nearest(config.lineHeight, LINE_OPTS.map((o) => o.v)))}
+            onValueChange={(v) => v && patch({ lineHeight: Number(v) })}
+            aria-label={t('lineHeight')}
+          >
+            {LINE_OPTS.map((o) => (
+              <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={o.v.toFixed(2)}>
+                <LineGapGlyph gap={o.gap} />
+              </ToggleGroup.Item>
+            ))}
+          </ToggleGroup.Root>
+        </div>
+        <div className="settings-row">
+          <span>
+            {t('contentWidth')} <span className="settings-val">{config.contentWidth}px</span>
+          </span>
+          <ToggleGroup.Root
+            className="seg preset-seg"
+            type="single"
+            value={String(nearest(config.contentWidth, WIDTH_OPTS.map((o) => o.v)))}
+            onValueChange={(v) => v && patch({ contentWidth: Number(v) })}
+            aria-label={t('contentWidth')}
+          >
+            {WIDTH_OPTS.map((o) => (
+              <ToggleGroup.Item key={o.v} value={String(o.v)} className="seg-btn" aria-label={`${o.v}px`}>
+                <WidthGlyph w={o.w} />
+              </ToggleGroup.Item>
+            ))}
+          </ToggleGroup.Root>
+        </div>
       </section>
 
       <section>

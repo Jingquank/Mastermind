@@ -1049,6 +1049,28 @@ mark.critic-hl.critic-anchor:hover {
   font-size: var(--font-size-micro);
 }
 
+/* reading presets: self-illustrating glyph ToggleGroups (replace the sliders) */
+.preset-seg {
+  width: 100%;
+  margin-top: calc(var(--space-unit) * 1.5);
+}
+.preset-seg .seg-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0;
+  color: var(--color-text-muted);
+}
+.preset-seg .seg-btn[data-state='on'] {
+  color: var(--color-text);
+}
+.preset-A {
+  line-height: 1;
+  font-weight: var(--weight-medium);
+}
+
 .settings-input {
   font-family: var(--font-body);
   font-size: var(--font-size-sm);
