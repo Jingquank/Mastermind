@@ -5,6 +5,7 @@ import path from 'node:path'
 import { createApp } from '../src/server/app'
 import { AssistRegistry } from '../src/server/assist/index'
 import { SessionRegistry, type Conn } from '../src/server/sessions'
+import { WorkspaceRegistry } from '../src/server/workspaces'
 import type { AssistRequestEvent } from '../src/shared/types'
 
 let tmp: string
@@ -22,6 +23,7 @@ beforeEach(() => {
   assist = new AssistRegistry(sessions, 1000)
   app = createApp({
     registry: sessions,
+    workspaces: new WorkspaceRegistry(),
     assist,
     version: 'test',
     startedAt: 0,

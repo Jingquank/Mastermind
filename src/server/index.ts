@@ -8,6 +8,7 @@ import { createApp } from './app'
 import { AssistRegistry } from './assist/index'
 import { log } from './log'
 import { SessionRegistry } from './sessions'
+import { WorkspaceRegistry } from './workspaces'
 import { clearServerState, readServerState, writeServerState } from './statefile'
 import { startWatcher, stopWatcher } from './watch'
 
@@ -55,6 +56,7 @@ async function main(): Promise<void> {
     neverOpenedMs: Number(process.env.MASTERMIND_NEVER_OPENED_MS || '') || undefined,
   })
   const assist = new AssistRegistry(registry)
+  const workspaces = new WorkspaceRegistry()
   registry.onChange = () => {
     lastActivity = Date.now()
   }
@@ -86,6 +88,7 @@ async function main(): Promise<void> {
 
   const app = createApp({
     registry,
+    workspaces,
     assist,
     version: pkg.version,
     startedAt,
@@ -114,7 +117,9 @@ async function main(): Promise<void> {
 
   setInterval(() => {
     const idleFor = Date.now() - lastActivity
-    if (registry.count() === 0 && idleFor > DAEMON_IDLE_EXIT_MS) {
+    // A tree open with no file selected has zero sessions but a live workspace
+    // SSE conn — don't quit out from under that tab.
+    if (registry.count() === 0 && workspaces.activeUiConnCount() === 0 && idleFor > DAEMON_IDLE_EXIT_MS) {
       shutdown(`idle for ${Math.round(idleFor / 60_000)} min with no sessions`)
     }
   }, 60_000).unref()

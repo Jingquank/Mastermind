@@ -52,6 +52,49 @@ export interface FileResponse {
   mtimeMs: number
 }
 
+/* ---- workspace (file tree) ---- */
+
+export interface CreateWorkspaceRequest {
+  /** Absolute (or cwd-relative) path of a directory to browse. */
+  root?: string
+}
+
+export interface CreateWorkspaceResponse {
+  workspaceId: string
+  url: string
+  /** realpath of the root */
+  root: string
+  displayName: string
+}
+
+export interface WorkspaceMeta {
+  workspaceId: string
+  root: string
+  displayName: string
+}
+
+/** One entry in a single directory level of the tree (client recurses lazily). */
+export interface TreeEntry {
+  name: string
+  /** path relative to the workspace root (forward-slashed, never absolute) */
+  rel: string
+  isDir: boolean
+  isMarkdown: boolean
+}
+
+export interface TreeResponse {
+  /** the directory listed, relative to root ('' = root) */
+  dir: string
+  entries: TreeEntry[]
+}
+
+/** Lazy per-file review badge — counts are null for non-markdown or unreadable files. */
+export interface FileMeta {
+  rel: string
+  counts: ReviewCounts | null
+  mtimeMs: number
+}
+
 export type SessionCloseReason = 'tabs-closed' | 'never-opened' | 'shutdown'
 
 export interface ReviewCounts {
@@ -125,6 +168,10 @@ export type SseEvent =
   | { event: 'assist-request'; data: AssistRequestEvent }
   /** server → ui: a suggest request settled (translate results return on the HTTP response) */
   | { event: 'assist-result'; data: { id: string; kind: 'suggest'; ok: boolean } }
+  /** workspace → tree: a directory's listing changed (add/remove/rename) */
+  | { event: 'file-list-changed'; data: { dir: string } }
+  /** workspace → tree: one file's review badge changed (re-fetch its file-meta) */
+  | { event: 'file-badge-changed'; data: { rel: string } }
 
 export type SseEventName = SseEvent['event']
 
