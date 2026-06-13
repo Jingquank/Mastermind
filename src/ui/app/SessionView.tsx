@@ -75,11 +75,27 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [railOpen, setRailOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [findOpen, setFindOpen] = useState(false)
-  const closeSettings = useCallback(() => {
-    setSettingsOpen(false)
-    // hand focus back to the invoking control
-    requestAnimationFrame(() => document.querySelector<HTMLElement>('.settings-gear')?.focus())
+  // the three transient panels share one home and are mutually exclusive:
+  // opening any one closes the others (SlideOver handles Escape/click-out/focus).
+  const toggleSettings = useCallback(() => {
+    setSettingsOpen((v) => {
+      if (!v) {
+        setFindOpen(false)
+        useDoc.getState().setRoundsOpen(false)
+      }
+      return !v
+    })
   }, [])
+  const toggleRounds = useCallback(() => {
+    const s = useDoc.getState()
+    const next = !s.roundsOpen
+    s.setRoundsOpen(next)
+    if (next) {
+      setSettingsOpen(false)
+      setFindOpen(false)
+    }
+  }, [])
+  const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const [agentWaiting, setAgentWaiting] = useState(false)
   const [assistAvailable, setAssistAvailable] = useState(false)
   const [walkIndex, setWalkIndex] = useState<number | null>(null)
@@ -222,7 +238,13 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         const s = useDoc.getState()
         if (s.mode === 'reading' && !s.diffOpen) {
           e.preventDefault()
-          setFindOpen((v) => !v)
+          setFindOpen((v) => {
+            if (!v) {
+              setSettingsOpen(false)
+              useDoc.getState().setRoundsOpen(false)
+            }
+            return !v
+          })
         }
         return
       }
@@ -260,14 +282,20 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           applyEdits([edit])
           setWalkIndex((prev) => (prev === null ? null : suggestions.length - 1 <= 0 ? null : Math.min(prev, suggestions.length - 2)))
         }
-      } else if (e.key === 'Escape' && !settingsOpen && !renamePrompt) {
+      } else if (
+        e.key === 'Escape' &&
+        !settingsOpen &&
+        !findOpen &&
+        !renamePrompt &&
+        !useDoc.getState().roundsOpen
+      ) {
         // layered dismissal: overlays consume Escape before the walker does
         setWalkIndex(null)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [save, suggestions, walkIndex, analysis, applyEdits, settingsOpen, renamePrompt])
+  }, [save, suggestions, walkIndex, analysis, applyEdits, settingsOpen, findOpen, renamePrompt])
 
   // paint + scroll the walker's current suggestion
   useEffect(() => {
@@ -338,7 +366,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   if (diffOpen) {
     return (
       <>
-        <TopBar agentWaiting={agentWaiting} onToggleSettings={() => setSettingsOpen((v) => !v)} />
+        <TopBar agentWaiting={agentWaiting} onToggleSettings={toggleSettings} />
         {settingsOpen && <SettingsPanel onClose={closeSettings} />}
         <DiffView
           sessionId={sessionId}
@@ -370,11 +398,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         suggestionCount={mode === 'reading' && !showTranslated ? suggestionCount : 0}
         onAcceptAll={() => bulkResolve('accept')}
         onRejectAll={() => bulkResolve('reject')}
-        onToggleSettings={() => setSettingsOpen((v) => !v)}
+        onToggleSettings={toggleSettings}
         agentWaiting={agentWaiting}
         handbackPulse={handbackPulse}
         roundCount={rounds.length}
-        onToggleRounds={rounds.length > 0 ? () => useDoc.getState().setRoundsOpen(!roundsOpen) : undefined}
+        onToggleRounds={rounds.length > 0 ? toggleRounds : undefined}
         translation={
           providerConfigured && mode === 'reading'
             ? {

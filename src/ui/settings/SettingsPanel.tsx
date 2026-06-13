@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useConfig, type ConfigPatch } from '../app/configStore'
+import { SlideOver } from '../app/SlideOver'
 import { useT } from '../i18n'
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -10,27 +11,6 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const t = useT()
   const [apiKey, setApiKey] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const panelRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    // popover idiom: clicking anywhere outside dismisses
-    const onPointerDown = (e: MouseEvent): void => {
-      const target = e.target as HTMLElement
-      if (panelRef.current && !panelRef.current.contains(target) && !target.closest('.settings-gear')) {
-        onClose()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    document.addEventListener('mousedown', onPointerDown)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.removeEventListener('mousedown', onPointerDown)
-    }
-  }, [onClose])
 
   if (!config) return null
 
@@ -44,16 +24,10 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const activeTheme = themes.find((t) => t.id === config.theme)
 
   return (
-    <div className="settings-panel" ref={panelRef}>
-      <div className="settings-head">
-        <span className="settings-title">{t('settings')}</span>
-        <button type="button" className="btn-ghost" onClick={onClose}>
-          {t('close')}
-        </button>
-      </div>
-
-      <section>
-        <h4>{t('theme')}</h4>
+    <SlideOver title={t('settings')} onClose={onClose} ignoreSelector=".settings-gear">
+      <div className="settings-body">
+        <section>
+          <h4>{t('theme')}</h4>
         <div className="settings-theme-row">
           {themes.map((th) => (
             <button
@@ -246,6 +220,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </>
         )}
       </section>
-    </div>
+      </div>
+    </SlideOver>
   )
 }

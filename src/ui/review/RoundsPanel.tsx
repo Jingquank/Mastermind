@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import { formatCounts, useLang, useT } from '../i18n'
+import { SlideOver } from '../app/SlideOver'
 import type { RoundInfo } from '../app/api'
 import { useDoc } from '../app/store'
 
@@ -27,30 +27,8 @@ export function RoundsPanel({ onClose }: { onClose: () => void }) {
   const lang = useLang()
   const rounds = useDoc((s) => s.rounds)
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    const onDown = (e: MouseEvent): void => {
-      const el = e.target as HTMLElement
-      if (!el.closest('.rounds-panel') && !el.closest('.rounds-toggle')) onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    document.addEventListener('mousedown', onDown)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.removeEventListener('mousedown', onDown)
-    }
-  }, [onClose])
-
   return (
-    <div className="rounds-panel" role="dialog" aria-label={t('roundsTitle')}>
-      <div className="rounds-head">
-        <span className="rounds-title">{t('roundsTitle')}</span>
-        <button type="button" className="btn-ghost" onClick={onClose}>
-          {t('close')}
-        </button>
-      </div>
+    <SlideOver title={t('roundsTitle')} onClose={onClose} ignoreSelector=".rounds-toggle">
       {rounds.length === 0 ? (
         <p className="rounds-empty">{t('roundsEmpty')}</p>
       ) : (
@@ -74,6 +52,6 @@ export function RoundsPanel({ onClose }: { onClose: () => void }) {
           })}
         </ol>
       )}
-    </div>
+    </SlideOver>
   )
 }
