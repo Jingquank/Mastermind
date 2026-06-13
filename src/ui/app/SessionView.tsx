@@ -12,6 +12,7 @@ import { ProposalCard } from '../review/ProposalCard'
 import { useProposals } from '../review/proposalStore'
 import { RoundsPanel } from '../review/RoundsPanel'
 import { Outline } from '../review/Outline'
+import { MarkGutter, type MarkTick } from '../review/MarkGutter'
 import { extractOutline } from '../modes/reading/outline'
 import { scrollToSpan } from '../util/scroll'
 import { DiffView } from '../diff/DiffView'
@@ -172,6 +173,24 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     [analysis],
   )
   const outline = useMemo(() => (analysis ? extractOutline(analysis.tree) : []), [analysis])
+  const markTicks = useMemo<MarkTick[]>(() => {
+    if (!analysis) return []
+    const ticks: MarkTick[] = []
+    for (const item of analysis.items) {
+      if (item.type === 'suggestion') {
+        const idx = analysis.spans.indexOf(item.span)
+        if (idx >= 0) ticks.push({ spanIndex: idx, kind: item.span.kind as MarkTick['kind'] })
+      } else if (item.type === 'highlight') {
+        const idx = analysis.spans.indexOf(item.span)
+        if (idx >= 0) ticks.push({ spanIndex: idx, kind: 'highlight' })
+      } else {
+        const anchor = item.anchor ?? item.comments[0]?.span
+        const idx = anchor ? analysis.spans.indexOf(anchor) : -1
+        if (idx >= 0) ticks.push({ spanIndex: idx, kind: 'comment' })
+      }
+    }
+    return ticks
+  }, [analysis])
 
   // keyboard suggestion walker: n/p (or j/k) step, Enter accepts, Backspace rejects
   useEffect(() => {
@@ -436,6 +455,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
           />
           <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />
           <ProposalCard onEdit={applyEdits} />
+          {markTicks.length > 0 && <MarkGutter docRef={articleRef} marks={markTicks} version={externalVersion} />}
         </>
       )}
       {handedBack && (

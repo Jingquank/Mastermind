@@ -1186,6 +1186,62 @@ input[type='checkbox'] {
   }
 }
 
+/* ---------- mark gutter / minimap ---------- */
+
+.mark-gutter {
+  position: fixed;
+  top: var(--topbar-h);
+  right: 0;
+  width: 12px;
+  height: calc(100vh - var(--topbar-h));
+  z-index: 15;
+  cursor: pointer;
+}
+
+.mark-gutter:hover {
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+
+.mark-gutter-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: color-mix(in srgb, var(--color-text) 9%, transparent);
+  pointer-events: none;
+}
+
+.mark-tick {
+  position: absolute;
+  right: 2px;
+  width: 7px;
+  height: 2px;
+  border-radius: 1px;
+  transform: translateY(-1px);
+}
+
+.mark-tick.tick-ins {
+  background: var(--review-insert-border);
+}
+.mark-tick.tick-del {
+  background: var(--review-delete-border);
+}
+.mark-tick.tick-sub {
+  background: var(--review-delete-border);
+}
+.mark-tick.tick-hl {
+  background: var(--review-highlight-border);
+}
+.mark-tick.tick-comment {
+  background: var(--review-comment-anchor);
+}
+
+@media (max-width: 1180px) {
+  .mark-gutter {
+    display: none;
+  }
+}
+
 /* ---------- rounds timeline ---------- */
 
 .rounds-panel {
