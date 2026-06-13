@@ -117,5 +117,24 @@ export type SseEvent =
   | { event: 'session-closed'; data: { reason: SessionCloseReason } }
   | { event: 'config-changed'; data: Record<string, never> }
   | { event: 'waiters-changed'; data: { count: number } }
+  /** an assist-capable agent (mastermind assist) is/ isn't listening on this session */
+  | { event: 'assist-availability'; data: { available: boolean } }
+  /** server → agent: please do this LLM task and POST the result back */
+  | { event: 'assist-request'; data: AssistRequestEvent }
+  /** server → ui: a suggest request settled (translate results return on the HTTP response) */
+  | { event: 'assist-result'; data: { id: string; kind: 'suggest'; ok: boolean } }
 
 export type SseEventName = SseEvent['event']
+
+/* ---- agent-channel (assist) ---- */
+
+export interface AssistBlock {
+  hash: string
+  text: string
+}
+
+export type AssistRequestEvent =
+  | { id: string; kind: 'translate'; sourceLang: string; targetLang: string; blocks: AssistBlock[] }
+  | { id: string; kind: 'suggest'; scope: 'selection' | 'section' | 'document'; selection: string; context?: string }
+
+export type AssistResultPayload = { kind: 'translate'; blocks: AssistBlock[] } | { kind: 'suggest'; markup: string }

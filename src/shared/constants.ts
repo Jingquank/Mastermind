@@ -12,3 +12,6 @@ export const SNAPSHOT_KEEP = 20
 
 /** Until the settings panel (M9) makes it configurable. */
 export const DEFAULT_AUTHOR_TAG = 'ke'
+
+/** How long an agent-channel request waits for the agent to answer. */
+export const ASSIST_TIMEOUT_MS = 120_000

@@ -21,13 +21,16 @@ import { scanThemes } from './themes'
 import { clearCache } from './translate/cache'
 import { providerConfigured, translateBlocks, type TranslateRequestBlock } from './translate/index'
 import { startWatcher, stopWatcher } from './watch'
+import type { AssistRegistry } from './assist/index'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
 import { serveFile } from './static'
+import type { AssistResultPayload } from '../shared/types'
 
 export interface AppDeps {
   registry: SessionRegistry
+  assist: AssistRegistry
   version: string
   startedAt: number
   requestShutdown: (reason: string) => void
@@ -38,7 +41,7 @@ const LOCAL_HOST_RE = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/
 const LOCAL_ORIGIN_RE = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/
 
 export function createApp(deps: AppDeps): Hono {
-  const { registry } = deps
+  const { registry, assist } = deps
   const app = new Hono()
 
   // Guards: localhost-only Host (DNS rebinding) and same-machine Origin for writes (CSRF).
@@ -289,15 +292,48 @@ export function createApp(deps: AppDeps): Hono {
     return c.json(latest)
   })
 
+  // --- agent-channel (assist) --- (POST /api/assist for suggestions lands in V5)
+
+  app.get('/api/assist/pending', (c) => {
+    const sessionId = c.req.query('sessionId')
+    const session = sessionId ? registry.get(sessionId) : undefined
+    if (!session) return c.json({ error: 'session not found' }, 404)
+    return c.json({ requests: assist.pendingFor(session.id) })
+  })
+
+  app.post('/api/assist/:id/result', async (c) => {
+    let payload: AssistResultPayload
+    try {
+      payload = await c.req.json<AssistResultPayload>()
+    } catch {
+      return c.json({ error: 'invalid JSON body' }, 400)
+    }
+    return assist.resolve(c.req.param('id'), payload) ? c.body(null, 204) : c.json({ error: 'unknown or expired' }, 404)
+  })
+
+  app.post('/api/assist/:id/error', async (c) => {
+    let body: { reason?: string }
+    try {
+      body = await c.req.json()
+    } catch {
+      body = {}
+    }
+    return assist.fail(c.req.param('id'), body.reason ?? 'declined')
+      ? c.body(null, 204)
+      : c.json({ error: 'unknown or expired' }, 404)
+  })
+
   app.get('/api/sessions/:id/events', (c) => {
     const sessionId = c.req.param('id')
     const role: ConnRole = c.req.query('role') === 'cli' ? 'cli' : 'ui'
+    const assistCapable = role === 'cli' && c.req.query('assist') === '1'
     if (!registry.get(sessionId)) return c.json({ error: 'session not found' }, 404)
 
     return streamSSE(c, async (stream) => {
       let open = true
       const conn: Conn = {
         role,
+        assistCapable,
         send: async (event: SseEventName, data: unknown) => {
           await stream.writeSSE({ event, data: JSON.stringify(data) })
         },

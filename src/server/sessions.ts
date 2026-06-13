@@ -11,6 +11,8 @@ export type ConnRole = 'ui' | 'cli'
 
 export interface Conn {
   readonly role: ConnRole
+  /** cli conns that opted into agent-channel work (SSE `assist=1`); answers translate/suggest requests. */
+  readonly assistCapable?: boolean
   /** Push one SSE event to this connection. */
   readonly send: (event: SseEventName, data: unknown) => Promise<void>
   /** Force the underlying stream closed. */
@@ -27,6 +29,8 @@ export interface Session {
   lastSelfWriteHash: string | null
   /** chokidar handle, owned by server/watch.ts */
   watcher: { close(): Promise<void> } | null
+  /** in-flight agent-channel request ids, cancelled on close (owned by assist registry) */
+  readonly pendingAssist: Set<string>
   readonly uiConns: Set<Conn>
   readonly cliConns: Set<Conn>
   /* liveness bookkeeping */
@@ -73,6 +77,7 @@ export class SessionRegistry {
       createdAt: Date.now(),
       lastSelfWriteHash: null,
       watcher: null,
+      pendingAssist: new Set(),
       uiConns: new Set(),
       cliConns: new Set(),
       everConnected: false,
@@ -135,8 +140,17 @@ export class SessionRegistry {
     } else {
       session.cliConns.add(conn)
       this.broadcast(sessionId, 'waiters-changed', { count: session.cliConns.size }, ['ui'])
+      if (conn.assistCapable) {
+        this.broadcast(sessionId, 'assist-availability', { available: true }, ['ui'])
+      }
     }
     return true
+  }
+
+  /** Any assist-capable cli conn currently listening on this session. */
+  hasAssistListener(session: Session): boolean {
+    for (const c of session.cliConns) if (c.assistCapable) return true
+    return false
   }
 
   detach(sessionId: string, conn: Conn): void {
@@ -147,6 +161,9 @@ export class SessionRegistry {
     session.cliConns.delete(conn)
     if (hadCli && !session.closed) {
       this.broadcast(sessionId, 'waiters-changed', { count: session.cliConns.size }, ['ui'])
+      if (conn.assistCapable) {
+        this.broadcast(sessionId, 'assist-availability', { available: this.hasAssistListener(session) }, ['ui'])
+      }
     }
     if (conn.role === 'ui' && session.uiConns.size === 0 && session.everConnected && !session.closed) {
       this.armGrace(session)

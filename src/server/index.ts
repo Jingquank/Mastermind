@@ -5,6 +5,7 @@ import type { Server } from 'node:http'
 import pkg from '../../package.json'
 import { DAEMON_IDLE_EXIT_MS, DEFAULT_PORT, PORT_SCAN_LIMIT } from '../shared/constants'
 import { createApp } from './app'
+import { AssistRegistry } from './assist/index'
 import { log } from './log'
 import { SessionRegistry } from './sessions'
 import { clearServerState, readServerState, writeServerState } from './statefile'
@@ -53,11 +54,13 @@ async function main(): Promise<void> {
     graceMs: Number(process.env.MASTERMIND_GRACE_MS || '') || undefined,
     neverOpenedMs: Number(process.env.MASTERMIND_NEVER_OPENED_MS || '') || undefined,
   })
+  const assist = new AssistRegistry(registry)
   registry.onChange = () => {
     lastActivity = Date.now()
   }
   registry.onSessionOpened = (session) => startWatcher(session, registry)
   registry.onSessionClosed = (session) => {
+    assist.cancelForSession(session.id)
     void stopWatcher(session)
     if (session.isDraft) {
       // abandoned blank draft → remove the placeholder
@@ -83,6 +86,7 @@ async function main(): Promise<void> {
 
   const app = createApp({
     registry,
+    assist,
     version: pkg.version,
     startedAt,
     requestShutdown: shutdown,
