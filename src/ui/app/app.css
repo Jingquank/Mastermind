@@ -1092,10 +1092,112 @@ input[type='checkbox'] {
   }
 }
 
+/* one-shot "released to the agent" beat after a local hand-back */
+.agent-chip.released {
+  animation: agent-released 900ms ease-out;
+}
+
+@keyframes agent-released {
+  0% {
+    transform: scale(1);
+    background: var(--color-accent-surface);
+    border-color: var(--color-accent-dim);
+  }
+  35% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .agent-chip-dot {
     animation: none;
   }
+  .agent-chip.released {
+    animation: none;
+  }
+}
+
+/* ---------- rounds timeline ---------- */
+
+.rounds-panel {
+  position: fixed;
+  top: calc(var(--topbar-h) + 8px);
+  left: calc(var(--space-unit) * 3);
+  z-index: 45;
+  width: 320px;
+  max-height: calc(100vh - var(--topbar-h) - 24px);
+  overflow-y: auto;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  padding: calc(var(--space-unit) * 3);
+}
+
+.rounds-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(var(--space-unit) * 2);
+}
+
+.rounds-title {
+  font-weight: 600;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+}
+
+.rounds-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.rounds-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rounds-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  padding: calc(var(--space-unit) * 2) 0;
+  cursor: pointer;
+}
+
+.rounds-row:hover {
+  background: var(--color-bg);
+}
+
+.rounds-stamp {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.rounds-date {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-micro);
+  color: var(--color-text-muted);
+}
+
+.rounds-counts {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.rounds-delta {
+  font-family: var(--font-mono);
+  color: var(--color-text-faint);
 }
 
 /* ---------- review bulk cluster ---------- */

@@ -10,6 +10,7 @@ import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { ProposalCard } from '../review/ProposalCard'
 import { useProposals } from '../review/proposalStore'
+import { RoundsPanel } from '../review/RoundsPanel'
 import { DiffView } from '../diff/DiffView'
 import { formatCounts, useLang, useT } from '../i18n'
 import { CheckIcon } from '../icons'
@@ -46,7 +47,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const handedBack = useDoc((s) => s.handedBack)
   const notice = useDoc((s) => s.notice)
   const diffOpen = useDoc((s) => s.diffOpen)
+  const diffLeftSnapshotId = useDoc((s) => s.diffLeftSnapshotId)
   const diffOffer = useDoc((s) => s.diffOffer)
+  const roundsOpen = useDoc((s) => s.roundsOpen)
+  const rounds = useDoc((s) => s.rounds)
+  const handbackPulse = useDoc((s) => s.handbackPulse)
   const renamePrompt = useDoc((s) => s.renamePrompt)
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
@@ -82,6 +87,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     void load(sessionId)
     useTranslation.getState().reset()
+    void useDoc.getState().loadRounds()
   }, [sessionId, load])
 
   useEffect(() => {
@@ -295,7 +301,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       <>
         <TopBar agentWaiting={agentWaiting} onToggleSettings={() => setSettingsOpen((v) => !v)} />
         {settingsOpen && <SettingsPanel onClose={closeSettings} />}
-        <DiffView sessionId={sessionId} onClose={() => useDoc.getState().setDiffOpen(false)} />
+        <DiffView
+          sessionId={sessionId}
+          onClose={() => useDoc.getState().setDiffOpen(false)}
+          left={diffLeftSnapshotId ? { kind: 'snapshot', id: diffLeftSnapshotId } : { kind: 'latest' }}
+        />
       </>
     )
   }
@@ -322,6 +332,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         onRejectAll={() => bulkResolve('reject')}
         onToggleSettings={() => setSettingsOpen((v) => !v)}
         agentWaiting={agentWaiting}
+        handbackPulse={handbackPulse}
+        roundCount={rounds.length}
+        onToggleRounds={rounds.length > 0 ? () => useDoc.getState().setRoundsOpen(!roundsOpen) : undefined}
         translation={
           providerConfigured && mode === 'reading'
             ? {
@@ -342,6 +355,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         }
       />
       {settingsOpen && <SettingsPanel onClose={closeSettings} />}
+      {roundsOpen && <RoundsPanel onClose={() => useDoc.getState().setRoundsOpen(false)} />}
       {renamePrompt && <RenameDialog />}
       {conflict && (
         <div className="banner" role="alert">

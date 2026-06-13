@@ -19,6 +19,9 @@ interface TopBarProps {
     onToggle: () => void
   }
   agentWaiting?: boolean
+  handbackPulse?: boolean
+  roundCount?: number
+  onToggleRounds?: () => void
 }
 
 export function TopBar({
@@ -30,6 +33,9 @@ export function TopBar({
   onToggleSettings,
   translation,
   agentWaiting = false,
+  handbackPulse = false,
+  roundCount = 0,
+  onToggleRounds,
 }: TopBarProps) {
   const t = useT()
   const headerRef = useRef<HTMLElement | null>(null)
@@ -65,7 +71,7 @@ export function TopBar({
         <span className="topbar-filename">{meta?.displayName ?? '…'}</span>
         <span className={`dirty-dot${dirty ? ' visible' : ''}`} title={dirty ? t('unsavedChanges') : t('saved')} />
         {agentWaiting && (
-          <span className="agent-chip" title={t('handBackTitle')}>
+          <span className={`agent-chip${handbackPulse ? ' released' : ''}`} title={t('handBackTitle')}>
             <span className="agent-chip-dot" />
             {t('agentWaiting')}
           </span>
@@ -110,6 +116,11 @@ export function TopBar({
               {t('rejectAll')}
             </button>
           </div>
+        )}
+        {onToggleRounds && (
+          <button type="button" className="btn-ghost rounds-toggle" onClick={onToggleRounds} title={t('roundsTitle')}>
+            {t('rounds')} {roundCount}
+          </button>
         )}
         {onToggleRail && (
           <button type="button" className="btn-ghost" onClick={onToggleRail} title={t('toggleRail')}>
