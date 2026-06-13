@@ -1,5 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react'
 import { useT } from '../i18n'
+import { CheckIcon, CrossIcon } from '../icons'
 import { acceptEdit, rejectEdit } from '../../shared/critic/resolve'
 import type { CriticSpan } from '../../shared/critic/types'
 import type { TextEdit } from '../../shared/types'
@@ -73,9 +74,11 @@ export function HoverActions({ articleRef, spans, source, onEdit }: Props) {
       style={{ top: Math.max(4, state.top - 34), left: Math.max(4, state.left) }}
     >
       <button type="button" className="accept" onClick={() => act('accept')}>
+        <CheckIcon width={12} height={12} />
         {t('accept')}
       </button>
       <button type="button" className="reject" onClick={() => act('reject')}>
+        <CrossIcon width={12} height={12} />
         {t('reject')}
       </button>
     </div>

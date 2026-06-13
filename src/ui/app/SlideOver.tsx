@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useT } from '../i18n'
+import { CrossIcon } from '../icons'
 
 interface Props {
   title: string
@@ -52,7 +53,7 @@ export function SlideOver({ title, onClose, ignoreSelector, children }: Props) {
       <div className="slide-over-head">
         <span className="slide-over-title">{title}</span>
         <button type="button" className="btn-ghost slide-over-close" onClick={onClose} aria-label={t('close')}>
-          ✕
+          <CrossIcon />
         </button>
       </div>
       <div className="slide-over-body">{children}</div>

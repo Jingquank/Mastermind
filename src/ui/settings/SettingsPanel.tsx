@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useConfig, type ConfigPatch } from '../app/configStore'
 import { SlideOver } from '../app/SlideOver'
+import { SwapIcon } from '../icons'
 import { useT } from '../i18n'
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -130,7 +131,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               defaultValue={config.langPair.a}
               onBlur={(e) => patch({ langPair: { ...config.langPair, a: e.target.value.trim() || 'en' } })}
             />
-            ⇄
+            <SwapIcon />
             <input
               type="text"
               className="settings-input narrow"

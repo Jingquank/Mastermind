@@ -3,6 +3,7 @@ import type { Analysis } from '../../shared/markdown/analyze'
 import { parseAuthor } from '../../shared/critic/scanner'
 import { useT } from '../i18n'
 import { scrollToSpan } from '../util/scroll'
+import { ChevronUpIcon, ChevronDownIcon } from '../icons'
 
 type Filter = 'all' | 'comment' | 'suggestion' | 'highlight'
 
@@ -112,10 +113,10 @@ export function FindBar({ analysis, source, docRef, onClose }: Props) {
       </div>
       <span className="find-count">{matches.length ? `${current}/${matches.length}` : t('findNone')}</span>
       <button type="button" className="find-nav" disabled={!matches.length} onClick={() => step(-1)} aria-label="Previous">
-        ↑
+        <ChevronUpIcon />
       </button>
       <button type="button" className="find-nav" disabled={!matches.length} onClick={() => step(1)} aria-label="Next">
-        ↓
+        <ChevronDownIcon />
       </button>
       <button type="button" className="btn-ghost" onClick={onClose}>
         {t('close')}

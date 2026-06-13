@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { CriticSpan } from '../../../shared/critic/types'
 import type { TextEdit } from '../../../shared/types'
 import { useT } from '../../i18n'
+import { ChatIcon, StrikethroughIcon, HighlighterIcon, PencilIcon } from '../../icons'
 import { rangeToSource, type SelRange } from './selection'
 
 interface Props {
@@ -126,12 +127,15 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
       {!composing ? (
         <>
           <button type="button" onClick={() => setComposing(true)}>
+            <ChatIcon width={13} height={13} />
             {t('comment')}
           </button>
           <button type="button" onClick={() => apply(`{--${slice}--}`)}>
+            <StrikethroughIcon width={13} height={13} />
             {t('suggestDeletion')}
           </button>
           <button type="button" onClick={() => apply(`{==${slice}==}`)}>
+            <HighlighterIcon width={13} height={13} />
             {t('highlight')}
           </button>
           {canSuggest && onSuggest && (
@@ -144,6 +148,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
                 setActive(null)
               }}
             >
+              <PencilIcon width={13} height={13} />
               {t('suggestEdits')}
             </button>
           )}

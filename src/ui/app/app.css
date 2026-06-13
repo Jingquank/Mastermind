@@ -432,6 +432,9 @@ button:disabled {
 }
 
 .sel-toolbar > button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 1.5);
   background: transparent;
   border: none;
   border-radius: var(--radius-xs);
@@ -781,6 +784,9 @@ mark.critic-hl.critic-anchor:hover {
 }
 
 .hover-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 1);
   background: transparent;
   border: none;
   border-radius: var(--radius-xs);

@@ -1,12 +1,39 @@
-import type { SVGProps } from 'react'
+import type { ComponentType, SVGProps } from 'react'
+import {
+  GearIcon as RGearIcon,
+  ChatBubbleIcon,
+  ExclamationTriangleIcon,
+  CheckIcon as RCheckIcon,
+  DotsHorizontalIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon as RChevronLeftIcon,
+  ChevronUpIcon as RChevronUpIcon,
+  ChevronDownIcon as RChevronDownIcon,
+  FileIcon as RFileIcon,
+  Cross2Icon,
+  Pencil1Icon,
+  StrikethroughIcon as RStrikethroughIcon,
+  EyeOpenIcon,
+  CounterClockwiseClockIcon,
+  MagnifyingGlassIcon,
+} from '@radix-ui/react-icons'
+
+type IconProps = SVGProps<SVGSVGElement>
 
 /**
- * The app's entire icon set: tiny stroke glyphs on currentColor, replacing
- * the emoji/text glyphs flagged in review (💬 ⚙ ⚠ ✓ ◆ ⇄). 1.5px strokes,
- * geometry aligned to the 4px-ceiling shape language.
+ * The app's icon set. Chrome glyphs come from @radix-ui/react-icons (15px grid,
+ * currentColor); the few Radix lacks (folder, language-swap, the comment
+ * diamond, the pending dot, the highlighter) stay hand-drawn at 1.5px stroke.
+ * Every icon is decorative (aria-hidden) — labels/tooltips carry the meaning.
+ * Existing import names are preserved so consumer call sites don't change.
  */
+function radix(Icon: ComponentType<any>, size: number) {
+  return function RadixGlyph(props: IconProps) {
+    return <Icon width={size} height={size} aria-hidden focusable={false} {...props} />
+  }
+}
 
-function base(props: SVGProps<SVGSVGElement>, size = 14): SVGProps<SVGSVGElement> {
+function base(props: IconProps, size = 14): IconProps {
   return {
     width: size,
     height: size,
@@ -22,50 +49,39 @@ function base(props: SVGProps<SVGSVGElement>, size = 14): SVGProps<SVGSVGElement
   }
 }
 
-export function GearIcon(props: SVGProps<SVGSVGElement>) {
+/* ---- Radix chrome glyphs (existing names preserved) ---- */
+export const GearIcon = radix(RGearIcon, 14)
+export const ChatIcon = radix(ChatBubbleIcon, 14)
+export const AlertIcon = radix(ExclamationTriangleIcon, 14)
+export const CheckIcon = radix(RCheckIcon, 14)
+export const MoreIcon = radix(DotsHorizontalIcon, 15)
+/** A right-pointing chevron; CSS rotates it 90° when its row is expanded. */
+export const ChevronIcon = radix(ChevronRightIcon, 14)
+export const ChevronLeftIcon = radix(RChevronLeftIcon, 14)
+export const ChevronUpIcon = radix(RChevronUpIcon, 13)
+export const ChevronDownIcon = radix(RChevronDownIcon, 13)
+export const FileIcon = radix(RFileIcon, 14)
+
+/* ---- new review/chrome verbs ---- */
+export const CrossIcon = radix(Cross2Icon, 14)
+export const PencilIcon = radix(Pencil1Icon, 14)
+export const StrikethroughIcon = radix(RStrikethroughIcon, 14)
+export const EyeIcon = radix(EyeOpenIcon, 14)
+export const HistoryIcon = radix(CounterClockwiseClockIcon, 14)
+export const SearchIcon = radix(MagnifyingGlassIcon, 14)
+
+/* ---- hand-drawn glyphs Radix lacks ---- */
+
+export function FolderIcon(props: IconProps) {
   return (
-    <svg {...base(props)}>
-      <circle cx="8" cy="8" r="2.4" />
-      <path d="M8 1.8v2M8 12.2v2M14.2 8h-2M3.8 8h-2M12.4 3.6l-1.4 1.4M5 11l-1.4 1.4M12.4 12.4 11 11M5 5 3.6 3.6" />
+    <svg {...base(props, 14)}>
+      <path d="M2 4.5h4l1.2 1.4H14v6.1H2z" />
     </svg>
   )
 }
 
-export function ChatIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props)}>
-      <path d="M2.5 3.5h11v7h-6l-3 2.7v-2.7h-2z" />
-    </svg>
-  )
-}
-
-export function AlertIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props)}>
-      <path d="M8 2.2 14.6 13H1.4z" />
-      <path d="M8 6.4v3" />
-      <circle cx="8" cy="11.4" r="0.4" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-export function CheckIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props)}>
-      <path d="m3 8.6 3.2 3.2L13 4.6" />
-    </svg>
-  )
-}
-
-export function DiamondIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props, 9)} viewBox="0 0 16 16">
-      <path d="M8 1.5 14.5 8 8 14.5 1.5 8z" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-export function SwapIcon(props: SVGProps<SVGSVGElement>) {
+/** Language-swap (⇄) — Radix has no clean horizontal double-arrow. */
+export function SwapIcon(props: IconProps) {
   return (
     <svg {...base(props, 13)}>
       <path d="M2.5 5.5h9.5m0 0L9.5 3m2.5 2.5L9.5 8M13.5 10.5H4m0 0L6.5 8M4 10.5 6.5 13" />
@@ -73,56 +89,29 @@ export function SwapIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-export function PendingDot(props: SVGProps<SVGSVGElement>) {
+/** Highlighter — a broad-nib marker over a stroke (the Highlight review verb). */
+export function HighlighterIcon(props: IconProps) {
+  return (
+    <svg {...base(props, 14)}>
+      <path d="M3 13.5h9" />
+      <path d="M10.2 2.6 13.4 5.8 7 12.2l-3.4.5.5-3.4z" />
+    </svg>
+  )
+}
+
+/** The inline comment marker (a small filled diamond). */
+export function DiamondIcon(props: IconProps) {
+  return (
+    <svg {...base(props, 9)}>
+      <path d="M8 1.5 14.5 8 8 14.5 1.5 8z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function PendingDot(props: IconProps) {
   return (
     <svg {...base(props, 8)}>
       <circle cx="8" cy="8" r="3" fill="currentColor" stroke="none" opacity={0.55} />
-    </svg>
-  )
-}
-
-/** A right-pointing chevron; CSS rotates it 90° when its row is expanded. */
-export function ChevronIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props, 12)}>
-      <path d="m6 4 4 4-4 4" />
-    </svg>
-  )
-}
-
-/** A left-pointing chevron (collapse the navigator). */
-export function ChevronLeftIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props, 13)}>
-      <path d="m10 4-4 4 4 4" />
-    </svg>
-  )
-}
-
-export function FolderIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props, 13)}>
-      <path d="M2 4.5h4l1.2 1.4H14v6.1H2z" />
-    </svg>
-  )
-}
-
-export function FileIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props, 13)}>
-      <path d="M4 2.2h5l3 3v8.6H4z" />
-      <path d="M9 2.2v3h3" />
-    </svg>
-  )
-}
-
-/** Horizontal ellipsis — the overflow / "more actions" trigger. */
-export function MoreIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base(props, 15)}>
-      <circle cx="3.5" cy="8" r="1.1" fill="currentColor" stroke="none" />
-      <circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" />
-      <circle cx="12.5" cy="8" r="1.1" fill="currentColor" stroke="none" />
     </svg>
   )
 }
