@@ -43,6 +43,8 @@ export interface SessionMeta {
   mtimeMs: number
   /** A `mastermind open --wait` is currently blocked on this session. */
   agentWaiting: boolean
+  /** An assist-capable agent (`mastermind assist`) is listening on this session. */
+  assistAvailable: boolean
 }
 
 export interface FileResponse {

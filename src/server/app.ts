@@ -21,7 +21,7 @@ import { scanThemes } from './themes'
 import { clearCache } from './translate/cache'
 import { providerConfigured, translateBlocks, type TranslateRequestBlock } from './translate/index'
 import { startWatcher, stopWatcher } from './watch'
-import type { AssistRegistry } from './assist/index'
+import { AssistError, type AssistRegistry } from './assist/index'
 import { log } from './log'
 import { themesDir, uiDir } from './paths'
 import { type Conn, type ConnRole, SessionRegistry } from './sessions'
@@ -103,14 +103,21 @@ export function createApp(deps: AppDeps): Hono {
     if (!session) return c.json({ error: 'session not found' }, 404)
     const config = readConfig()
     if (!providerConfigured(config)) return c.json({ error: 'no translation provider configured' }, 400)
-    const results = await translateBlocks(
-      session,
-      body.blocks.slice(0, 50),
-      body.sourceLang ?? 'auto-detected source language',
-      body.targetLang,
-      config,
-    )
-    return c.json({ results })
+    try {
+      const results = await translateBlocks(
+        session,
+        body.blocks.slice(0, 50),
+        body.sourceLang ?? 'auto-detected source language',
+        body.targetLang,
+        config,
+        assist,
+      )
+      return c.json({ results })
+    } catch (err) {
+      // agent-channel surfaces no-agent/timeout/cancel here (the whole batch fails)
+      const code = err instanceof AssistError ? err.code : 'provider'
+      return c.json({ error: code }, code === 'no-agent' ? 409 : 502)
+    }
   })
 
   app.delete('/api/translate/cache', (c) => {
@@ -185,6 +192,7 @@ export function createApp(deps: AppDeps): Hono {
       isDraft: session.isDraft,
       mtimeMs,
       agentWaiting: session.cliConns.size > 0,
+      assistAvailable: registry.hasAssistListener(session),
     }
     return c.json(meta)
   })

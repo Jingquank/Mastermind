@@ -1,5 +1,6 @@
 import { validateTranslatedBlock } from '../../shared/blocks'
 import type { MastermindConfig } from '../../shared/types'
+import type { AssistRegistry } from '../assist/index'
 import { log } from '../log'
 import type { Session } from '../sessions'
 import { loadCache, saveCache } from './cache'
@@ -32,8 +33,27 @@ export async function translateBlocks(
   sourceLang: string,
   targetLang: string,
   config: MastermindConfig,
+  assist?: AssistRegistry,
 ): Promise<TranslateResult[]> {
   const provider = config.provider!
+
+  // agent-channel: one batched request to the user's agent, no on-disk cache
+  // (the "model" is whatever the agent answered — not a stable cache identity;
+  // the UI's in-memory map is the only cache). May throw AssistError (the route
+  // turns it into 409 no-agent / 502).
+  if (provider.type === 'agent-channel') {
+    if (!assist) throw new Error('agent-channel translate requires the assist registry')
+    if (blocks.length === 0) return []
+    const payload = await assist.enqueue(session, { kind: 'translate', sourceLang, targetLang, blocks })
+    const byHash = new Map(payload.kind === 'translate' ? payload.blocks.map((b) => [b.hash, b.text]) : [])
+    return blocks.map((block): TranslateResult => {
+      const text = byHash.get(block.hash)
+      if (text === undefined) return { hash: block.hash, error: 'provider', cached: false }
+      if (!validateTranslatedBlock(block.text, text)) return { hash: block.hash, error: 'structure', cached: false }
+      return { hash: block.hash, text, cached: false }
+    })
+  }
+
   const model = provider.model ?? ''
   const entries = loadCache(session.path, targetLang, model)
   const results: TranslateResult[] = []

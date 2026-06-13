@@ -66,10 +66,14 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     requestAnimationFrame(() => document.querySelector<HTMLElement>('.settings-gear')?.focus())
   }, [])
   const [agentWaiting, setAgentWaiting] = useState(false)
+  const [assistAvailable, setAssistAvailable] = useState(false)
   const [walkIndex, setWalkIndex] = useState<number | null>(null)
   const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
   const providerConfigured = useConfig((s) => s.config?.provider?.configured) ?? false
+  const providerType = useConfig((s) => s.config?.provider?.type) ?? null
   const langPair = useConfig((s) => s.config?.langPair) ?? { a: 'en', b: 'zh-CN' }
+  // agent-channel needs a live `mastermind assist` listener; API providers are always "available"
+  const translationReady = providerConfigured && (providerType !== 'agent-channel' || assistAvailable)
   const transActive = useTranslation((s) => s.active)
   const transLoading = useTranslation((s) => s.loading)
 
@@ -80,6 +84,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     setAgentWaiting(meta?.agentWaiting ?? false)
+    setAssistAvailable(meta?.assistAvailable ?? false)
   }, [meta])
 
   // toasts auto-clear
@@ -116,6 +121,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     es.addEventListener('waiters-changed', (e) => {
       const { count } = JSON.parse((e as MessageEvent).data) as { count: number }
       setAgentWaiting(count > 0)
+    })
+    es.addEventListener('assist-availability', (e) => {
+      const { available } = JSON.parse((e as MessageEvent).data) as { available: boolean }
+      setAssistAvailable(available)
     })
     return () => es.close()
   }, [sessionId])
@@ -318,6 +327,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
                     })(),
                 active: transActive,
                 loading: transLoading,
+                // agent-channel toggle is disabled until `mastermind assist` is listening
+                disabled: !translationReady && !transActive,
+                disabledTitle: t('toggleLangNoAgent'),
                 onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
               }
             : undefined

@@ -10,7 +10,14 @@ interface TopBarProps {
   onAcceptAll?: () => void
   onRejectAll?: () => void
   onToggleSettings?: () => void
-  translation?: { label: string; active: boolean; loading: boolean; onToggle: () => void }
+  translation?: {
+    label: string
+    active: boolean
+    loading: boolean
+    disabled?: boolean
+    disabledTitle?: string
+    onToggle: () => void
+  }
   agentWaiting?: boolean
 }
 
@@ -84,8 +91,8 @@ export function TopBar({
             className={`btn-ghost lang-toggle${translation.active ? ' active' : ''}`}
             aria-pressed={translation.active}
             onClick={translation.onToggle}
-            disabled={translation.loading}
-            title={t('toggleLang')}
+            disabled={translation.loading || translation.disabled}
+            title={translation.disabled ? (translation.disabledTitle ?? t('toggleLang')) : t('toggleLang')}
           >
             <SwapIcon />
             {translation.loading ? t('translating') : translation.label}
