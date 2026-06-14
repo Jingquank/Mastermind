@@ -1,33 +1,33 @@
 [data-theme='nacht'] {
-  /* Swiss International — Nacht (dark, electric blue).
+  /* Mint (dark, spring green — Dracula-based).
      v0.4: Radix-rigor 12-step OKLCH scales (anchored to the v0.3 Swiss values),
      with semantic tokens mapped onto the steps. Marks stay hand-tuned. */
 
   /* ---- Layer 1: raw scales (values differ per theme) ---- */
-  --gray-1: oklch(0.169 0.006 271.014);
-  --gray-2: oklch(0.209 0.009 264.373);
-  --gray-3: oklch(0.228 0.006 262.399);
-  --gray-4: oklch(0.247 0.006 262.399);
-  --gray-5: oklch(0.266 0.006 262.399);
-  --gray-6: oklch(0.285 0.006 271.216);
-  --gray-7: oklch(0.343 0.006 262.399);
-  --gray-8: oklch(0.401 0.006 262.399);
-  --gray-9: oklch(0.459 0.006 262.399);
-  --gray-10: oklch(0.517 0.005 271.321);
-  --gray-11: oklch(0.685 0.004 247.879);
-  --gray-12: oklch(0.949 0.006 264.532);
-  --accent-1: oklch(0.205 0.018 262.399);
-  --accent-2: oklch(0.245 0.033 262.399);
-  --accent-3: oklch(0.3 0.057 262.399);
-  --accent-4: oklch(0.36 0.082 262.399);
-  --accent-5: oklch(0.42 0.109 262.399);
-  --accent-6: oklch(0.485 0.135 262.399);
-  --accent-7: oklch(0.56 0.162 262.399);
-  --accent-8: oklch(0.65 0.184 262.399);
-  --accent-9: oklch(0.62 0.205 262.399);
-  --accent-10: oklch(0.74 0.199 262.399);
-  --accent-11: oklch(0.731 0.138 263.383);
-  --accent-12: oklch(0.93 0.152 262.399);
+  --gray-1: oklch(0.288 0.022 277.509);
+  --gray-2: oklch(0.34 0.027 276.046);
+  --gray-3: oklch(0.356 0.006 148.025);
+  --gray-4: oklch(0.371 0.006 148.025);
+  --gray-5: oklch(0.387 0.006 148.025);
+  --gray-6: oklch(0.403 0.032 277.832);
+  --gray-7: oklch(0.442 0.006 148.025);
+  --gray-8: oklch(0.481 0.006 148.025);
+  --gray-9: oklch(0.521 0.006 148.025);
+  --gray-10: oklch(0.56 0.08 270.086);
+  --gray-11: oklch(0.72 0.049 273.138);
+  --gray-12: oklch(0.977 0.008 106.545);
+  --accent-1: oklch(0.205 0.02 148.025);
+  --accent-2: oklch(0.245 0.035 148.025);
+  --accent-3: oklch(0.3 0.061 148.025);
+  --accent-4: oklch(0.36 0.088 148.025);
+  --accent-5: oklch(0.42 0.116 148.025);
+  --accent-6: oklch(0.485 0.145 148.025);
+  --accent-7: oklch(0.56 0.173 148.025);
+  --accent-8: oklch(0.65 0.198 148.025);
+  --accent-9: oklch(0.871 0.22 148.025);
+  --accent-10: oklch(0.74 0.213 148.025);
+  --accent-11: oklch(0.748 0.201 148.012);
+  --accent-12: oklch(0.93 0.162 148.025);
 
   /* ---- Layer 2: semantic mapping (identical names across all themes) ---- */
   --color-bg: var(--gray-1);
@@ -39,9 +39,9 @@
   --color-border-hover: var(--gray-7);
   --color-accent: var(--accent-9);
   --color-accent-dim: var(--accent-11);
-  --color-on-accent: #06122e;
+  --color-on-accent: #0b2016;
   --color-cta-bg: var(--accent-9);
-  --color-cta-text: #06122e;
+  --color-cta-text: #0b2016;
   --focus-ring: var(--accent-8);
   --color-selection: color-mix(in oklab, var(--color-text) 16%, transparent);
   --color-accent-surface: color-mix(in oklab, var(--color-accent) 16%, transparent);
@@ -60,8 +60,8 @@
   --review-delete-border: rgba(240, 102, 74, 0.5);
   --review-highlight-bg: rgba(232, 190, 58, 0.2);
   --review-highlight-border: rgba(232, 190, 58, 0.55);
-  --review-comment-anchor: #9a86ff;
-  --review-comment-active-bg: rgba(154, 134, 255, 0.16);
+  --review-comment-anchor: #bd93f9;
+  --review-comment-active-bg: rgba(189, 147, 249, 0.16);
 
   color-scheme: dark;
 }

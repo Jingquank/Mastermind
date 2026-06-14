@@ -21,7 +21,7 @@ Edge cases punted deliberately, with the behavior you get instead.
 
 ## Selection & comments
 
-- Selecting **across block boundaries** or **across existing marks** is refused (the toolbar simply doesn't appear).
+- Selecting **across block boundaries** is supported: a mark can't cross a block in CriticMarkup, so the selection is split into one mark per spanned block (each block's slice wrapped independently; a comment anchors to the first block). Selecting **across existing marks** is still refused (the toolbar doesn't appear), as is a slice that can't be unambiguously mapped.
 - Selections inside text whose source contains escapes/entities fall back to substring search; ambiguous matches are refused rather than guessed.
 - Anchored-comment adjacency is strict: `{==span==}{>>note<<}` with zero characters between the marks.
 

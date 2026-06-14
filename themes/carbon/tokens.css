@@ -1,0 +1,67 @@
+[data-theme='carbon'] {
+  /* Carbon (near-black, steel blue-gray).
+     v0.4: Radix-rigor 12-step OKLCH scales (anchored to the v0.3 Swiss values),
+     with semantic tokens mapped onto the steps. Marks stay hand-tuned. */
+
+  /* ---- Layer 1: raw scales (values differ per theme) ---- */
+  --gray-1: oklch(0.139 0.003 246.256);
+  --gray-2: oklch(0.187 0.006 271.067);
+  --gray-3: oklch(0.209 0.006 254.388);
+  --gray-4: oklch(0.232 0.006 254.388);
+  --gray-5: oklch(0.254 0.006 254.388);
+  --gray-6: oklch(0.276 0.008 264.438);
+  --gray-7: oklch(0.331 0.006 254.388);
+  --gray-8: oklch(0.386 0.006 254.388);
+  --gray-9: oklch(0.44 0.006 254.388);
+  --gray-10: oklch(0.495 0.007 255.514);
+  --gray-11: oklch(0.692 0.006 264.522);
+  --gray-12: oklch(0.958 0.002 247.84);
+  --accent-1: oklch(0.205 0.005 254.388);
+  --accent-2: oklch(0.245 0.008 254.388);
+  --accent-3: oklch(0.3 0.014 254.388);
+  --accent-4: oklch(0.36 0.02 254.388);
+  --accent-5: oklch(0.42 0.027 254.388);
+  --accent-6: oklch(0.485 0.034 254.388);
+  --accent-7: oklch(0.56 0.04 254.388);
+  --accent-8: oklch(0.65 0.046 254.388);
+  --accent-9: oklch(0.656 0.051 254.388);
+  --accent-10: oklch(0.74 0.049 254.388);
+  --accent-11: oklch(0.77 0.043 256.264);
+  --accent-12: oklch(0.93 0.038 254.388);
+
+  /* ---- Layer 2: semantic mapping (identical names across all themes) ---- */
+  --color-bg: var(--gray-1);
+  --color-bg-elevated: var(--gray-2);
+  --color-text: var(--gray-12);
+  --color-text-muted: var(--gray-11);
+  --color-text-faint: var(--gray-10);
+  --color-border: var(--gray-6);
+  --color-border-hover: var(--gray-7);
+  --color-accent: var(--accent-9);
+  --color-accent-dim: var(--accent-11);
+  --color-on-accent: #0a0e14;
+  --color-cta-bg: var(--accent-9);
+  --color-cta-text: #0a0e14;
+  --focus-ring: var(--accent-8);
+  --color-selection: color-mix(in oklab, var(--color-text) 16%, transparent);
+  --color-accent-surface: color-mix(in oklab, var(--color-accent) 16%, transparent);
+  --color-invert-bg: #f4f4f1;
+  --color-invert-bg-elevated: #ffffff;
+  --color-invert-text: #141414;
+  --color-invert-text-muted: rgba(20, 20, 20, 0.62);
+  --color-invert-border: rgba(20, 20, 20, 0.14);
+
+  /* ---- Layer 3: review / mark semantics (hand-tuned, de-conflicted from accent) ---- */
+  --review-insert-text: #4fc76e;
+  --review-insert-bg: rgba(79, 199, 110, 0.16);
+  --review-insert-border: #4fc76e;
+  --review-delete-text: #f0664a;
+  --review-delete-bg: rgba(240, 102, 74, 0.16);
+  --review-delete-border: rgba(240, 102, 74, 0.5);
+  --review-highlight-bg: rgba(232, 190, 58, 0.2);
+  --review-highlight-border: rgba(232, 190, 58, 0.55);
+  --review-comment-anchor: #c9a8ff;
+  --review-comment-active-bg: rgba(201, 168, 255, 0.16);
+
+  color-scheme: dark;
+}

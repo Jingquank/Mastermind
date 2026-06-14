@@ -3,7 +3,11 @@ import type { CriticSpan } from '../../../shared/critic/types'
 import type { TextEdit } from '../../../shared/types'
 import { useT } from '../../i18n'
 import { ChatIcon, StrikethroughIcon, HighlighterIcon, PencilIcon } from '../../icons'
-import { rangeToSource, type SelRange } from './selection'
+import { usePresence } from '../../util/presence'
+import { rangeToSourceRanges, markEdits, type SelRange } from './selection'
+
+/** matches --dur-fast; the toolbar's pop-out duration */
+const EXIT_MS = 120
 
 interface Props {
   containerRef: RefObject<HTMLElement | null>
@@ -17,7 +21,8 @@ interface Props {
 }
 
 interface Active {
-  sel: SelRange
+  /** one source range per block the selection spans (≥1, in document order) */
+  ranges: SelRange[]
   rect: { top: number; left: number; width: number }
 }
 
@@ -33,6 +38,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
   const [comment, setComment] = useState('')
   const composingRef = useRef(false)
   composingRef.current = composing
+  const lastActive = useRef<Active | null>(null)
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
@@ -51,13 +57,13 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
           setActive(null)
           return
         }
-        const res = rangeToSource(range, source, spans)
+        const res = rangeToSourceRanges(range, source, spans)
         if ('error' in res) {
           setActive(null)
           return
         }
         const rect = range.getBoundingClientRect()
-        setActive({ sel: res, rect: { top: rect.top, left: rect.left, width: rect.width } })
+        setActive({ ranges: res.ranges, rect: { top: rect.top, left: rect.left, width: rect.width } })
       }, 120)
     }
     document.addEventListener('selectionchange', onSelectionChange)
@@ -100,23 +106,30 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
     }
   }, [active])
 
-  if (!active) return null
+  // keep the toolbar mounted through its leave animation; render against the
+  // last live selection so position/contents hold steady while it fades out.
+  const present = usePresence(!!active, EXIT_MS)
+  if (active) lastActive.current = active
+  const view = active ?? lastActive.current
+  if (!present.mounted || !view) return null
 
-  const slice = source.slice(active.sel.from, active.sel.to)
-  const apply = (insert: string): void => {
-    onEdit([{ from: active.sel.from, to: active.sel.to, insert }])
+  // wrap each spanned block's slice independently — a mark can't cross a block
+  // boundary, so a multi-block selection becomes one mark per block.
+  const apply = (wrap: (text: string, index: number, isLast: boolean) => string): void => {
+    onEdit(markEdits(view.ranges, wrap))
     window.getSelection()?.removeAllRanges()
     setActive(null)
     setComposing(false)
     setComment('')
   }
+  const commentInsert = (s: string): string => `{==${s}==}{>>@${authorTag}: ${sanitizeComment(comment)}<<}`
 
-  const top = Math.max(8, active.rect.top - (composing ? 150 : 44))
-  const left = Math.min(Math.max(8, active.rect.left + active.rect.width / 2 - 130), window.innerWidth - 280)
+  const top = Math.max(8, view.rect.top - (composing ? 150 : 44))
+  const left = Math.min(Math.max(8, view.rect.left + view.rect.width / 2 - 130), window.innerWidth - 280)
 
   return (
     <div
-      className="sel-toolbar"
+      className={`sel-toolbar${present.exiting ? ' closing' : ''}`}
       style={{ top, left }}
       onMouseDown={(e) => {
         // keep the document selection alive while clicking toolbar buttons,
@@ -130,20 +143,21 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             <ChatIcon width={13} height={13} />
             {t('comment')}
           </button>
-          <button type="button" onClick={() => apply(`{--${slice}--}`)}>
+          <button type="button" onClick={() => apply((s) => `{--${s}--}`)}>
             <StrikethroughIcon width={13} height={13} />
             {t('suggestDeletion')}
           </button>
-          <button type="button" onClick={() => apply(`{==${slice}==}`)}>
+          <button type="button" onClick={() => apply((s) => `{==${s}==}`)}>
             <HighlighterIcon width={13} height={13} />
             {t('highlight')}
           </button>
-          {canSuggest && onSuggest && (
+          {canSuggest && onSuggest && view.ranges.length === 1 && (
             <button
               type="button"
               className="sel-suggest"
               onClick={() => {
-                onSuggest({ from: active.sel.from, to: active.sel.to }, slice)
+                const r = view.ranges[0]!
+                onSuggest({ from: r.from, to: r.to }, r.text)
                 window.getSelection()?.removeAllRanges()
                 setActive(null)
               }}
@@ -164,7 +178,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && comment.trim()) {
-                apply(`{==${slice}==}{>>@${authorTag}: ${sanitizeComment(comment)}<<}`)
+                apply((s, i) => (i === 0 ? commentInsert(s) : `{==${s}==}`))
               } else if (e.key === 'Escape') {
                 // the textarea swallows keydowns (stopPropagation below), so
                 // the window-level Escape handler never sees this one
@@ -183,7 +197,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
               type="button"
               className="primary"
               disabled={!comment.trim()}
-              onClick={() => apply(`{==${slice}==}{>>@${authorTag}: ${sanitizeComment(comment)}<<}`)}
+              onClick={() => apply((s, i) => (i === 0 ? commentInsert(s) : `{==${s}==}`))}
             >
               {t('comment')}
             </button>

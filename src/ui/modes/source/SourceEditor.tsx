@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 import { scan } from '../../../shared/critic/scanner'
 import { codeRanges } from '../../../shared/markdown/exclusions'
 import { useDoc } from '../../app/store'
+import { scrollElementToTop } from '../../util/scroll'
 
 const CRITIC_CLASS: Record<string, string> = {
   ins: 'cm-critic cm-critic-ins',
@@ -77,9 +78,10 @@ export function SourceEditor() {
           criticHighlighter,
           sourceTheme,
           EditorView.updateListener.of((u) => {
-            if (u.docChanged) {
-              useDoc.getState().setEditorDirty(u.state.doc.toString() !== useDoc.getState().source)
-            }
+            // Push every edit straight into the canonical buffer — the store
+            // debounces the disk write (autosave). No remount: setSourceFromEditor
+            // leaves externalVersion untouched, so the cursor is preserved.
+            if (u.docChanged) useDoc.getState().setSourceFromEditor(u.state.doc.toString())
           }),
         ],
       }),
@@ -91,11 +93,24 @@ export function SourceEditor() {
       if (text !== useDoc.getState().source) useDoc.getState().setSourceFromEditor(text)
     }
     useDoc.getState().registerFlusher(flush)
+    // Outline navigation: scroll to the heading's source line, landed near the
+    // top of the page (the window is the scroll container — the CM scroller is
+    // sized to its content).
+    useDoc.getState().registerScroller((offset) => {
+      const pos = Math.min(Math.max(offset, 0), view.state.doc.length)
+      view.dispatch({ selection: { anchor: pos } })
+      const node = view.domAtPos(pos).node
+      const line = (node.nodeType === 1 ? (node as Element) : node.parentElement)?.closest('.cm-line') ?? null
+      scrollElementToTop(line)
+    })
 
     return () => {
-      flush()
+      // Deliberately NOT flushing on unmount: every edit was already pushed live,
+      // so the store is current. A remount is triggered by an external buffer
+      // swap (disk reload, handback adopting the new summary block) — flushing the
+      // outgoing editor's now-stale text would overwrite that adopted content.
       useDoc.getState().registerFlusher(null)
-      useDoc.getState().setEditorDirty(false)
+      useDoc.getState().registerScroller(null)
       view.destroy()
     }
   }, [])

@@ -1,7 +1,7 @@
 import { useConfig, type ConfigPatch } from '../app/configStore'
 import { ToggleGroup } from 'radix-ui'
 import { SlideOver } from '../app/SlideOver'
-import { SwapIcon, ChevronDownIcon } from '../icons'
+import { SwapIcon } from '../icons'
 import { LangSelect } from './LangSelect'
 import { useT, type MsgKey } from '../i18n'
 import { TYPE_SETS, MONO_FONTS, displayStack, monoStack } from '../theme/fonts'
@@ -72,6 +72,19 @@ function CodeSwatch({ theme, appearance }: { theme: CodeTheme; appearance: 'ligh
   )
 }
 
+/** A tiny page-tile previewing a theme: its bg, two ink lines, an accent dot. */
+function ThemeSwatch({ s }: { s: { bg: string; ink: string; accent: string } | null }) {
+  if (!s) return null
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden focusable={false} style={{ flex: 'none' }}>
+      <rect x={1} y={1} width={14} height={14} rx={2.5} fill={s.bg} stroke="rgba(128,128,128,0.35)" strokeWidth={1} />
+      <rect x={4} y={5} width={5} height={1.4} rx={0.7} fill={s.ink} />
+      <rect x={4} y={8.5} width={8} height={1.2} rx={0.6} fill={s.ink} opacity={0.55} />
+      <circle cx={11.5} cy={5.7} r={1.6} fill={s.accent} />
+    </svg>
+  )
+}
+
 /** Centered rules whose width previews the content measure. */
 function WidthGlyph({ w }: { w: number }) {
   const x = (16 - w) / 2
@@ -97,7 +110,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const activeTheme = themes.find((th) => th.id === config.theme)
 
   return (
-    <SlideOver title={t('settings')} onClose={onClose} ignoreSelector=".topbar-settings">
+    <SlideOver title={t('settings')} onClose={onClose} ignoreSelector=".floating-settings">
       <div className="settings-body">
         {/* ---------- Appearance ---------- */}
         <section>
@@ -109,10 +122,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 <button
                   key={th.id}
                   type="button"
-                  className={`theme-chip${config.theme === th.id ? ' active' : ''}`}
+                  className={`theme-chip code-chip${config.theme === th.id ? ' active' : ''}`}
                   aria-pressed={config.theme === th.id}
                   onClick={() => patch({ theme: th.id })}
                 >
+                  <ThemeSwatch s={th.swatch} />
                   {th.name}
                 </button>
               ))}
@@ -127,7 +141,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               return (
                 <>
                   <div className="settings-row">
-                    <span>{t('filmGrain')}</span>
+                    <span>
+                      {t('filmGrain')} <span className="settings-val">{t(INTENSITY_LABEL[intensity])}</span>
+                    </span>
                     <ToggleGroup.Root
                       className="seg preset-seg"
                       type="single"
@@ -136,7 +152,13 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                       aria-label={t('filmGrain')}
                     >
                       {INTENSITY_STEPS.map((step) => (
-                        <ToggleGroup.Item key={step} value={step} className="seg-btn" aria-label={t(INTENSITY_LABEL[step])}>
+                        <ToggleGroup.Item
+                          key={step}
+                          value={step}
+                          className="seg-btn"
+                          aria-label={t(INTENSITY_LABEL[step])}
+                          title={t(INTENSITY_LABEL[step])}
+                        >
                           {step === 'off' ? (
                             <GrainOffGlyph />
                           ) : (
@@ -148,7 +170,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   </div>
                   {intensity !== 'off' && (
                     <div className="settings-row">
-                      <span>{t('grainTexture')}</span>
+                      <span>
+                        {t('grainTexture')} <span className="settings-val">{t(TEXTURE_LABEL[texture])}</span>
+                      </span>
                       <ToggleGroup.Root
                         className="seg preset-seg"
                         type="single"
@@ -157,7 +181,13 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                         aria-label={t('grainTexture')}
                       >
                         {TEXTURE_STEPS.map((tex) => (
-                          <ToggleGroup.Item key={tex} value={tex} className="seg-btn" aria-label={t(TEXTURE_LABEL[tex])}>
+                          <ToggleGroup.Item
+                            key={tex}
+                            value={tex}
+                            className="seg-btn"
+                            aria-label={t(TEXTURE_LABEL[tex])}
+                            title={t(TEXTURE_LABEL[tex])}
+                          >
                             <GrainSwatch id={`grain-tex-${tex}`} texture={tex} opacity={0.7} />
                           </ToggleGroup.Item>
                         ))}
@@ -290,26 +320,35 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               type="text"
               className="settings-input"
               defaultValue={config.authorTag}
+              spellCheck={false}
+              autoComplete="off"
+              autoCapitalize="off"
+              maxLength={32}
+              title={t('authorTagHint')}
               onBlur={(e) => {
                 const v = e.target.value.trim().replace(/^@/, '')
                 if (v && v !== config.authorTag) patch({ authorTag: v })
               }}
             />
           </label>
-          <label className="settings-row">
+          <div className="settings-row">
             <span>{t('uiLanguage')}</span>
-            <div className="settings-select">
-              <select
-                className="settings-input"
-                value={config.uiLang}
-                onChange={(e) => patch({ uiLang: e.target.value as 'en' | 'zh-CN' })}
-              >
-                <option value="en">English</option>
-                <option value="zh-CN">简体中文</option>
-              </select>
-              <ChevronDownIcon className="settings-select-icon" />
+            {/* A small fixed option set → the same chip vocabulary as Theme/Typeface
+                above; the open-ended Reading pair below stays a searchable picker. */}
+            <div className="settings-theme-row">
+              {(['en', 'zh-CN'] as const).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`theme-chip${config.uiLang === code ? ' active' : ''}`}
+                  aria-pressed={config.uiLang === code}
+                  onClick={() => patch({ uiLang: code })}
+                >
+                  {code === 'en' ? 'English' : '简体中文'}
+                </button>
+              ))}
             </div>
-          </label>
+          </div>
           <div className="settings-row">
             <span>{t('readingPair')}</span>
             <div className="settings-langpair">

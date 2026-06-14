@@ -88,6 +88,18 @@ export function FolderIcon(props: IconProps) {
   )
 }
 
+/** Table-of-contents / document outline — a small bulleted list of headings. */
+export function OutlineIcon(props: IconProps) {
+  return (
+    <svg {...base(props, 14)}>
+      <circle cx="3.1" cy="4" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="3.1" cy="8" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="3.1" cy="12" r="0.85" fill="currentColor" stroke="none" />
+      <path d="M6 4h7.5M6 8h7.5M6 12h7.5" />
+    </svg>
+  )
+}
+
 /** Language-swap (⇄) — Radix has no clean horizontal double-arrow. */
 export function SwapIcon(props: IconProps) {
   return (

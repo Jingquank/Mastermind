@@ -156,6 +156,8 @@ export interface ThemeInfo {
   appearance: 'light' | 'dark'
   grain: { enabled: boolean; opacity?: number; tintOpacity?: number } | null
   fonts: ThemeFontInfo[]
+  /** Preview hexes for the picker swatch (theme's own bg / muted ink / accent). */
+  swatch: { bg: string; ink: string; accent: string } | null
 }
 
 export type SseEvent =

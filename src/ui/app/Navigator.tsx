@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ToggleGroup } from 'radix-ui'
-import { ChevronLeftIcon, FolderIcon } from '../icons'
+import { ChevronLeftIcon, FolderIcon, OutlineIcon } from '../icons'
 import { Tip } from './Tip'
 import { useT } from '../i18n'
 import { scrollToOffset } from '../util/scroll'
 import { FilesList } from './Tree'
 import { useNav } from './navStore'
+import { useDoc } from './store'
 import { useWorkspace } from './workspaceStore'
 
 /** Reactive `(max-width: 900px)` flag — drives the off-canvas vs in-flow nav. */
@@ -83,7 +84,7 @@ export function Navigator({ workspaceId, openSessionId }: Props) {
             aria-expanded={false}
             onClick={reveal}
           >
-            {showFiles ? <FolderIcon /> : <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />}
+            {showFiles ? <FolderIcon /> : <OutlineIcon />}
           </button>
         </Tip>
       )}
@@ -133,43 +134,92 @@ function OutlineList() {
   const items = useNav((s) => s.outline)
   const docEl = useNav((s) => s.docEl)
   const [activeOffset, setActiveOffset] = useState<number | null>(null)
-  const visible = useRef(new Set<number>())
 
+  // Scroll-spy driven by scroll POSITION (not IntersectionObserver) so it's
+  // deterministic and monotonic — the indicator only ever steps one section at
+  // a time, never flickers. The active heading is the last one whose top has
+  // scrolled above a reading line near the top of the viewport.
+  //
+  // The catch: the final sections live in the last viewport-height of the page,
+  // which can never scroll up to that line (the page bottoms out first), so
+  // they'd never become active. We fix that by spreading the unreachable tail's
+  // activation points across the remaining scroll — each tail heading still gets
+  // its moment, and the last one activates exactly when the page hits the bottom.
   useEffect(() => {
     if (!docEl) return
-    const els = items
-      .map((it) => docEl.querySelector(`[data-ps="${it.offset}"]`))
-      .filter((el): el is Element => el !== null)
-    if (els.length === 0) return
-    visible.current.clear()
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const off = Number((e.target as HTMLElement).dataset.ps)
-          if (e.isIntersecting) visible.current.add(off)
-          else visible.current.delete(off)
+    const heads = items
+      .map((it) => ({ offset: it.offset, el: docEl.querySelector(`[data-ps="${it.offset}"]`) as HTMLElement | null }))
+      .filter((h): h is { offset: number; el: HTMLElement } => h.el !== null)
+    if (heads.length === 0) return
+
+    let raf = 0
+    const update = (): void => {
+      raf = 0
+      const y = window.scrollY
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      // Reading line near the top: a heading is "current" once it scrolls to
+      // here. Kept small so the FIRST heading stays current at the top (a larger
+      // line would already sit below it) — the unreachable TAIL is handled by the
+      // redistribution below, not by pushing this line down.
+      const line = 96
+      // scrollY at which each heading would reach the reading line. `y + top` is
+      // the heading's absolute document offset, so these are stable across frames.
+      const at = heads.map((h) => y + h.el.getBoundingClientRect().top - line)
+      // Redistribute the tail that can't reach the line (its activation point is
+      // past the page's max scroll) into the final stretch of scroll.
+      const firstUnreachable = at.findIndex((v) => v > maxScroll)
+      if (maxScroll > 0 && firstUnreachable > 0) {
+        const base = at[firstUnreachable - 1]!
+        const span = maxScroll - base
+        const tail = heads.length - firstUnreachable
+        for (let i = firstUnreachable; i < heads.length; i++) {
+          at[i] = base + (span * (i - firstUnreachable + 1)) / tail
         }
-        const on = [...visible.current].sort((a, b) => a - b)
-        setActiveOffset(on.length ? on[0]! : null)
-      },
-      { rootMargin: '0px 0px -65% 0px', threshold: 0 },
-    )
-    for (const el of els) io.observe(el)
-    return () => io.disconnect()
+      }
+      let active = 0
+      for (let i = 0; i < heads.length; i++) {
+        if (y >= at[i]! - 1) active = i
+        else break
+      }
+      setActiveOffset(heads[active]!.offset)
+    }
+    const onScroll = (): void => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
   }, [items, docEl])
 
   if (items.length < 2) return null
   const minDepth = Math.min(...items.map((i) => i.depth))
 
+  // Reading mode renders the article (docEl) with data-ps offsets, so scroll by
+  // offset. The editor modes have no such element — they register a scroller on
+  // the doc store that knows how to reach the heading (by source offset for
+  // Source, by heading index for the WYSIWYG Editing view). We deliberately
+  // don't set the active item on click — the indicator only reflects scroll
+  // position (the scroll-spy below), so it tracks the page as it scrolls to the
+  // target instead of jumping ahead and fighting the scroll animation.
+  const go = (offset: number, index: number): void => {
+    if (docEl) scrollToOffset({ current: docEl }, offset)
+    else useDoc.getState().scroller?.(offset, index)
+  }
+
   return (
     <ul className="nav-outline">
-      {items.map((it) => (
+      {items.map((it, i) => (
         <li
           key={it.offset}
           style={{ paddingLeft: `${(it.depth - minDepth) * 12}px` }}
           className={activeOffset === it.offset ? 'active' : undefined}
         >
-          <button type="button" onClick={() => scrollToOffset({ current: docEl }, it.offset)} title={it.text}>
+          <button type="button" onClick={() => go(it.offset, i)} title={it.text}>
             {it.text}
           </button>
         </li>

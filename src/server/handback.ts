@@ -26,6 +26,7 @@ export async function performHandback(
   session: Session,
   rawContent: string,
   baseMtimeMs: number | undefined,
+  note?: string,
 ): Promise<HandbackOutcome> {
   if (baseMtimeMs !== undefined) {
     const st = await fs.stat(session.path).catch(() => null)
@@ -37,7 +38,7 @@ export async function performHandback(
   const content = await processFeedbackLanguage(rawContent)
   const body = stripSummary(content)
   const counts = reviewCounts(group(scan(body, codeRanges(body)), body))
-  const final = upsertSummary(content, counts, new Date())
+  const final = upsertSummary(content, counts, new Date(), note)
 
   session.lastSelfWriteHash = sha256hex(final)
   await fs.writeFile(session.path, final)

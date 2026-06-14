@@ -40,11 +40,13 @@ const MONO_FALLBACK = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 export const FONT_FACES: FontFace[] = [
   { family: 'Schibsted Grotesk', url: '/themes/grid/fonts/SchibstedGrotesk-Variable.woff2', weight: '400 900' },
   { family: 'Geist Mono', url: '/themes/grid/fonts/GeistMono-Variable.woff2', weight: '100 900' },
-  { family: 'Fraunces', url: '/themes/fonts/Fraunces-Variable.woff2', weight: '100 900' },
-  { family: 'Newsreader', url: '/themes/fonts/Newsreader-Variable.woff2', weight: '200 800' },
   { family: 'Geist', url: '/themes/fonts/GeistSans-Variable.woff2', weight: '100 900' },
-  { family: 'Space Grotesk', url: '/themes/fonts/SpaceGrotesk-Variable.woff2', weight: '300 700' },
-  { family: 'Hanken Grotesk', url: '/themes/fonts/HankenGrotesk-Variable.woff2', weight: '100 900' },
+  { family: 'Bricolage Grotesque', url: '/themes/fonts/BricolageGrotesque-Variable.woff2', weight: '200 800' },
+  { family: 'Inter', url: '/themes/fonts/Inter-Variable.woff2', weight: '100 900' },
+  { family: 'Lora', url: '/themes/fonts/Lora-Variable.woff2', weight: '400 700' },
+  { family: 'Crimson Pro', url: '/themes/fonts/CrimsonPro-Variable.woff2', weight: '200 900' },
+  { family: 'Manrope', url: '/themes/fonts/Manrope-Variable.woff2', weight: '200 800' },
+  { family: 'Outfit', url: '/themes/fonts/Outfit-Variable.woff2', weight: '100 900' },
   { family: 'JetBrains Mono', url: '/themes/fonts/JetBrainsMono-Variable.woff2', weight: '100 800' },
   { family: 'Spline Sans Mono', url: '/themes/fonts/SplineSansMono-Variable.woff2', weight: '300 700' },
   { family: 'Ubuntu Sans Mono', url: '/themes/fonts/UbuntuSansMono-Variable.woff2', weight: '100 800' },
@@ -53,9 +55,12 @@ export const FONT_FACES: FontFace[] = [
 /** Curated display+body pairings. `grid` is the default and matches the base tokens. */
 export const TYPE_SETS: TypeSet[] = [
   { id: 'grid', name: 'Grid', displayFamily: 'Schibsted Grotesk', displayWeight: 800, displayTracking: '-0.02em', bodyFamily: 'Schibsted Grotesk' },
-  { id: 'editorial', name: 'Editorial', displayFamily: 'Fraunces', displayWeight: 600, displayTracking: '-0.01em', bodyFamily: 'Newsreader' },
   { id: 'geist', name: 'Geist', displayFamily: 'Geist', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Geist' },
-  { id: 'humanist', name: 'Humanist', displayFamily: 'Space Grotesk', displayWeight: 700, displayTracking: '-0.01em', bodyFamily: 'Hanken Grotesk' },
+  { id: 'bricolage', name: 'Bricolage', displayFamily: 'Bricolage Grotesque', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Inter' },
+  { id: 'lora', name: 'Lora', displayFamily: 'Lora', displayWeight: 600, displayTracking: '-0.01em', bodyFamily: 'Lora' },
+  { id: 'crimson', name: 'Crimson', displayFamily: 'Crimson Pro', displayWeight: 600, displayTracking: '0', bodyFamily: 'Crimson Pro' },
+  { id: 'manrope', name: 'Manrope', displayFamily: 'Manrope', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Manrope' },
+  { id: 'outfit', name: 'Outfit', displayFamily: 'Outfit', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Outfit' },
 ]
 
 export const MONO_FONTS: MonoFont[] = [
@@ -68,7 +73,7 @@ export const MONO_FONTS: MonoFont[] = [
 export const DEFAULT_TYPE_SET = 'grid'
 export const DEFAULT_MONO = 'geist'
 
-const SERIF_FAMILIES = new Set(['Fraunces', 'Newsreader'])
+const SERIF_FAMILIES = new Set(['Lora', 'Crimson Pro'])
 
 function stack(family: string, fallback: string): string {
   return `'${family}', ${fallback}`

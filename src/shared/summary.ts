@@ -38,20 +38,33 @@ export function formatStamp(date: Date): string {
   return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())} ${p(date.getHours())}:${p(date.getMinutes())}`
 }
 
-export function buildSummaryBlock(counts: ReviewCountsDetail, date: Date): string {
+/**
+ * Fold a free-form hand-back note into blockquote lines for the summary block.
+ * Returns '' when there's nothing to add. Defangs the HTML-comment delimiters so
+ * a pasted note can never break out of (or forge) the summary block, and folds
+ * the note's own lines into the leading `> ` quote so the block stays one unit.
+ */
+function noteLines(note: string | undefined): string {
+  const safe = (note ?? '').replace(/<!--|-->/g, '').trim()
+  if (!safe) return ''
+  const quoted = safe.split('\n').map((l) => `> ${l}`.trimEnd()).join('\n')
+  return `>\n> **Note:** ${quoted.replace(/^> /, '')}\n`
+}
+
+export function buildSummaryBlock(counts: ReviewCountsDetail, date: Date, note?: string): string {
   const phrase = countsPhrase(counts)
   const detail = phrase
     ? `${phrase}. Open the CriticMarkup marks above for details.`
     : 'No inline marks — see the document itself for changes.'
-  return `${SUMMARY_OPEN}\n> **Review summary** (${formatStamp(date)})\n> ${detail}\n${SUMMARY_CLOSE}\n`
+  return `${SUMMARY_OPEN}\n> **Review summary** (${formatStamp(date)})\n> ${detail}\n${noteLines(note)}${SUMMARY_CLOSE}\n`
 }
 
 /**
  * Insert/replace the summary block: exactly one, replaced in place when one
  * already exists, appended at EOF otherwise.
  */
-export function upsertSummary(text: string, counts: ReviewCountsDetail, date: Date): string {
-  const block = buildSummaryBlock(counts, date)
+export function upsertSummary(text: string, counts: ReviewCountsDetail, date: Date, note?: string): string {
+  const block = buildSummaryBlock(counts, date, note)
   const firstIdx = text.indexOf(SUMMARY_OPEN)
   if (firstIdx !== -1) {
     const before = stripSummary(text.slice(0, firstIdx))

@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { applyTextEdits } from '../../shared/edits'
 import { detectEol, normalizeToLf, restoreEol, type Eol } from '../../shared/eol'
-import type { CriticKind } from '../../shared/critic/types'
 import type { ReviewCounts, SessionMeta, TextEdit } from '../../shared/types'
 import {
   ApiError,
@@ -12,7 +11,24 @@ import {
   putFile,
 } from './api'
 
-export type ViewMode = 'reading' | 'editing' | 'source'
+export type ViewMode = 'reading' | 'source'
+
+/** Idle delay before the buffer is flushed to disk. The file is the single
+ *  source of truth, so every edit lands automatically — no manual save. */
+const AUTOSAVE_MS = 600
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+function clearAutosave(): void {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer)
+    autosaveTimer = null
+  }
+}
+
+/** Reflect the open document in the tab title — a no-op outside a browser (tests). */
+function setTabTitle(name: string): void {
+  const g = globalThis as { document?: { title: string } }
+  if (g.document) g.document.title = `${name} — Mastermind`
+}
 
 export interface DocStore {
   sessionId: string | null
@@ -37,12 +53,10 @@ export interface DocStore {
    * Editor-originated flushes do not bump it.
    */
   externalVersion: number
-  /** The active editor has unflushed changes (dot indicator while typing). */
-  editorDirty: boolean
   /** Registered by the active editor: flush pending edits into `source`. */
   flushEditor: (() => void) | null
-  /** Registered by the WYSIWYG editor: accept/reject a span via a PM transaction (dirty-doc route). */
-  editorResolve: ((spanIndex: number, kind: CriticKind, mode: 'accept' | 'reject') => void) | null
+  /** Registered by the Source editor: scroll to an outline heading. */
+  scroller: ((offset: number, index: number) => void) | null
   /** Undo stack for review operations applied outside the editors (cap 50). */
   history: string[]
   /** The file changed on disk under us (banner state). */
@@ -60,7 +74,8 @@ export interface DocStore {
   reloadFromDisk(): Promise<void>
   /** PUT without the mtime guard (the "Save anyway" path). */
   saveForce(): Promise<void>
-  handback(): Promise<boolean>
+  /** Hand the document back to the waiting agent; an optional note is woven into the summary block. */
+  handback(note?: string): Promise<boolean>
   clearHandedBack(): void
   setNotice(notice: DocStore['notice']): void
   /** Draft naming: first save prompts for a filename. */
@@ -71,12 +86,14 @@ export interface DocStore {
   setSource(source: string): void
   /** Editor flush path — updates the buffer without remounting the editor. */
   setSourceFromEditor(source: string): void
-  setEditorDirty(dirty: boolean): void
   registerFlusher(fn: (() => void) | null): void
-  registerEditorResolve(fn: DocStore['editorResolve']): void
+  registerScroller(fn: DocStore['scroller']): void
   applyEdits(edits: TextEdit[]): void
   setMode(mode: ViewMode): void
-  save(): Promise<boolean>
+  /** Debounced disk write triggered by every buffer edit (drafts prompt for a name first). */
+  queueAutosave(): void
+  /** Flush the buffer to disk now (debounced via queueAutosave; also the rename follow-up). */
+  autosave(): Promise<boolean>
   /** Replace buffer + saved state from disk content (reload after external change). */
   adoptDiskContent(content: string, mtimeMs: number): void
 }
@@ -96,9 +113,8 @@ export const useDoc = create<DocStore>((set, get) => ({
   savingKind: null,
   notice: null,
   externalVersion: 0,
-  editorDirty: false,
   flushEditor: null,
-  editorResolve: null,
+  scroller: null,
   history: [],
   diskChange: null,
   handedBack: null,
@@ -120,11 +136,11 @@ export const useDoc = create<DocStore>((set, get) => ({
         status: 'ready',
         conflict: false,
         externalVersion: s.externalVersion + 1,
-        editorDirty: false,
-        // new drafts open straight into WYSIWYG
-        mode: meta.isDraft ? 'editing' : s.mode,
+        // an empty draft has nothing to read — open it in the source editor
+        mode: meta.isDraft ? 'source' : s.mode,
       }))
-      document.title = `${meta.displayName} — Mastermind`
+      clearAutosave()
+      setTabTitle(meta.displayName)
     } catch (err) {
       const message =
         err instanceof ApiError && err.status === 404
@@ -142,6 +158,7 @@ export const useDoc = create<DocStore>((set, get) => ({
       externalVersion: s.externalVersion + 1,
       history: [...s.history.slice(-49), s.source],
     }))
+    get().queueAutosave()
   },
 
   undo() {
@@ -150,22 +167,21 @@ export const useDoc = create<DocStore>((set, get) => ({
       if (prev === undefined) return s
       return { source: prev, history: s.history.slice(0, -1), externalVersion: s.externalVersion + 1 }
     })
+    get().queueAutosave()
   },
 
   setSourceFromEditor(source) {
-    set({ source, editorDirty: false })
-  },
-
-  setEditorDirty(dirty) {
-    if (get().editorDirty !== dirty) set({ editorDirty: dirty })
+    if (source === get().source) return
+    set({ source })
+    get().queueAutosave()
   },
 
   registerFlusher(fn) {
     set({ flushEditor: fn })
   },
 
-  registerEditorResolve(fn) {
-    set({ editorResolve: fn })
+  registerScroller(fn) {
+    set({ scroller: fn })
   },
 
   applyEdits(edits) {
@@ -174,6 +190,7 @@ export const useDoc = create<DocStore>((set, get) => ({
       externalVersion: s.externalVersion + 1,
       history: [...s.history.slice(-49), s.source],
     }))
+    get().queueAutosave()
   },
 
   setMode(mode) {
@@ -183,14 +200,28 @@ export const useDoc = create<DocStore>((set, get) => ({
     set({ mode })
   },
 
-  async save() {
+  queueAutosave() {
+    const { meta, renamePrompt, conflict } = get()
+    // An unnamed draft has no path to write to — ask for a filename on first edit.
+    // Once named, completeRename writes and subsequent edits autosave normally.
+    if (meta?.isDraft) {
+      if (!renamePrompt) set({ renamePrompt: true })
+      return
+    }
+    // Don't bury the conflict banner under retry churn — the user resolves it.
+    if (conflict) return
+    clearAutosave()
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null
+      void get().autosave()
+    }, AUTOSAVE_MS)
+  },
+
+  async autosave() {
+    clearAutosave()
     get().flushEditor?.()
     const { sessionId, source, savedSource, eol, mtimeMs, saving, meta } = get()
-    if (!sessionId || saving) return false
-    if (meta?.isDraft) {
-      set({ renamePrompt: true })
-      return false
-    }
+    if (!sessionId || saving || meta?.isDraft) return false
     if (source === savedSource) return true
     set({ saving: true, savingKind: 'save', notice: null })
     try {
@@ -210,7 +241,7 @@ export const useDoc = create<DocStore>((set, get) => ({
         set({ conflict: true })
         return false
       }
-      // a failed save must never be silent — the file is the protocol
+      // a failed write must never be silent — the file is the protocol
       set({ notice: { kind: 'error', msg: 'saveFailed' } })
       return false
     } finally {
@@ -219,6 +250,7 @@ export const useDoc = create<DocStore>((set, get) => ({
   },
 
   adoptDiskContent(content, mtimeMs) {
+    clearAutosave()
     const normalized = normalizeToLf(content)
     set((s) => ({
       source: normalized,
@@ -227,7 +259,6 @@ export const useDoc = create<DocStore>((set, get) => ({
       mtimeMs,
       conflict: false,
       externalVersion: s.externalVersion + 1,
-      editorDirty: false,
       diskChange: null,
       // reload must be undoable: keep the discarded buffer on the stack
       history: normalized === s.source ? s.history : [...s.history.slice(-49), s.source],
@@ -254,6 +285,7 @@ export const useDoc = create<DocStore>((set, get) => ({
   },
 
   async saveForce() {
+    clearAutosave()
     const { sessionId, eol } = get()
     if (!sessionId) return
     get().flushEditor?.()
@@ -262,7 +294,10 @@ export const useDoc = create<DocStore>((set, get) => ({
     set({ savedSource: current, mtimeMs: res.mtimeMs, conflict: false, diskChange: null })
   },
 
-  async handback() {
+  async handback(note?: string) {
+    // Cancel any pending autosave so its stale PUT can't land after handback and
+    // clobber the summary block the server is about to write.
+    clearAutosave()
     get().flushEditor?.()
     const { sessionId, source, eol, mtimeMs, saving, meta } = get()
     if (!sessionId || saving) return false
@@ -272,7 +307,7 @@ export const useDoc = create<DocStore>((set, get) => ({
     }
     set({ saving: true, savingKind: 'handback', notice: null })
     try {
-      const res = await postHandback(sessionId, restoreEol(source, eol), mtimeMs)
+      const res = await postHandback(sessionId, restoreEol(source, eol), mtimeMs, note)
       // the server appended/refreshed the summary block — adopt its content
       const file = await getFile(sessionId)
       get().adoptDiskContent(file.content, file.mtimeMs)
@@ -308,8 +343,8 @@ export const useDoc = create<DocStore>((set, get) => ({
         renamePrompt: false,
         renameError: null,
       })
-      document.title = `${res.displayName} — Mastermind`
-      await get().save()
+      setTabTitle(res.displayName)
+      await get().autosave()
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         set({ renameError: '__exists__' })
@@ -321,5 +356,5 @@ export const useDoc = create<DocStore>((set, get) => ({
 }))
 
 export function useDirty(): boolean {
-  return useDoc((s) => s.source !== s.savedSource || s.editorDirty)
+  return useDoc((s) => s.source !== s.savedSource)
 }

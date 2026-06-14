@@ -1,0 +1,11 @@
+{
+  "id": "carbon",
+  "name": "Carbon",
+  "appearance": "dark",
+  "fonts": [
+    { "family": "Schibsted Grotesk", "src": "/themes/grid/fonts/SchibstedGrotesk-Variable.woff2", "weight": "400 900" },
+    { "family": "Geist Mono", "src": "/themes/grid/fonts/GeistMono-Variable.woff2", "weight": "100 900" }
+  ],
+  "grain": { "enabled": false },
+  "swatch": { "bg": "#08090a", "ink": "#9a9ca0", "accent": "#7c93b0" }
+}

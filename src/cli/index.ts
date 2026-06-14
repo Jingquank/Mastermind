@@ -47,10 +47,11 @@ program
   .command('open')
   .argument('<file>', 'markdown file to open')
   .option('--wait', 'block until the user clicks "Save & hand back", then exit 0')
-  .option('--serve-assist', 'also answer translation/suggestion requests (implies the agent is the provider)')
+  .option('--serve-assist', 'answer translation/suggestion requests for this session (on by default with --wait)')
+  .option('--no-assist', 'with --wait, review only — do not serve the assist channel (translation/suggestions)')
   .option('--no-browser', 'print the URL without opening a browser tab')
   .description('start the server if not running and open a browser tab for this file')
-  .action(async (file: string, opts: { wait?: boolean; serveAssist?: boolean; browser: boolean }) => {
+  .action(async (file: string, opts: { wait?: boolean; serveAssist?: boolean; assist: boolean; browser: boolean }) => {
     const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
     const abs = path.resolve(file)
     let st: fs.Stats
@@ -66,11 +67,13 @@ program
     process.stdout.write(`${session.url}\n`)
     if (opts.browser) openBrowser(session.url)
 
+    // A --wait review serves the agent-channel by default: it lights up the reading-language
+    // toggle and lets Mastermind pre-translate the document while the user reads (opt out with
+    // --no-assist). Plain `open` stays fire-and-forget; --serve-assist makes it block-and-serve.
+    const serve = !!opts.serveAssist || (!!opts.wait && opts.assist)
     if (opts.wait) {
-      await waitForHandback(port, session.sessionId, { serveAssist: opts.serveAssist })
-    } else if (opts.serveAssist) {
-      // serve the agent-channel (translation / inline suggestions) for this exact
-      // session without blocking on hand-back, so the reading-language toggle goes live
+      await waitForHandback(port, session.sessionId, { serveAssist: serve })
+    } else if (serve) {
       await serveAssist(port, session.sessionId)
     }
     process.exit(0)

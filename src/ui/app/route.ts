@@ -1,27 +1,9 @@
 import { useEffect, useState } from 'react'
+import { parseRoute, type Route } from './route-parse'
 
-/**
- * Hand-rolled routing (no router dep). Three shapes:
- *   /d/:sid           a single-file session (the agent-loop path — unchanged)
- *   /w/:wid           a workspace with no file open yet
- *   /w/:wid/d/:sid    a workspace with a file open ( /d/:sid stays an exact suffix )
- */
-export type Route =
-  | { kind: 'home' }
-  | { kind: 'doc'; sessionId: string }
-  | { kind: 'workspace'; workspaceId: string; sessionId: string | null }
-
-const ID = '[0-9a-f-]+'
-const WS_RE = new RegExp(`^/w/(${ID})(?:/d/(${ID}))?/?$`, 'i')
-const DOC_RE = new RegExp(`^/d/(${ID})`, 'i')
-
-export function parseRoute(pathname: string): Route {
-  const ws = WS_RE.exec(pathname)
-  if (ws) return { kind: 'workspace', workspaceId: ws[1]!, sessionId: ws[2] ?? null }
-  const doc = DOC_RE.exec(pathname)
-  if (doc) return { kind: 'doc', sessionId: doc[1]! }
-  return { kind: 'home' }
-}
+// Hand-rolled routing (no router dep). The pure pathname→Route parsing lives in
+// `route-parse.ts` (DOM-free); this module adds the browser-bound navigation.
+export { parseRoute, type Route }
 
 /** SPA navigation: push a path and notify listeners (popstate covers back/forward). */
 export function navigate(to: string): void {

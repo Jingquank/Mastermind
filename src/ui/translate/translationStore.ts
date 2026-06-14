@@ -15,9 +15,15 @@ interface TransState {
   toggle(sessionId: string, source: string, langPair: { a: string; b: string }): Promise<void>
   /** Fetch translations for blocks not yet in the map (after comment edits). */
   ensure(sessionId: string, source: string): Promise<void>
+  /** Warm the cache + map in the background (no UI flip) so a later toggle is instant. */
+  prefetch(sessionId: string, source: string, langPair: { a: string; b: string }): Promise<void>
   deactivate(): void
   reset(): void
 }
+
+// in-flight prefetches keyed by `${sessionId}|${targetLang}`, so a re-fired
+// effect or a second tab doesn't launch duplicate background warm-ups.
+const prefetchInFlight = new Set<string>()
 
 export function previewTargetLang(source: string, pair: { a: string; b: string }): string {
   return pickTarget(source, pair).targetLang
@@ -65,7 +71,10 @@ async function fetchTranslations(
       }
       continue
     }
-    const json = (await res.json()) as TranslateResponse
+    // 200 may still carry an `error` code: cached blocks came back, but some
+    // misses needed a live agent. Record translated blocks; surface the code.
+    const json = (await res.json()) as TranslateResponse & { error?: string }
+    if (json.error) error = json.error
     for (const r of json.results) {
       if (r.text !== undefined) map[r.hash] = r.text
       else failed[r.hash] = true
@@ -90,13 +99,19 @@ export const useTranslation = create<TransState>((set, get) => ({
     set({ loading: true, targetLang })
     try {
       const { map, failed, error } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map)
-      if (Object.keys(map).length === 0 && error) {
-        // nothing came back — surface the reason instead of a silently blank translated view
+      const merged = { ...get().map, ...map }
+      if (Object.keys(merged).length === 0) {
+        // nothing to show (no cache, agent absent) — surface the reason, don't blank the view
         const { useDoc } = await import('../app/store')
         useDoc.getState().setNotice({ kind: 'error', msg: error === 'no-agent' ? 'translateNoAgent' : 'translateFailed' })
         return
       }
-      set((s) => ({ active: true, map: { ...s.map, ...map }, failed }))
+      set({ active: true, map: merged, failed })
+      // partial: cached blocks rendered, but some need a live agent to finish
+      if (error === 'no-agent' && Object.keys(failed).length > 0) {
+        const { useDoc } = await import('../app/store')
+        useDoc.getState().setNotice({ kind: 'ok', msg: 'translatePartialNoAgent' })
+      }
     } finally {
       set({ loading: false })
     }
@@ -111,6 +126,22 @@ export const useTranslation = create<TransState>((set, get) => ({
       set((s) => ({ map: { ...s.map, ...map }, failed: { ...s.failed, ...failed } }))
     } finally {
       set({ loading: false })
+    }
+  },
+
+  async prefetch(sessionId, source, langPair) {
+    const { sourceLang, targetLang } = pickTarget(source, langPair)
+    const key = `${sessionId}|${targetLang}`
+    if (prefetchInFlight.has(key)) return
+    prefetchInFlight.add(key)
+    try {
+      // background warm-up: no `loading` flip (it must not block or spin the button)
+      const { map, failed } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map)
+      if (Object.keys(map).length > 0) {
+        set((s) => ({ targetLang, map: { ...s.map, ...map }, failed: { ...s.failed, ...failed } }))
+      }
+    } finally {
+      prefetchInFlight.delete(key)
     }
   },
 

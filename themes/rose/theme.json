@@ -1,0 +1,11 @@
+{
+  "id": "rose",
+  "name": "Rose",
+  "appearance": "light",
+  "fonts": [
+    { "family": "Schibsted Grotesk", "src": "/themes/grid/fonts/SchibstedGrotesk-Variable.woff2", "weight": "400 900" },
+    { "family": "Geist Mono", "src": "/themes/grid/fonts/GeistMono-Variable.woff2", "weight": "100 900" }
+  ],
+  "grain": { "enabled": false },
+  "swatch": { "bg": "#fcfcfa", "ink": "#66665f", "accent": "#d6336c" }
+}

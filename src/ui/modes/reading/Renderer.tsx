@@ -23,6 +23,29 @@ export interface RenderCtx {
   anchoredHighlights?: ReadonlySet<number>
   /** When set, paint fenced code with syntax-token spans (the user's code-color scheme). */
   highlightCode?: boolean
+  /** Localized labels for keyboard / screen-reader mark resolution. When present,
+   *  suggestion marks (ins/del/sub) become tabbable buttons that announce their
+   *  action; absent (e.g. the translated view), the marks stay inert. */
+  markLabels?: { insertion: string; deletion: string; change: string; hint: string }
+}
+
+/** Build a keyboard/SR action label for a suggestion mark. */
+function markLabel(labels: NonNullable<RenderCtx['markLabels']>, kind: 'ins' | 'del' | 'sub', text: string): string {
+  const name = kind === 'ins' ? labels.insertion : kind === 'del' ? labels.deletion : labels.change
+  // Trim a trailing period/space so the appended hint reads as one clean sentence.
+  const body = text.replace(/[.\s]+$/, '')
+  return `${name}: ${body}. ${labels.hint}`
+}
+
+/** Props that make a suggestion mark a tabbable, announced button — only when the
+ *  view wired resolution (ctx.markLabels). Empty otherwise, so the mark stays inert. */
+function resolveProps(
+  ctx: RenderCtx,
+  kind: 'ins' | 'del' | 'sub',
+  text: string,
+): { tabIndex: 0; role: 'button'; 'aria-label': string } | Record<string, never> {
+  if (!ctx.markLabels) return {}
+  return { tabIndex: 0, role: 'button', 'aria-label': markLabel(ctx.markLabels, kind, text) }
 }
 
 /** Tokenized children for a fenced code block — plain strings for `text`, colored spans otherwise. */
@@ -41,7 +64,12 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
     case 'criticInsert': {
       const n = node as CriticWrapNode
       return (
-        <ins key={key} className="critic critic-ins" data-span-index={n.data.spanIndex}>
+        <ins
+          key={key}
+          className="critic critic-ins"
+          data-span-index={n.data.spanIndex}
+          {...resolveProps(ctx, 'ins', phrasingText(n.children))}
+        >
           {renderInline(n.children, ctx)}
         </ins>
       )
@@ -49,7 +77,12 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
     case 'criticDelete': {
       const n = node as CriticWrapNode
       return (
-        <del key={key} className="critic critic-del" data-span-index={n.data.spanIndex}>
+        <del
+          key={key}
+          className="critic critic-del"
+          data-span-index={n.data.spanIndex}
+          {...resolveProps(ctx, 'del', phrasingText(n.children))}
+        >
           {renderInline(n.children, ctx)}
         </del>
       )
@@ -71,7 +104,12 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
     case 'criticSub': {
       const n = node as CriticSubNode
       return (
-        <span key={key} className="critic critic-sub" data-span-index={n.data.spanIndex}>
+        <span
+          key={key}
+          className="critic critic-sub"
+          data-span-index={n.data.spanIndex}
+          {...resolveProps(ctx, 'sub', `${n.data.old} → ${n.data.new}`)}
+        >
           <del>{n.data.old}</del>
           <span className="critic-sub-arrow" aria-hidden>
             →
@@ -154,7 +192,17 @@ function renderPhrasing(node: PhrasingContent, key: number, ctx: RenderCtx): Rea
         </a>
       )
     case 'image':
-      return <img key={key} src={node.url} alt={node.alt ?? ''} title={node.title ?? undefined} {...posAttrs(node)} />
+      return (
+        <img
+          key={key}
+          src={node.url}
+          alt={node.alt ?? ''}
+          title={node.title ?? undefined}
+          loading="lazy"
+          decoding="async"
+          {...posAttrs(node)}
+        />
+      )
     case 'break':
       return <br key={key} />
     case 'footnoteReference':
@@ -332,6 +380,22 @@ function renderBlock(node: BlockContent | DefinitionContent | RootContent, key: 
  */
 export const CALLOUT_HEADING = /^(decisions?|open\s+questions?|to-?dos?|todos?|risks?)\b/i
 
+export type CalloutKind = 'decisions' | 'questions' | 'todo' | 'risks'
+
+/**
+ * Which callout family a heading names — drives the per-type icon and the
+ * `md-callout--<kind>` modifier. Identity comes from iconography, not color:
+ * the document body stays neutral (review marks own the only color there).
+ */
+export function calloutKind(text: string): CalloutKind | null {
+  const s = text.trim().toLowerCase()
+  if (/^decisions?\b/.test(s)) return 'decisions'
+  if (/^open\s+questions?\b|^questions?\b/.test(s)) return 'questions'
+  if (/^to-?dos?\b|^todos?\b/.test(s)) return 'todo'
+  if (/^risks?\b/.test(s)) return 'risks'
+  return null
+}
+
 function phrasingText(nodes: readonly PhrasingContent[]): string {
   let out = ''
   for (const n of nodes) {
@@ -352,6 +416,7 @@ export function MarkdownView({ tree, ctx }: { tree: Root; ctx: RenderCtx }) {
       // equal-or-shallower depth, then wrap the run in a card. The wrapper has no
       // data-ps/data-pe, so selection/commenting still anchors to the inner blocks.
       const depth = node.depth
+      const kind = calloutKind(phrasingText(node.children))
       let j = i + 1
       while (j < children.length) {
         const next = children[j]!
@@ -359,7 +424,7 @@ export function MarkdownView({ tree, ctx }: { tree: Root; ctx: RenderCtx }) {
         j++
       }
       out.push(
-        <section key={i} className="md-callout">
+        <section key={i} className={kind ? `md-callout md-callout--${kind}` : 'md-callout'}>
           {children.slice(i, j).map((b, bi) => renderBlock(b, bi, ctx))}
         </section>,
       )

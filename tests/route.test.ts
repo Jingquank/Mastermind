@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRoute } from '../src/ui/app/route'
+import { parseRoute } from '../src/ui/app/route-parse'
 
 const WID = '479f2eb9-6313-4d75-8002-215ee536c4e4'
 const SID = '31dd9b72-c8ff-403d-a054-f8fb5c3e860b'

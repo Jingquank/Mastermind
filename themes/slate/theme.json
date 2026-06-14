@@ -1,0 +1,11 @@
+{
+  "id": "slate",
+  "name": "Slate",
+  "appearance": "dark",
+  "fonts": [
+    { "family": "Schibsted Grotesk", "src": "/themes/grid/fonts/SchibstedGrotesk-Variable.woff2", "weight": "400 900" },
+    { "family": "Geist Mono", "src": "/themes/grid/fonts/GeistMono-Variable.woff2", "weight": "100 900" }
+  ],
+  "grain": { "enabled": false },
+  "swatch": { "bg": "#0e0f12", "ink": "#989a9c", "accent": "#2dd4bf" }
+}

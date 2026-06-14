@@ -49,8 +49,16 @@ export interface HandbackResponse {
   summaryLine: string
 }
 
-export function postHandback(sessionId: string, content: string, baseMtimeMs: number): Promise<HandbackResponse> {
-  return request<HandbackResponse>(`/api/sessions/${sessionId}/handback`, jsonInit('POST', { content, baseMtimeMs }))
+export function postHandback(
+  sessionId: string,
+  content: string,
+  baseMtimeMs: number,
+  note?: string,
+): Promise<HandbackResponse> {
+  return request<HandbackResponse>(
+    `/api/sessions/${sessionId}/handback`,
+    jsonInit('POST', { content, baseMtimeMs, note }),
+  )
 }
 
 export function postRename(sessionId: string, filename: string): Promise<{ path: string; displayName: string }> {

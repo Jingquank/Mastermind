@@ -18,7 +18,7 @@ next round until the user approves.
 
 ## How the protocol behaves
 
-- `mastermind open --wait <file>` prints the review URL to stdout immediately, then blocks.
+- `mastermind open --wait <file>` prints the review URL to stdout immediately, then blocks. It now **serves the assist channel by default** — the reading-language toggle goes live and Mastermind pre-translates the document while the user reads (answer the `mastermind-assist:` lines it prints; see below). Pass `--no-assist` to review without it.
 - On **Save & hand back** it prints one machine-readable line and exits `0`:
 
   ```
@@ -69,10 +69,12 @@ If you can't fulfill a task: `mastermind assist-error <id> --reason "…"`. Task
 
 ### Serving assist alongside an open document
 
-Prefer opening the document with assist already attached — that's what lights up the reading-language toggle (it stays disabled until an agent is listening on *that* session):
+A `--wait` review serves the assist channel **by default**, so the common review flow already pre-translates and answers inline-suggestion requests:
 
-- `mastermind open --serve-assist <file>` — opens the doc for review **and** answers assist tasks **without blocking** on hand-back. Use this whenever you want translation / inline suggestions to just work while the user reads.
-- `mastermind open --wait --serve-assist <file>` — the blocking review loop that *also* answers assist tasks.
+- `mastermind open --wait <file>` — the blocking review loop; **serves assist by default**. Add `--no-assist` to review without it.
+- `mastermind open --serve-assist <file>` — opens the doc and answers assist tasks **without blocking** on hand-back. Use this when you want translation / inline suggestions to just work while the user reads but don't need the hand-back signal.
 - `mastermind assist <file>` — a standalone listener (no browser tab of its own).
 
-All three bind to the same session by the file's real path, print the same `mastermind-assist:` lines, and auto-reconnect across transient drops so the toggle stays live for the whole review. If the toggle shows "Run `mastermind open --serve-assist`", no agent is currently serving that session.
+All bind to the same session by the file's real path, print the same `mastermind-assist:` lines, and auto-reconnect across transient drops so translation stays live for the whole review. **To actually pre-translate, answer those lines** — run the command as a background process and reply to each `translate` task with `mastermind assist-result`; left unanswered, the tasks simply expire and the toggle falls back to whatever is already cached.
+
+The reading-language toggle is always clickable: it flips instantly to any translation already cached on disk (`.mastermind/translations/`, which survives reloads and works with no agent), and when a block isn't cached and nothing is serving assist, clicking it surfaces a "run `mastermind open --serve-assist`" notice.

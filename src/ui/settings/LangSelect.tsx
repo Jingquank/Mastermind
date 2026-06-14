@@ -19,9 +19,10 @@ const VIEWPORT_MARGIN = 8
 const TRIGGER_GAP = 6
 
 interface MenuPos {
-  left: number
   width: number
   maxHeight: number
+  left?: number
+  right?: number
   top?: number
   bottom?: number
 }
@@ -33,9 +34,13 @@ interface MenuPos {
  * translates anything, so the list is a shortcut, not a fence.
  *
  * The menu is `position: fixed` so it escapes the settings SlideOver's
- * `overflow: auto` clipping, and it flips above the trigger when there's more
- * room there (this field sits near the panel's bottom edge). It stays a DOM
- * child of the field — not portaled — so the SlideOver's outside-click /
+ * `overflow: auto` clipping. It flies out as a ribbon to the *left* of the
+ * SlideOver panel rather than stacking on the trigger — that way the list
+ * never overlays the panel's own fields and always has the full viewport
+ * height to grow into (the old below-the-trigger menu got clipped near the
+ * panel's bottom edge). On viewports too narrow to fit the ribbon beside the
+ * panel it falls back to the classic flip-above/below placement. It stays a
+ * DOM child of the field — not portaled — so the SlideOver's outside-click /
  * Escape containment checks keep treating menu interactions as "inside".
  */
 export function LangSelect({ value, onChange, label }: Props) {
@@ -79,14 +84,40 @@ export function LangSelect({ value, onChange, label }: Props) {
       const el = triggerRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
+      const width = r.width
+      // Anchor the ribbon to the panel's left edge (fall back to the trigger if
+      // the panel can't be found) so it sits beside the whole SlideOver, not
+      // just this field.
+      const panel = el.closest('.slide-over')?.getBoundingClientRect()
+      const anchorLeft = panel ? panel.left : r.left
+
+      // Enough room to the left of the panel to fit the ribbon? If so, fly out
+      // there and grow toward whichever vertical direction has more space,
+      // staying aligned to the trigger row.
+      if (anchorLeft - TRIGGER_GAP - width >= VIEWPORT_MARGIN) {
+        const spaceUp = r.bottom - VIEWPORT_MARGIN
+        const spaceDown = window.innerHeight - r.top - VIEWPORT_MARGIN
+        const growUp = spaceUp >= spaceDown
+        const maxHeight = Math.min(MENU_DESIRED, growUp ? spaceUp : spaceDown)
+        const right = window.innerWidth - anchorLeft + TRIGGER_GAP
+        setPos(
+          growUp
+            ? { right, width, bottom: window.innerHeight - r.bottom, maxHeight }
+            : { right, width, top: r.top, maxHeight },
+        )
+        return
+      }
+
+      // Narrow viewport: no room beside the panel — fall back to the classic
+      // flip-above/below-the-trigger placement.
       const below = window.innerHeight - r.bottom - VIEWPORT_MARGIN
       const above = r.top - VIEWPORT_MARGIN
       const flipUp = below < Math.min(MENU_DESIRED, MENU_MIN) && above > below
       const maxHeight = Math.max(MENU_MIN, Math.min(MENU_DESIRED, flipUp ? above : below))
       setPos(
         flipUp
-          ? { left: r.left, width: r.width, bottom: window.innerHeight - r.top + TRIGGER_GAP, maxHeight }
-          : { left: r.left, width: r.width, top: r.bottom + TRIGGER_GAP, maxHeight },
+          ? { left: r.left, width, bottom: window.innerHeight - r.top + TRIGGER_GAP, maxHeight }
+          : { left: r.left, width, top: r.bottom + TRIGGER_GAP, maxHeight },
       )
     }
     place()
@@ -158,6 +189,7 @@ export function LangSelect({ value, onChange, label }: Props) {
           style={{
             position: 'fixed',
             left: pos.left,
+            right: pos.right,
             width: pos.width,
             top: pos.top,
             bottom: pos.bottom,

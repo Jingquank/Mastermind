@@ -1,10 +1,11 @@
 {
   "id": "nacht",
-  "name": "Nacht",
+  "name": "Mint",
   "appearance": "dark",
   "fonts": [
     { "family": "Schibsted Grotesk", "src": "/themes/grid/fonts/SchibstedGrotesk-Variable.woff2", "weight": "400 900" },
     { "family": "Geist Mono", "src": "/themes/grid/fonts/GeistMono-Variable.woff2", "weight": "100 900" }
   ],
-  "grain": { "enabled": false }
+  "grain": { "enabled": false },
+  "swatch": { "bg": "#282a36", "ink": "#9aa3c4", "accent": "#50fa7b" }
 }

@@ -62,7 +62,6 @@
   /* ---- Motion system (theme-invariant; consumed by transitions + Phase N) ---- */
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-fast: 120ms;
   --dur-base: 180ms;
   --dur-slow: 300ms;
@@ -146,19 +145,24 @@ body {
   right: var(--bar-gap);
   bottom: var(--bar-gap);
   top: auto;
-  margin-inline: auto; /* lets max-width center the collapsed island */
-  max-width: 100%;
+  margin-inline: auto; /* lets max-width center the bar + collapsed island */
+  /* Cap the expanded bar slightly wider than the content column instead of
+     letting it fill the viewport; centered by margin-inline above. */
+  max-width: calc(var(--content-max-width) + var(--space-unit) * 16);
   z-index: var(--z-topbar);
   display: flex;
   flex-wrap: nowrap; /* Phase E: a fixed inline set + overflow menu — never wraps */
   align-items: center;
   justify-content: space-between;
   gap: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
+  /* Same rhythm as the bar's gap (8 block / 16 inline): the inline inset clears
+     the capsule's rounded ends and gives the end content even breathing room. */
   padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  /* full-size bar is a capsule too (the collapsed island already was) */
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
 }
 @media (prefers-reduced-motion: no-preference) {
   .topbar {
@@ -176,7 +180,8 @@ body {
   position: absolute;
   left: calc(var(--space-unit) * 6);
   right: calc(var(--space-unit) * 6);
-  bottom: calc(var(--space-unit) * 1.5);
+  /* flush to the island's bottom edge — no gap beneath it */
+  bottom: 0;
   height: 2px;
   border-radius: var(--radius-full);
   background: var(--color-accent-dim);
@@ -191,8 +196,10 @@ body {
 
 /* ---- collapsed island (suppressed while hovered or keyboard-focused) ---- */
 .topbar.collapsed:not(:hover):not(:focus-within) {
-  max-width: 22rem;
-  justify-content: center;
+  /* Compact island, but the primary Hand back CTA stays reachable: only the
+     centered mode switch folds away (below). filename·mode sits left, CTA right.
+     Roomy enough that a typical filename doesn't truncate beside the CTA. */
+  max-width: 26rem;
   padding-block: calc(var(--space-unit) * 1.5);
   border-radius: var(--radius-full);
 }
@@ -207,17 +214,27 @@ body {
   overflow: hidden;
   pointer-events: none;
 }
-/* The right-hand action cluster is in flow — collapse its box so the pill can
-   shrink, not just fade. */
-.topbar.collapsed:not(:hover):not(:focus-within) .topbar-right {
-  max-width: 0;
-  opacity: 0;
-  padding: 0;
-  overflow: hidden;
-  pointer-events: none;
+/* Compact island chrome: the primary Hand back action must never hide behind a
+   hover or a scroll, but everything secondary folds away. The mode label and the
+   comment toggle drop entirely, and the CTA shrinks to a single send glyph — the
+   note chevron and the "Hand back" text both fold, the icon takes their place.
+   Hovering / focusing the bar re-expands it to the full controls. */
+.topbar.collapsed:not(:hover):not(:focus-within) .topbar-icon-btn {
+  display: none;
 }
-.topbar.collapsed:not(:hover):not(:focus-within) .topbar-mode-label {
-  display: inline;
+.topbar.collapsed:not(:hover):not(:focus-within) .cta-split-arrow {
+  display: none;
+}
+.topbar.collapsed:not(:hover):not(:focus-within) .cta-label {
+  display: none;
+}
+.topbar.collapsed:not(:hover):not(:focus-within) .cta-send-icon {
+  display: inline-flex;
+}
+.topbar.collapsed:not(:hover):not(:focus-within) .cta-split-main {
+  /* the whole pill again (no seam), square enough to read as an icon button */
+  border-radius: var(--radius-full);
+  padding-inline: calc(var(--space-unit) * 2.5);
 }
 
 .topbar-left {
@@ -236,31 +253,17 @@ body {
   max-width: calc(var(--space-unit) * 50);
 }
 
-/* Current view mode, surfaced only in the collapsed island (e.g. "· Reading"). */
-.topbar-mode-label {
-  display: none;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  white-space: nowrap;
+/* slot-text rolling labels (SlotLabel): the lib makes the container an
+   inline-flex of clipped per-glyph cells. Keep those cells aligned to the
+   surrounding chrome text rather than the lib's default bottom alignment. */
+.seg-btn .slot-text,
+.btn-cta .slot-text,
+.agent-chip .slot-text,
+.toast .slot-text {
+  vertical-align: middle;
 }
-.topbar-mode-label::before {
-  content: '·';
-  margin-inline: calc(var(--space-unit) * 1.5);
-}
-
-.dirty-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent-dim);
-  opacity: 0;
-  transition: opacity var(--dur-fast) ease;
-  flex: none;
-}
-
-.dirty-dot.visible {
-  opacity: 1;
+.toast .slot-text {
+  white-space: normal; /* notices can wrap; let the roll line break naturally */
 }
 
 .topbar-right {
@@ -343,6 +346,34 @@ body {
   color: var(--color-accent-dim);
 }
 
+/* Settings: a standalone floating button pinned to the bottom-right corner of
+   the page (outside the bottom bar). The settings slide-over rises above it. */
+.floating-settings {
+  position: fixed;
+  right: var(--bar-gap);
+  /* Vertically centered within the bottom bar's height band so it reads as part
+     of that row (the bar sits at --bar-gap and is --bar-h tall). */
+  bottom: calc(var(--bar-gap) + (var(--bar-h) - var(--space-unit) * 11) / 2);
+  z-index: var(--z-topbar);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--space-unit) * 11);
+  height: calc(var(--space-unit) * 11);
+  color: var(--color-text-muted);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
+  transition: color var(--dur-fast) ease;
+}
+.floating-settings:hover:not(:disabled) {
+  color: var(--color-text);
+}
+.floating-settings.active {
+  color: var(--color-accent-dim);
+}
+
 /* ---------- buttons ---------- */
 
 button {
@@ -376,6 +407,132 @@ button:disabled {
 
 .btn-cta:active:not(:disabled) {
   background: color-mix(in srgb, var(--color-cta-bg) 72%, var(--color-cta-text) 28%);
+}
+
+/* ---- hand-back split button (wide face + note-popover arrow) ---- */
+.cta-split {
+  display: inline-flex;
+  align-items: stretch;
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+/* Leading send glyph on the CTA — only revealed in the compact island. */
+.cta-send-icon {
+  display: none;
+}
+.cta-split-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  /* tighter inner edge so the seam sits midway between the label and the
+     chevron, instead of leaving the chevron stranded against the pill end */
+  padding-right: calc(var(--space-unit) * 2);
+}
+.cta-split-arrow {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  /* outer (right) gap matches the chevron's optical top/bottom inset so it sits
+     evenly inside the rounded cap; inner (left) edge stays tight to the seam */
+  padding-left: calc(var(--space-unit) * 2);
+  padding-right: calc(var(--space-unit) * 2.5);
+  /* hairline seam so the two faces read as one pill, not a gap */
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--color-cta-text) 22%, transparent);
+}
+/* Press the whole pill as one unit — scaling a single half would split the seam. */
+.cta-split:active:not(:has(:disabled)) {
+  transform: scale(0.96);
+}
+.cta-split .btn-cta:active:not(:disabled) {
+  transform: none;
+}
+.cta-split-arrow[data-state='open'] {
+  background: color-mix(in srgb, var(--color-cta-bg) 72%, var(--color-cta-text) 28%);
+}
+
+/* One unified composer: the card is the field (textarea is borderless), with a
+   hairline-divided action tray underneath. Streamlined — no nested borders. */
+.handback-note {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  max-width: calc(100vw - var(--space-unit) * 6);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
+  z-index: var(--z-popover);
+  overflow: hidden; /* clip the footer tray to the card's rounded corners */
+}
+.handback-note:focus-within {
+  /* quiet focus: a subtle neutral border darkening, not a loud accent ring */
+  border-color: var(--color-border-hover);
+}
+
+/* The note popover unfolds upward out of the bar — a clip-path reveal (no text
+   distortion) with a short fade. Radix keeps the Content mounted through close,
+   flipping data-state open↔closed, so the exit runs its own faster keyframe. */
+@media (prefers-reduced-motion: no-preference) {
+  .handback-note[data-state='open'] {
+    animation: hb-unfold-in calc(var(--dur-base) + 40ms) var(--ease-out);
+  }
+  .handback-note[data-state='closed'] {
+    animation: hb-unfold-out var(--dur-fast) var(--ease-standard);
+  }
+}
+@keyframes hb-unfold-in {
+  from {
+    opacity: 0;
+    clip-path: inset(100% 0 0 0 round var(--radius-lg));
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round var(--radius-lg));
+    transform: none;
+  }
+}
+@keyframes hb-unfold-out {
+  from {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round var(--radius-lg));
+  }
+  to {
+    opacity: 0;
+    clip-path: inset(40% 0 0 0 round var(--radius-lg));
+  }
+}
+.handback-note-input {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  line-height: var(--lh-snug);
+  background: transparent;
+  border: none;
+  padding: calc(var(--space-unit) * 3);
+  color: var(--color-text);
+  resize: none;
+  min-height: 76px;
+}
+.handback-note-input:focus-visible {
+  outline: none;
+}
+.handback-note-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 2);
+  padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 2) calc(var(--space-unit) * 2)
+    calc(var(--space-unit) * 3);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.handback-note-hint {
+  font-size: var(--font-size-micro);
+  line-height: var(--lh-snug);
+  color: var(--color-text-muted);
+}
+/* icon-only capsule — the popover context already says "hand back with a note",
+   so the button just needs the send glyph */
+.handback-note-send {
+  flex: none;
+  padding: calc(var(--space-unit) * 2);
 }
 
 .btn-ghost {
@@ -464,8 +621,13 @@ button:disabled {
 }
 
 .doc-shell.with-rail {
-  grid-template-columns: minmax(0, 1fr) minmax(auto, var(--content-max-width)) 320px minmax(0, 0.4fr);
-  column-gap: calc(var(--space-unit) * 6);
+  /* The rail claims up to 320px out of the right gutter. While that gutter is
+     wider than the rail (wide / superwide screens), the right column stays 1fr —
+     the SAME as the no-rail right gutter — so toggling comments doesn't move the
+     centered content. It only shifts left on mid widths where the rail can't fit
+     otherwise. The content↔rail gap is .rail's padding, not column-gap, because
+     column-gap would also offset the content column. */
+  grid-template-columns: minmax(0, 1fr) minmax(auto, var(--content-max-width)) minmax(320px, 1fr);
 }
 
 .doc-column {
@@ -481,6 +643,8 @@ button:disabled {
   grid-column: 3;
   position: relative;
   padding-top: calc(var(--space-unit) * 8);
+  /* the content↔rail gap; on .rail (not column-gap) so it never offsets content */
+  padding-left: calc(var(--space-unit) * 6);
 }
 
 .rail-card {
@@ -584,7 +748,7 @@ button:disabled {
   color: var(--color-invert-text);
   border-radius: var(--radius-md);
   padding: calc(var(--space-unit) * 1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px rgb(0 0 0 / calc(0.18 * var(--shadow-strength)));
 }
 
 .sel-toolbar > button {
@@ -782,35 +946,64 @@ button:disabled {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-/* The section heading becomes a compact uppercase label with a diamond marker
-   and a divider rule, so the card reads as one titled unit. In the translated
-   view the heading is nested one level deeper, inside the first .trans-block. */
+/* Per-type marker, set on the single-class selectors so the .md-callout--<kind>
+   modifiers (declared after, same specificity) win over the default. The default
+   is a neutral diamond for any matched-but-unclassified heading. Each icon is a
+   mask painted with currentColor, so it inherits the band's ink — identity comes
+   from the glyph SHAPE, never a hue (review marks own document color). */
+.md-callout {
+  --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 5l7 7-7 7-7-7z' fill='%23000'/%3E%3C/svg%3E");
+}
+.md-callout--decisions {
+  --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.3 12.3l2.5 2.5 4.8-5.4'/%3E%3C/svg%3E");
+}
+.md-callout--questions {
+  --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.2-2.7 3.9'/%3E%3Ccircle cx='12' cy='17.3' r='.6' fill='%23000' stroke='none'/%3E%3C/svg%3E");
+}
+.md-callout--todo {
+  --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.8 7.2l1.6 1.6 2.8-3'/%3E%3Cpath d='M3.8 16.4l1.6 1.6 2.8-3'/%3E%3Cline x1='11.5' y1='7.4' x2='20.2' y2='7.4'/%3E%3Cline x1='11.5' y1='16.8' x2='20.2' y2='16.8'/%3E%3C/svg%3E");
+}
+.md-callout--risks {
+  --callout-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4.2 21 19.2H3z'/%3E%3Cline x1='12' y1='10' x2='12' y2='13.8'/%3E%3Ccircle cx='12' cy='16.6' r='.6' fill='%23000' stroke='none'/%3E%3C/svg%3E");
+}
+
+/* The section heading reads as a quiet titled row: a per-type icon + bold title
+   over a hairline. Identity comes from the icon SHAPE, not a hue or an inverted
+   band (the dark-band device is reserved for the transient selection toolbar) —
+   so a meta-section reads as a gently emphasized panel, not a jarring transform. */
 .md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child,
 .trans-view .md-callout > .trans-block:first-child .trans-block-body > :is(h1, h2, h3, h4, h5, h6):first-child {
   display: flex;
   align-items: center;
-  gap: calc(var(--space-unit) * 2);
+  gap: calc(var(--space-unit) * 2.5);
   margin: 0 0 calc(var(--space-unit) * 4);
   padding: 0 0 calc(var(--space-unit) * 3);
   border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
   font-family: var(--font-display);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-body);
   font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  text-transform: none;
   line-height: 1.2;
+}
+
+.trans-view .md-callout > .trans-block:first-child .trans-block-body > :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-right: 0;
 }
 
 .md-root .md-callout > :is(h1, h2, h3, h4, h5, h6):first-child::before,
 .trans-view .md-callout > .trans-block:first-child .trans-block-body > :is(h1, h2, h3, h4, h5, h6):first-child::before {
   content: '';
   flex: none;
-  width: 7px;
-  height: 7px;
-  background: var(--color-text);
-  transform: rotate(45deg);
+  width: 20px;
+  height: 20px;
+  background: var(--color-text-muted);
+  -webkit-mask: var(--callout-icon) center / contain no-repeat;
+  mask: var(--callout-icon) center / contain no-repeat;
 }
 
 .md-root .md-callout > :last-child,
@@ -951,23 +1144,6 @@ mark.critic-hl.critic-anchor:hover {
 
 /* ---------- editors ---------- */
 
-.milkdown-host .milkdown {
-  outline: none;
-}
-
-.milkdown-host .ProseMirror {
-  outline: none;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  min-height: 50vh;
-}
-
-.milkdown-host .ProseMirror-selectednode {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
-  border-radius: var(--radius-xs);
-}
-
 .source-host {
   font-family: var(--font-mono);
 }
@@ -1011,7 +1187,7 @@ mark.critic-hl.critic-anchor:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 2px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgb(0 0 0 / calc(0.08 * var(--shadow-strength)));
 }
 
 .hover-actions button {
@@ -1052,16 +1228,15 @@ mark.critic-hl.critic-anchor:hover {
 
 .toast {
   position: fixed;
-  bottom: calc(var(--space-unit) * 6);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--space-unit) * 6);
+  right: calc(var(--space-unit) * 6);
   z-index: var(--z-toast);
   background: var(--color-invert-bg);
   color: var(--color-cta-text);
   border-radius: var(--radius-md);
   padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
   font-size: var(--font-size-sm);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgb(0 0 0 / calc(0.2 * var(--shadow-strength)));
 }
 
 /* ---------- misc ---------- */
@@ -1099,9 +1274,9 @@ mark.critic-hl.critic-anchor:hover {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg); /* uniform on all four corners — reads as a floating card, not a drawer */
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.14 * var(--shadow-strength)));
   transform-origin: bottom right;
-  animation: slide-over-in var(--dur-base) var(--ease-spring);
+  animation: slide-over-in var(--dur-base) var(--ease-out);
 }
 /* Pops up from the bottom (rise + subtle scale) rather than sliding in from the right edge. */
 @keyframes slide-over-in {
@@ -1178,9 +1353,23 @@ mark.critic-hl.critic-anchor:hover {
 .settings-row {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--space-unit) * 1);
-  margin-bottom: calc(var(--space-unit) * 3);
+  /* One uniform label→control gap for every row (chips and segmented presets
+     alike) — the per-control margin-top/bottom overrides are gone. */
+  gap: calc(var(--space-unit) * 1.5);
+  margin-bottom: calc(var(--space-unit) * 4);
   font-size: var(--font-size-sm);
+}
+/* Section padding owns the tail; the last row doesn't double it up. */
+.settings-row:last-child {
+  margin-bottom: 0;
+}
+/* Label line: text on the left, the mono current-value aligned to the right
+   edge so values read down a clean column across the numeric rows. */
+.settings-row:not(.is-toggle) > span:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 2);
 }
 
 .settings-row.is-toggle {
@@ -1221,7 +1410,7 @@ mark.critic-hl.critic-anchor:hover {
   text-transform: uppercase;
   padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2);
   border-radius: var(--radius-xs);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 10px rgb(0 0 0 / calc(0.18 * var(--shadow-strength)));
   user-select: none;
 }
 .tooltip-arrow {
@@ -1237,7 +1426,6 @@ mark.critic-hl.critic-anchor:hover {
 /* reading presets: self-illustrating glyph ToggleGroups (replace the sliders) */
 .preset-seg {
   width: 100%;
-  margin-top: calc(var(--space-unit) * 1.5);
 }
 .preset-seg .seg-btn {
   flex: 1;
@@ -1261,8 +1449,10 @@ mark.critic-hl.critic-anchor:hover {
   font-size: var(--font-size-sm);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  padding: calc(var(--space-unit) * 1.5);
+  border-radius: var(--radius-lg);
+  /* Horizontal inset matches the chips and clears the pill's rounded ends so the
+     value never hugs the corner. */
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 3);
   color: var(--color-text);
   width: 100%;
 }
@@ -1272,16 +1462,23 @@ mark.critic-hl.critic-anchor:hover {
   display: flex;
   flex-direction: column;
   gap: calc(var(--space-unit) * 1.5);
-  margin-top: calc(var(--space-unit) * 1.5);
 }
 .settings-langswap {
   align-self: center;
+  position: relative; /* hosts the expanded hit area below */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: calc(var(--space-unit) * 0.5);
   color: var(--color-text-muted);
   transform: rotate(90deg); /* SwapIcon is horizontal; the pair stacks vertically */
+}
+/* Keep the glyph compact between the two pickers, but give it a comfortable
+   ~28px hit area (it sits in the 6px gaps without overlapping the triggers). */
+.settings-langswap::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--space-unit) * -1.5);
 }
 .settings-langswap:hover {
   color: var(--color-text);
@@ -1298,7 +1495,8 @@ mark.critic-hl.critic-anchor:hover {
   cursor: pointer;
   text-align: left;
 }
-.lang-trigger:hover {
+.lang-trigger:hover,
+.lang-trigger[aria-expanded='true'] {
   border-color: var(--color-border-hover);
 }
 .lang-trigger-text {
@@ -1323,7 +1521,7 @@ mark.critic-hl.critic-anchor:hover {
   font-size: var(--font-size-nano);
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
 }
 .lang-chevron {
   flex: none;
@@ -1380,7 +1578,6 @@ mark.critic-hl.critic-anchor:hover {
   display: flex;
   gap: calc(var(--space-unit) * 2);
   flex-wrap: wrap;
-  margin-bottom: calc(var(--space-unit) * 2);
 }
 
 .theme-chip {
@@ -1403,10 +1600,13 @@ mark.critic-hl.critic-anchor:hover {
   border-color: var(--color-border-hover);
 }
 
+/* Selected = a filled tonal chip + ink text (mirrors the .seg-btn active
+   treatment and DESIGN.md). No accent ring: the accent stays on the primary CTA
+   and focus, so a panel full of selected options still reads calm. */
 .theme-chip.active {
-  border-color: var(--color-accent-dim);
+  border-color: color-mix(in srgb, var(--color-text) 26%, var(--color-border));
   color: var(--color-text);
-  box-shadow: 0 0 0 1px var(--color-accent-dim);
+  background: color-mix(in srgb, var(--color-text) 9%, var(--color-bg));
 }
 
 .settings-gear {
@@ -1531,7 +1731,7 @@ input[type='checkbox'] {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: calc(var(--space-unit) * 4);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 12px 40px rgb(0 0 0 / calc(0.22 * var(--shadow-strength)));
 }
 
 .modal h4 {
@@ -1562,6 +1762,17 @@ input[type='checkbox'] {
   border-radius: var(--radius-full);
   padding: 2px calc(var(--space-unit) * 2.5);
   white-space: nowrap;
+}
+
+/* floated at the top-right of the UI, outside the bar — its own surface + shadow
+   so it reads legibly over the document instead of the bar's background */
+.agent-chip-floating {
+  position: fixed;
+  top: var(--bar-gap);
+  right: var(--bar-gap);
+  z-index: var(--z-topbar);
+  background: var(--color-bg-elevated);
+  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
 }
 
 .agent-chip-dot {
@@ -1689,46 +1900,6 @@ input[type='checkbox'] {
   background: var(--review-delete-text);
 }
 
-/* ---------- editing-mode task items ---------- */
-
-.milkdown-host li[data-checked] {
-  list-style: none;
-  margin-left: calc(var(--space-unit) * -5);
-  position: relative;
-  padding-left: 21px;
-}
-
-.milkdown-host li[data-checked]::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.28em;
-  width: 13px;
-  height: 13px;
-  border: 1.5px solid var(--color-text-muted);
-  border-radius: var(--radius-xs);
-  cursor: pointer;
-}
-
-.milkdown-host li[data-checked='true']::before {
-  background: var(--color-accent-dim);
-  border-color: var(--color-accent-dim);
-}
-
-/* the check itself, drawn with borders in --color-bg (clears 3:1 on every theme's fill) */
-.milkdown-host li[data-checked='true']::after {
-  content: '';
-  position: absolute;
-  left: 3.5px;
-  top: calc(0.28em + 3px);
-  width: 7px;
-  height: 4px;
-  border-left: 2px solid var(--color-bg);
-  border-bottom: 2px solid var(--color-bg);
-  transform: rotate(-45deg);
-  pointer-events: none;
-}
-
 /* ---------- misc additions ---------- */
 
 .loading-note {
@@ -1753,8 +1924,9 @@ input[type='checkbox'] {
 
 @media (max-width: 1180px) {
   .doc-shell.with-rail {
-    grid-template-columns: minmax(0, 0.2fr) minmax(280px, var(--content-max-width)) 264px minmax(0, 0.1fr);
-    column-gap: calc(var(--space-unit) * 4);
+    /* tighter gutters so the narrower rail still fits; .rail padding-left (24) +
+       card (248) = the 272 min on the right column. */
+    grid-template-columns: minmax(0, 0.2fr) minmax(280px, var(--content-max-width)) minmax(272px, 1fr);
   }
 
   .rail-card {
@@ -1779,7 +1951,7 @@ input[type='checkbox'] {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
   padding: calc(var(--space-unit) * 3);
 }
 
@@ -1901,7 +2073,7 @@ input[type='checkbox'] {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 4px 16px rgb(0 0 0 / calc(0.14 * var(--shadow-strength)));
   padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2);
 }
 
@@ -1961,14 +2133,25 @@ input[type='checkbox'] {
     transform: translateY(0);
   }
 }
-@keyframes mm-toast-in {
+/* the comment toolbar gets a livelier rise-and-settle than the plain pop */
+@keyframes mm-toolbar-in {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(10px);
+    transform: translateY(12px) scale(0.92);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes mm-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 @keyframes mm-card-flash {
@@ -1980,13 +2163,66 @@ input[type='checkbox'] {
   }
 }
 
+@keyframes mm-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+}
+/* comment cards live in the right rail, so they arrive from / depart toward it */
+@keyframes mm-rail-in {
+  from {
+    opacity: 0;
+    transform: translateX(22px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes mm-rail-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(28px) scale(0.93);
+  }
+}
+
 /* entrances on discrete events (each element mounts on its trigger, so no replay) */
 .toast {
   animation: mm-toast-in var(--dur-base) var(--ease-out);
 }
-.sel-toolbar,
 .hover-actions {
   animation: mm-pop-in var(--dur-fast) var(--ease-out);
+}
+/* the comment toolbar rises out of the selection it's anchored above */
+.sel-toolbar {
+  transform-origin: center bottom;
+  animation: mm-toolbar-in var(--dur-base) var(--ease-out);
+}
+/* the floating comment toolbar drops back out when the selection is released */
+.sel-toolbar.closing {
+  animation: mm-pop-out var(--dur-fast) var(--ease-standard) forwards;
+  pointer-events: none;
+}
+/* a comment thread slides in when added/loaded, and back out when resolved;
+   cards stagger in via --enter-delay (set per-card) so a full rail cascades */
+.rail-card {
+  transform-origin: right center;
+  animation: mm-rail-in var(--dur-slow) var(--ease-out) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+.rail-card.leaving {
+  animation: mm-rail-out var(--dur-base) var(--ease-standard) forwards;
+  animation-delay: 0ms;
+  pointer-events: none;
 }
 /* comment-thread activation: the landed card flashes the accent wash, then settles */
 .rail-card.active {
@@ -2029,17 +2265,22 @@ input[type='checkbox'] {
 @media (prefers-reduced-motion: reduce) {
   .toast,
   .sel-toolbar,
+  .sel-toolbar.closing,
   .hover-actions,
+  .rail-card,
+  .rail-card.leaving,
   .rail-card.active {
     animation: none;
   }
   .seg-btn,
   .btn-cta,
+  .cta-split,
   .hover-actions button,
   .sel-toolbar > button {
     transition: none;
   }
   .btn-cta:active:not(:disabled),
+  .cta-split:active,
   .hover-actions button:active,
   .sel-toolbar > button:active {
     transform: none;
@@ -2074,7 +2315,7 @@ input[type='checkbox'] {
   background: var(--color-bg-elevated);
   border-right: 1px solid var(--color-border);
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 8px 0 32px rgb(0 0 0 / calc(0.12 * var(--shadow-strength)));
   z-index: var(--z-nav);
   overflow: hidden;
   transition:
@@ -2106,7 +2347,10 @@ input[type='checkbox'] {
 }
 .nav-collapse {
   flex: none;
-  padding: 2px 4px;
+  /* ≥24px square so it clears the WCAG 2.5.8 minimum target size on every pointer. */
+  min-width: calc(var(--space-unit) * 6);
+  min-height: calc(var(--space-unit) * 6);
+  padding: calc(var(--space-unit) * 1);
 }
 .nav-seg {
   margin: calc(var(--space-unit) * 2);
@@ -2155,9 +2399,10 @@ input[type='checkbox'] {
 }
 
 .nav-reveal {
+  /* Pinned to the top-left of the page; stays there while the page scrolls. */
   position: fixed;
-  left: 10px;
-  top: calc(var(--bar-gap) + 10px);
+  left: calc(var(--space-unit) * 3);
+  top: calc(var(--space-unit) * 3);
   z-index: var(--z-nav);
   width: 32px;
   height: 32px;
@@ -2186,7 +2431,7 @@ input[type='checkbox'] {
   }
   .navigator {
     z-index: calc(var(--z-overlay) + 1);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 40px rgb(0 0 0 / calc(0.25 * var(--shadow-strength)));
   }
   /* mobile: the view-mode toggle (and its translation sibling) rejoin bar flow */
   .topbar-center {
@@ -2304,6 +2549,24 @@ input[type='checkbox'] {
   color: var(--color-text-faint);
   font-family: var(--font-mono);
   font-size: var(--font-size-micro);
+}
+
+/* Touch / stylus (coarse pointer): grow the compact icon controls to a
+   comfortable ~44px target. Desktop (fine pointer) keeps its dense sizing. */
+@media (pointer: coarse) {
+  .nav-reveal,
+  .nav-collapse,
+  .topbar-icon-btn,
+  .topbar-trans,
+  .floating-settings {
+    min-width: calc(var(--space-unit) * 11);
+    min-height: calc(var(--space-unit) * 11);
+  }
+  .seg-btn,
+  .theme-chip,
+  .nav-outline li button {
+    min-height: calc(var(--space-unit) * 10);
+  }
 }
 
 @media print {

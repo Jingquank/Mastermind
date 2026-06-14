@@ -1,0 +1,67 @@
+[data-theme='rose'] {
+  /* Rose (warm light, muted magenta).
+     v0.4: Radix-rigor 12-step OKLCH scales (anchored to the v0.3 Swiss values),
+     with semantic tokens mapped onto the steps. Marks stay hand-tuned. */
+
+  /* ---- Layer 1: raw scales (values differ per theme) ---- */
+  --gray-1: oklch(0.991 0.003 106.447);
+  --gray-2: oklch(0.96 0.004 106.474);
+  --gray-3: oklch(0.947 0.004 5.248);
+  --gray-4: oklch(0.935 0.004 5.248);
+  --gray-5: oklch(0.922 0.004 5.248);
+  --gray-6: oklch(0.909 0.008 98.888);
+  --gray-7: oklch(0.85 0.004 5.248);
+  --gray-8: oklch(0.791 0.004 5.248);
+  --gray-9: oklch(0.732 0.004 5.248);
+  --gray-10: oklch(0.674 0.015 88.723);
+  --gray-11: oklch(0.508 0.011 106.779);
+  --gray-12: oklch(0.191 0 89.876);
+  --accent-1: oklch(0.984 0.018 5.248);
+  --accent-2: oklch(0.968 0.032 5.248);
+  --accent-3: oklch(0.943 0.056 5.248);
+  --accent-4: oklch(0.913 0.08 5.248);
+  --accent-5: oklch(0.877 0.107 5.248);
+  --accent-6: oklch(0.832 0.133 5.248);
+  --accent-7: oklch(0.776 0.159 5.248);
+  --accent-8: oklch(0.702 0.181 5.248);
+  --accent-9: oklch(0.588 0.201 5.248);
+  --accent-10: oklch(0.552 0.195 5.248);
+  --accent-11: oklch(0.514 0.183 4.481);
+  --accent-12: oklch(0.353 0.149 5.248);
+
+  /* ---- Layer 2: semantic mapping (identical names across all themes) ---- */
+  --color-bg: var(--gray-1);
+  --color-bg-elevated: var(--gray-2);
+  --color-text: var(--gray-12);
+  --color-text-muted: var(--gray-11);
+  --color-text-faint: var(--gray-10);
+  --color-border: var(--gray-6);
+  --color-border-hover: var(--gray-7);
+  --color-accent: var(--accent-9);
+  --color-accent-dim: var(--accent-11);
+  --color-on-accent: #ffffff;
+  --color-cta-bg: var(--accent-9);
+  --color-cta-text: #ffffff;
+  --focus-ring: var(--gray-12);
+  --color-selection: color-mix(in oklab, var(--color-text) 12%, transparent);
+  --color-accent-surface: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  --color-invert-bg: #141414;
+  --color-invert-bg-elevated: #1f1f1e;
+  --color-invert-text: #f4f4f1;
+  --color-invert-text-muted: rgba(244, 244, 241, 0.66);
+  --color-invert-border: rgba(244, 244, 241, 0.16);
+
+  /* ---- Layer 3: review / mark semantics (hand-tuned, de-conflicted from accent) ---- */
+  --review-insert-text: #1b7a35;
+  --review-insert-bg: rgba(27, 122, 53, 0.1);
+  --review-insert-border: #1b7a35;
+  --review-delete-text: #a23618;
+  --review-delete-bg: rgba(162, 54, 24, 0.1);
+  --review-delete-border: rgba(162, 54, 24, 0.45);
+  --review-highlight-bg: rgba(224, 176, 18, 0.22);
+  --review-highlight-border: rgba(224, 176, 18, 0.55);
+  --review-comment-anchor: #2f5fd0;
+  --review-comment-active-bg: rgba(47, 95, 208, 0.1);
+
+  color-scheme: light;
+}

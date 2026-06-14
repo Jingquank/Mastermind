@@ -1,34 +1,38 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_AUTHOR_TAG } from '../../shared/constants'
 import { acceptEdit, rejectEdit } from '../../shared/critic/resolve'
 import { analyzeMarkdown } from '../../shared/markdown/analyze'
-import { MilkdownEditor } from '../modes/editing/MilkdownEditor'
-import { EditingHoverActions } from '../modes/editing/EditingHoverActions'
+import { parseMarkdown } from '../../shared/markdown/processor'
 import { MarkdownView } from '../modes/reading/Renderer'
 import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
-import { SourceEditor } from '../modes/source/SourceEditor'
 import { CommentRail } from '../review/CommentRail'
 import { HoverActions } from '../review/HoverActions'
 import { ProposalCard } from '../review/ProposalCard'
 import { useProposals } from '../review/proposalStore'
 import { useNav } from './navStore'
 import { MarkGutter, type MarkTick } from '../review/MarkGutter'
-import { FindBar } from '../review/FindBar'
 import { extractOutline } from '../modes/reading/outline'
 import { parseAuthor } from '../../shared/critic/scanner'
 import { scrollToSpan } from '../util/scroll'
+import { SlotLabel } from '../util/SlotLabel'
 import { formatCounts, useLang, useT } from '../i18n'
-import { CheckIcon } from '../icons'
-import { RenameDialog } from './RenameDialog'
-import { SettingsPanel } from '../settings/SettingsPanel'
-import { TranslatedView } from '../translate/TranslatedView'
+import { CheckIcon, GearIcon } from '../icons'
 import { previewTargetLang, useTranslation } from '../translate/translationStore'
 import { openEvents } from './api'
 import { useConfig } from './configStore'
 import { useDirty, useDoc, type ViewMode } from './store'
 import { TopBar } from './TopBar'
 
-const MODE_CYCLE: Record<ViewMode, ViewMode> = { reading: 'editing', editing: 'source', source: 'reading' }
+// Code-split the heavy / conditionally-rendered views so the initial bundle stays
+// lean: CodeMirror (Source), the settings panel, find bar, rename dialog, and the
+// translated view each load on demand. (named exports → default shim for lazy())
+const SourceEditor = lazy(() => import('../modes/source/SourceEditor').then((m) => ({ default: m.SourceEditor })))
+const SettingsPanel = lazy(() => import('../settings/SettingsPanel').then((m) => ({ default: m.SettingsPanel })))
+const FindBar = lazy(() => import('../review/FindBar').then((m) => ({ default: m.FindBar })))
+const RenameDialog = lazy(() => import('./RenameDialog').then((m) => ({ default: m.RenameDialog })))
+const TranslatedView = lazy(() => import('../translate/TranslatedView').then((m) => ({ default: m.TranslatedView })))
+
+const MODE_CYCLE: Record<ViewMode, ViewMode> = { reading: 'source', source: 'reading' }
 
 function isTypingTarget(e: KeyboardEvent): boolean {
   const el = e.target as HTMLElement | null
@@ -58,7 +62,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const externalVersion = useDoc((s) => s.externalVersion)
   const load = useDoc((s) => s.load)
   const applyEdits = useDoc((s) => s.applyEdits)
-  const save = useDoc((s) => s.save)
   const dirty = useDirty()
 
   const t = useT()
@@ -92,6 +95,31 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     void load(sessionId)
     useTranslation.getState().reset()
   }, [sessionId, load])
+
+  // #2 eager pre-translate: while an agent is serving assist, warm the whole
+  // document's translation into the on-disk cache + map so the toggle is instant.
+  // Intentionally keyed on agent-presence + load, not `source`, so it primes on
+  // open / agent-connect without re-firing on every keystroke.
+  useEffect(() => {
+    if (status !== 'ready' || !translationReady || !source) return
+    void useTranslation.getState().prefetch(sessionId, source, langPair)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationReady, status, sessionId])
+
+  // Autosave debounces by ~600ms; flush immediately when the tab is hidden or
+  // the window loses focus so closing it can't drop the last few keystrokes.
+  useEffect(() => {
+    const flushNow = () => void useDoc.getState().autosave()
+    const onVisibility = () => {
+      if (document.hidden) flushNow()
+    }
+    window.addEventListener('blur', flushNow)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('blur', flushNow)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   useEffect(() => {
     setAgentWaiting(meta?.agentWaiting ?? false)
@@ -171,13 +199,23 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         : [],
     [analysis],
   )
-  const outline = useMemo(() => (analysis ? extractOutline(analysis.tree) : []), [analysis])
-  // publish the outline + article element to the shared navigator (it lives
-  // outside SessionView); clears when leaving reading mode or unmounting
+  // The heading outline drives the left navigator in both modes (so its
+  // collapse/expand state persists across Reading/Source). Reading reuses its
+  // critic-aware tree; Source parses the source directly.
+  const outline = useMemo(
+    () => (analysis ? extractOutline(analysis.tree) : status === 'ready' ? extractOutline(parseMarkdown(source)) : []),
+    [analysis, status, source],
+  )
+  // Publish the outline + (in reading mode) the article element to the shared
+  // navigator, which lives outside SessionView. docEl is null in source mode —
+  // there the navigator scrolls via the registered editor scroller instead of
+  // the article's data-ps offsets.
   useEffect(() => {
     useNav.getState().publish(outline, articleRef.current)
-    return () => useNav.getState().publish([], null)
   }, [outline, mode, externalVersion])
+  // Clear only on real unmount, so switching modes never blanks the outline
+  // (which would briefly unmount the navigator and reset its transient state).
+  useEffect(() => () => useNav.getState().publish([], null), [])
   const commentFootnotes = useMemo(() => {
     if (!analysis) return []
     return analysis.spans
@@ -206,9 +244,10 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   // keyboard suggestion walker: n/p (or j/k) step, Enter accepts, Backspace rejects
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // ⌘S is a no-op now — the buffer autosaves. Swallow it so the browser's
+      // "save page" dialog never appears.
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
-        void save()
         return
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
@@ -271,7 +310,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [save, suggestions, walkIndex, analysis, applyEdits, settingsOpen, findOpen, renamePrompt])
+  }, [suggestions, walkIndex, analysis, applyEdits, settingsOpen, findOpen, renamePrompt])
 
   // paint + scroll the walker's current suggestion
   useEffect(() => {
@@ -347,7 +386,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       <TopBar
         railOpen={railOpen}
         onToggleRail={mode === 'reading' && hasThreads ? () => setRailOpen((v) => !v) : undefined}
-        onToggleSettings={toggleSettings}
         translation={
           mode === 'reading'
             ? {
@@ -359,21 +397,47 @@ export function SessionView({ sessionId }: { sessionId: string }) {
                     })(),
                 active: transActive,
                 loading: transLoading,
-                // agent-channel toggle is disabled until `mastermind assist` is listening
-                disabled: !translationReady && !transActive,
-                disabledTitle: t('toggleLangNoAgent'),
+                // always clickable: it toggles instantly from the on-disk cache, and when a
+                // block isn't cached and no agent is listening, the toggle surfaces a notice.
                 onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
               }
             : undefined
         }
-        agentWaiting={agentWaiting}
-        handbackPulse={handbackPulse}
       />
-      {settingsOpen && <SettingsPanel onClose={closeSettings} />}
-      {findOpen && mode === 'reading' && !showTranslated && analysis && (
-        <FindBar analysis={analysis} source={source} docRef={articleRef} onClose={() => setFindOpen(false)} />
+      {/* "Agent waiting" status floats at the top-right of the UI, outside the bar. */}
+      {agentWaiting && (
+        <span className={`agent-chip agent-chip-floating${handbackPulse ? ' released' : ''}`} title={t('handBackTitle')}>
+          <span className="agent-chip-dot" />
+          <SlotLabel text={t('agentWaiting')} revealOnMount />
+        </span>
       )}
-      {renamePrompt && <RenameDialog />}
+      {/* Settings lives on its own as a floating button in the bottom-right
+          corner — outside the bottom bar — anchoring the panel that rises above it. */}
+      <button
+        type="button"
+        className={`floating-settings${settingsOpen ? ' active' : ''}`}
+        onClick={toggleSettings}
+        aria-label={t('settings')}
+        aria-pressed={settingsOpen}
+        title={t('settings')}
+      >
+        <GearIcon width={16} height={16} />
+      </button>
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsPanel onClose={closeSettings} />
+        </Suspense>
+      )}
+      {findOpen && mode === 'reading' && !showTranslated && analysis && (
+        <Suspense fallback={null}>
+          <FindBar analysis={analysis} source={source} docRef={articleRef} onClose={() => setFindOpen(false)} />
+        </Suspense>
+      )}
+      {renamePrompt && (
+        <Suspense fallback={null}>
+          <RenameDialog />
+        </Suspense>
+      )}
       {conflict && (
         <div className="banner" role="alert">
           <span className="banner-text">{t('savePaused')}</span>
@@ -401,13 +465,26 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       <div className={`doc-shell${showRail ? ' with-rail' : ''}`}>
         <div className="doc-column">
           {showTranslated && (
-            <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
+            <Suspense fallback={<div className="center-note loading-note">{t('loadingDocument')}</div>}>
+              <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
+            </Suspense>
           )}
           {mode === 'reading' && !showTranslated && analysis && (
             <article className="md-root" ref={articleRef} onClick={onArticleClick} onKeyDown={onArticleKeyDown}>
               <MarkdownView
                 tree={analysis.tree}
-                ctx={{ source, onEdit: (edit) => applyEdits([edit]), anchoredHighlights, highlightCode }}
+                ctx={{
+                  source,
+                  onEdit: (edit) => applyEdits([edit]),
+                  anchoredHighlights,
+                  highlightCode,
+                  markLabels: {
+                    insertion: t('markInsertion'),
+                    deletion: t('markDeletion'),
+                    change: t('markChange'),
+                    hint: t('markResolveHint'),
+                  },
+                }}
               />
               {commentFootnotes.length > 0 && (
                 <section className="print-footnotes">
@@ -424,9 +501,11 @@ export function SessionView({ sessionId }: { sessionId: string }) {
               )}
             </article>
           )}
-          {mode === 'editing' && <MilkdownEditor key={`e${externalVersion}`} />}
-          {mode === 'editing' && <EditingHoverActions />}
-          {mode === 'source' && <SourceEditor key={`s${externalVersion}`} />}
+          {mode === 'source' && (
+            <Suspense fallback={<div className="center-note loading-note">{t('loadingDocument')}</div>}>
+              <SourceEditor key={`s${externalVersion}`} />
+            </Suspense>
+          )}
         </div>
         {showRail && analysis && (
           <CommentRail
@@ -461,15 +540,20 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       )}
       {handedBack && (
         <div className="toast" role="status">
-          <CheckIcon width={13} height={13} /> {t('handedBackToast')}
-          {formatCounts(handedBack, lang)}
+          <CheckIcon width={13} height={13} />{' '}
+          <SlotLabel revealOnMount text={`${t('handedBackToast')}${formatCounts(handedBack, lang)}`} />
         </div>
       )}
       {!handedBack && notice && (
         <div className={`toast${notice.kind === 'error' ? ' toast-error' : ''}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
-          {notice.count !== undefined
-            ? `${notice.count} ${t(notice.msg as never)} · ${t('undoHint')}`
-            : t(notice.msg as never)}
+          <SlotLabel
+            revealOnMount
+            text={
+              notice.count !== undefined
+                ? `${notice.count} ${t(notice.msg as never)} · ${t('undoHint')}`
+                : t(notice.msg as never)
+            }
+          />
         </div>
       )}
     </>

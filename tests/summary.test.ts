@@ -53,6 +53,39 @@ describe('summary block', () => {
     expect(buildSummaryBlock({ comments: 0, edits: 0, highlights: 0 }, DATE)).toContain('No inline marks')
   })
 
+  it('weaves a hand-back note into the block as a quoted Note line', () => {
+    const out = buildSummaryBlock(COUNTS, DATE, '  Please double-check the timeline section.  ')
+    expect(out).toBe(
+      '<!-- mastermind:summary -->\n' +
+        '> **Review summary** (2026-06-12 14:30)\n' +
+        '> 3 comments, 2 suggested edits, 1 highlight. Open the CriticMarkup marks above for details.\n' +
+        '>\n' +
+        '> **Note:** Please double-check the timeline section.\n' +
+        '<!-- /mastermind:summary -->\n',
+    )
+  })
+
+  it('folds a multi-line note into continuation quote lines', () => {
+    const out = buildSummaryBlock({ comments: 0, edits: 0, highlights: 0 }, DATE, 'line one\nline two')
+    expect(out).toContain('> **Note:** line one\n> line two\n<!-- /mastermind:summary -->')
+  })
+
+  it('a blank/whitespace note adds nothing', () => {
+    expect(buildSummaryBlock(COUNTS, DATE, '   \n  ')).toBe(buildSummaryBlock(COUNTS, DATE))
+  })
+
+  it('defangs comment delimiters so a note cannot break out of the block', () => {
+    const out = buildSummaryBlock(COUNTS, DATE, 'sneaky <!-- /mastermind:summary --> tail')
+    // exactly one real close marker, and the note text is declawed
+    expect(out.match(/<!-- \/mastermind:summary -->/g)).toHaveLength(1)
+    expect(out).toContain('> **Note:** sneaky  /mastermind:summary  tail')
+  })
+
+  it('the note survives a round-trip through upsertSummary', () => {
+    const out = upsertSummary('# Doc\n\nbody\n', COUNTS, DATE, 'ship it')
+    expect(out).toContain('> **Note:** ship it')
+  })
+
   it('singulars read correctly', () => {
     expect(summaryLine({ comments: 1, edits: 1, highlights: 0 })).toBe(
       'mastermind: review complete — 1 comment, 1 suggested edit',

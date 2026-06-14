@@ -51,8 +51,8 @@ interface WaitProc {
   urlLine: Promise<string>
 }
 
-function runOpenWait(file: string, cfgDir: string): WaitProc {
-  const proc = spawn(process.execPath, [distCli, 'open', file, '--wait', '--no-browser'], {
+function runOpenWait(file: string, cfgDir: string, extraArgs: string[] = []): WaitProc {
+  const proc = spawn(process.execPath, [distCli, 'open', file, '--wait', '--no-browser', ...extraArgs], {
     env: { ...process.env, MASTERMIND_CONFIG_DIR: cfgDir },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -71,6 +71,27 @@ function runOpenWait(file: string, cfgDir: string): WaitProc {
   })
   const exited = new Promise<number | null>((resolve) => proc.on('exit', (code) => resolve(code)))
   return { proc, stdout: () => out, stderr: () => err, exited, urlLine }
+}
+
+/** Poll the session meta until `pred` holds (or time out) — robust to CPU-saturated parallel runs. */
+async function waitForMeta(
+  port: number,
+  sessionId: string,
+  pred: (m: { assistAvailable: boolean; agentWaiting: boolean }) => boolean,
+  timeoutMs = 8000,
+): Promise<{ assistAvailable: boolean; agentWaiting: boolean }> {
+  const until = Date.now() + timeoutMs
+  let last = { assistAvailable: false, agentWaiting: false }
+  while (Date.now() < until) {
+    try {
+      last = (await fetch(`http://127.0.0.1:${port}/api/sessions/${sessionId}`).then((r) => r.json())) as typeof last
+      if (pred(last)) return last
+    } catch {
+      /* daemon momentarily busy — retry */
+    }
+    await sleep(100)
+  }
+  return last
 }
 
 afterAll(() => {
@@ -107,6 +128,30 @@ describe.skipIf(!hasDist)('mastermind open --wait (e2e)', () => {
     const saved = fs.readFileSync(file, 'utf8')
     expect(saved).toContain('<!-- mastermind:summary -->')
     expect(saved).toContain('1 comment, 1 suggested edit')
+  }, 20000)
+
+  it('serves the assist channel by default with --wait (lights up the translation toggle)', async () => {
+    const { cfgDir, file } = tmpSetup('assistdefault')
+    await startDaemon(5315, cfgDir, { MASTERMIND_NEVER_OPENED_MS: '60000' })
+    const wait = runOpenWait(file, cfgDir)
+    const url = await wait.urlLine
+    const sessionId = url.split('/d/')[1]!
+    const meta = await waitForMeta(5315, sessionId, (m) => m.assistAvailable)
+    expect(meta.assistAvailable).toBe(true)
+    wait.proc.kill('SIGKILL')
+  }, 20000)
+
+  it('--no-assist opts out: --wait reviews without serving assist', async () => {
+    const { cfgDir, file } = tmpSetup('noassist')
+    await startDaemon(5316, cfgDir, { MASTERMIND_NEVER_OPENED_MS: '60000' })
+    const wait = runOpenWait(file, cfgDir, ['--no-assist'])
+    const url = await wait.urlLine
+    const sessionId = url.split('/d/')[1]!
+    // wait until the cli listener has attached, then confirm it did NOT advertise assist
+    const meta = await waitForMeta(5316, sessionId, (m) => m.agentWaiting)
+    expect(meta.agentWaiting).toBe(true)
+    expect(meta.assistAvailable).toBe(false)
+    wait.proc.kill('SIGKILL')
   }, 20000)
 
   it('exits 130 on SIGINT', async () => {

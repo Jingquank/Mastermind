@@ -10,6 +10,17 @@ interface ThemeJson {
   appearance?: string
   fonts?: Array<{ family?: string; src?: string; weight?: string | number }>
   grain?: { enabled?: boolean; opacity?: number; tintOpacity?: number }
+  swatch?: { bg?: unknown; ink?: unknown; accent?: unknown }
+}
+
+/** Accept a swatch only when all three preview hexes are present strings. */
+function parseSwatch(s: ThemeJson['swatch']): ThemeInfo['swatch'] {
+  if (!s) return null
+  const { bg, ink, accent } = s
+  if (typeof bg === 'string' && typeof ink === 'string' && typeof accent === 'string') {
+    return { bg, ink, accent }
+  }
+  return null
 }
 
 /**
@@ -33,9 +44,16 @@ export async function scanThemes(): Promise<ThemeInfo[]> {
   const out: ThemeInfo[] = []
   for (const id of entries.sort()) {
     const dir = path.join(themesDir, id)
+    // A directory without a theme.json isn't a theme — e.g. the shared
+    // themes/fonts/ face directory. Skip it silently (not an error worth logging).
     try {
       const st = await fs.stat(dir)
       if (!st.isDirectory()) continue
+      await fs.access(path.join(dir, 'theme.json'))
+    } catch {
+      continue
+    }
+    try {
       const [jsonRaw] = await Promise.all([
         fs.readFile(path.join(dir, 'theme.json'), 'utf8'),
         fs.access(path.join(dir, 'tokens.css')), // both files required
@@ -54,6 +72,7 @@ export async function scanThemes(): Promise<ThemeInfo[]> {
           ? { enabled: parsed.grain.enabled ?? false, opacity: parsed.grain.opacity, tintOpacity: parsed.grain.tintOpacity }
           : null,
         fonts,
+        swatch: parseSwatch(parsed.swatch),
       })
     } catch (err) {
       log(`theme ${id} skipped:`, err instanceof Error ? err.message : err)
