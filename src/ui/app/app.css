@@ -135,113 +135,53 @@ body {
 
 /* ---------- top bar ---------- */
 
-/* A floating pill anchored to the BOTTOM of the viewport. It collapses into a
-   compact centered island on scroll-down and re-expands on scroll-up / hover /
-   focus-within (the latter two handled purely in CSS — see the `.collapsed`
-   rules below — so they always win without waiting on a React re-render). */
+/* A compact pill anchored to the BOTTOM of the viewport. It hugs its contents,
+   floats centered, and stays put — it does not react to scroll. */
 .topbar {
   position: fixed;
-  left: var(--bar-gap);
-  right: var(--bar-gap);
+  left: 0;
+  right: 0;
   bottom: var(--bar-gap);
   top: auto;
-  margin-inline: auto; /* lets max-width center the bar + collapsed island */
-  /* Cap the expanded bar slightly wider than the content column instead of
-     letting it fill the viewport; centered by margin-inline above. */
-  max-width: calc(var(--content-max-width) + var(--space-unit) * 16);
+  /* Compact pill: the bar hugs its contents and floats centered (auto margins
+     against the full-width left/right:0 box), so there is no wide, mostly-empty
+     state. It grows only with the filename, capped to the viewport on tiny screens. */
+  width: max-content;
+  max-width: calc(100vw - var(--bar-gap) * 2);
+  margin-inline: auto;
   z-index: var(--z-topbar);
   display: flex;
-  flex-wrap: nowrap; /* Phase E: a fixed inline set + overflow menu — never wraps */
+  flex-wrap: nowrap; /* a fixed inline set — never wraps */
   align-items: center;
-  justify-content: space-between;
   gap: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
-  /* Same rhythm as the bar's gap (8 block / 16 inline): the inline inset clears
-     the capsule's rounded ends and gives the end content even breathing room. */
+  /* 8 block / 16 inline: the inline inset clears the capsule's rounded ends. */
   padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  /* full-size bar is a capsule too (the collapsed island already was) */
   border-radius: var(--radius-full);
   box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
 }
 @media (prefers-reduced-motion: no-preference) {
   .topbar {
-    transition:
-      max-width var(--dur-slow) var(--ease-out),
-      padding var(--dur-slow) var(--ease-out),
-      border-radius var(--dur-slow) var(--ease-out);
+    transition: padding var(--dur-slow) var(--ease-out);
   }
 }
 
-/* Reading-progress hairline — only visible on the collapsed island. Scales with
-   --read-progress (0→1, written by TopBar on scroll). /delight */
-.topbar::after {
-  content: '';
-  position: absolute;
-  left: calc(var(--space-unit) * 6);
-  right: calc(var(--space-unit) * 6);
-  /* flush to the island's bottom edge — no gap beneath it */
-  bottom: 0;
-  height: 2px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent-dim);
-  transform: scaleX(var(--read-progress, 0));
-  transform-origin: left center;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--dur-base) var(--ease-standard),
-    transform var(--dur-fast) linear;
-}
-
-/* ---- collapsed island (suppressed while hovered or keyboard-focused) ---- */
-.topbar.collapsed:not(:hover):not(:focus-within) {
-  /* Compact island, but the primary Hand back CTA stays reachable: only the
-     centered mode switch folds away (below). filename·mode sits left, CTA right.
-     Roomy enough that a typical filename doesn't truncate beside the CTA. */
-  max-width: 26rem;
-  padding-block: calc(var(--space-unit) * 1.5);
-  border-radius: var(--radius-full);
-}
-.topbar.collapsed:not(:hover):not(:focus-within)::after {
-  opacity: 1;
-}
-/* Centered seg + translation toggle live in .topbar-center (absolute on desktop,
-   in-flow on mobile) — fade, and collapse the box so the mobile pill can shrink. */
-.topbar.collapsed:not(:hover):not(:focus-within) .topbar-center {
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-/* Compact island chrome: the primary Hand back action must never hide behind a
-   hover or a scroll, but everything secondary folds away. The mode label and the
-   comment toggle drop entirely, and the CTA shrinks to a single send glyph — the
-   note chevron and the "Hand back" text both fold, the icon takes their place.
-   Hovering / focusing the bar re-expands it to the full controls. */
-.topbar.collapsed:not(:hover):not(:focus-within) .topbar-icon-btn {
-  display: none;
-}
-.topbar.collapsed:not(:hover):not(:focus-within) .cta-split-arrow {
-  display: none;
-}
-.topbar.collapsed:not(:hover):not(:focus-within) .cta-label {
-  display: none;
-}
-.topbar.collapsed:not(:hover):not(:focus-within) .cta-send-icon {
-  display: inline-flex;
-}
-.topbar.collapsed:not(:hover):not(:focus-within) .cta-split-main {
-  /* the whole pill again (no seam), square enough to read as an icon button */
-  border-radius: var(--radius-full);
-  padding-inline: calc(var(--space-unit) * 2.5);
-}
-
-.topbar-left {
+.topbar-lead {
   display: flex;
   align-items: center;
-  gap: calc(var(--space-unit) * 2);
+  gap: calc(var(--space-unit) * 2.5);
   min-width: 0;
+  flex-shrink: 1; /* the filename truncates before the action cluster gives way */
+}
+
+/* hairline between the icon-only view toggle and the filename */
+.topbar-divider {
+  width: 1px;
+  align-self: stretch;
+  margin-block: calc(var(--space-unit) * 1);
+  background: var(--color-border);
+  flex-shrink: 0;
 }
 
 .topbar-filename {
@@ -274,40 +214,19 @@ body {
 }
 @media (prefers-reduced-motion: no-preference) {
   .topbar-right {
-    transition:
-      opacity var(--dur-slow) var(--ease-out),
-      max-width var(--dur-slow) var(--ease-out);
-  }
-  .topbar-center {
     transition: opacity var(--dur-slow) var(--ease-out);
   }
 }
 .topbar .seg {
   flex-shrink: 0;
-}
-
-/* The view-mode toggle stays optically centered in the bar no matter how wide the
-   filename or the action cluster grow. Its wrapper is the centered element; the
-   translation toggle hangs off the seg's right edge (absolute) so adding/removing
-   it never shifts the mode switch off center. Reverts to flow on mobile (900px). */
-.topbar-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-}
-.topbar-center > .seg {
   background: var(--color-bg-elevated);
+}
+/* the view toggle is icon-only in the bar — square targets, no text label */
+.topbar .seg-btn {
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2);
 }
 
 .topbar-trans {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: calc(var(--space-unit) * 2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -414,10 +333,6 @@ button:disabled {
   display: inline-flex;
   align-items: stretch;
   transition: transform var(--dur-fast) var(--ease-standard);
-}
-/* Leading send glyph on the CTA — only revealed in the compact island. */
-.cta-send-icon {
-  display: none;
 }
 .cta-split-main {
   border-top-right-radius: 0;
@@ -2432,16 +2347,6 @@ input[type='checkbox'] {
   .navigator {
     z-index: calc(var(--z-overlay) + 1);
     box-shadow: 0 0 40px rgb(0 0 0 / calc(0.25 * var(--shadow-strength)));
-  }
-  /* mobile: the view-mode toggle (and its translation sibling) rejoin bar flow */
-  .topbar-center {
-    position: static;
-    transform: none;
-  }
-  .topbar-trans {
-    position: static;
-    left: auto;
-    transform: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

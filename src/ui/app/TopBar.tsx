@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react'
+import { useLayoutEffect, useRef, type ComponentType, type SVGProps } from 'react'
 import { ToggleGroup } from 'radix-ui'
 import { useT } from '../i18n'
 import { ChatIcon, CodeIcon, EyeIcon, LanguageIcon } from '../icons'
@@ -27,10 +27,6 @@ export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
   // mtimeMs changes only when the file is (re)loaded from disk — never on local
   // edits — so it's the clean signal to re-roll the filename on a refresh.
   const mtimeMs = useDoc((s) => s.mtimeMs)
-  // Collapsed = the floating bar has shrunk into its compact island (scrolled
-  // down, away from the top). Scrolling up / hover / focus-within re-expands it
-  // (hover & focus are handled purely in CSS so they win without a re-render).
-  const [collapsed, setCollapsed] = useState(false)
 
   const MODES: { id: ViewMode; label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
     { id: 'reading', label: t('reading'), Icon: EyeIcon },
@@ -49,54 +45,12 @@ export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
     return () => ro.disconnect()
   }, [])
 
-  // Drive the collapse on scroll direction and feed the reading-progress
-  // hairline. rAF-throttled passive listener, mirroring MarkGutter's pattern.
-  useEffect(() => {
-    const el = headerRef.current
-    const EXPAND_AT = 24 // always expanded within this many px of the top
-    const JITTER = 4 // ignore sub-pixel scroll noise before flipping state
-    let lastY = window.scrollY
-    let raf = 0
-    const update = () => {
-      raf = 0
-      const y = window.scrollY
-      const doc = document.documentElement
-      const max = doc.scrollHeight - doc.clientHeight
-      const progress = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0
-      el?.style.setProperty('--read-progress', String(progress))
-      const dy = y - lastY
-      if (y <= EXPAND_AT) setCollapsed(false)
-      else if (dy > JITTER) setCollapsed(true)
-      else if (dy < -JITTER) setCollapsed(false)
-      lastY = y
-    }
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update)
-    }
-    update()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (raf) cancelAnimationFrame(raf)
-    }
-  }, [])
-
   return (
-    <header className={`topbar${collapsed ? ' collapsed' : ''}`} ref={headerRef}>
-      <div className="topbar-left">
-        {/* The filename rolls in when the document loads, and re-rolls with a
-            rainbow sweep whenever the .md content is refreshed from disk. */}
-        <SlotLabel
-          className="topbar-filename"
-          text={meta?.displayName ?? '…'}
-          revealOnMount
-          rerollKey={mtimeMs}
-          tint="var(--color-accent)"
-        />
-      </div>
-      {/* The mode switch stays absolutely centered in the bar; the translation
-          toggle hangs off its right edge (absolute) so it never shifts center. */}
-      <div className="topbar-center">
+    <header className="topbar" ref={headerRef}>
+      {/* Lead cluster: the icon-only view-mode toggle leads the bar, a hairline,
+          then the filename — which rolls in on load and re-rolls with a rainbow
+          sweep whenever the .md content is refreshed from disk. */}
+      <div className="topbar-lead">
         <ToggleGroup.Root
           className="seg"
           type="single"
@@ -106,14 +60,22 @@ export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
           title={`⌘E ${t('viewMode')}`}
         >
           {MODES.map(({ id, label, Icon }) => (
-            <ToggleGroup.Item key={id} value={id} className="seg-btn">
+            // Icon-only: the label rides aria-label + the native tooltip.
+            <ToggleGroup.Item key={id} value={id} className="seg-btn" aria-label={label} title={label}>
               <Icon />
-              {/* rerollKey flips when this mode becomes/stops being active, so
-                  the just-clicked label rolls (untinted) as click feedback. */}
-              <SlotLabel text={label} rerollKey={mode === id ? 'on' : 'off'} />
             </ToggleGroup.Item>
           ))}
         </ToggleGroup.Root>
+        <span className="topbar-divider" aria-hidden="true" />
+        <SlotLabel
+          className="topbar-filename"
+          text={meta?.displayName ?? '…'}
+          revealOnMount
+          rerollKey={mtimeMs}
+          tint="var(--color-accent)"
+        />
+      </div>
+      <div className="topbar-right">
         {translation && (
           <button
             type="button"
@@ -127,8 +89,6 @@ export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
             <LanguageIcon />
           </button>
         )}
-      </div>
-      <div className="topbar-right">
         {onToggleRail && (
           <button
             type="button"

@@ -46,9 +46,6 @@ export function HandBackButton() {
         disabled={saving}
         title={t('handBackTitle')}
       >
-        {/* Leading send glyph: hidden in the full bar, the sole content of the
-            CTA once the bar collapses to its compact island (see app.css). */}
-        <SendIcon className="cta-send-icon" />
         <SlotLabel
           ref={label}
           className="cta-label"
