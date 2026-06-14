@@ -132,6 +132,8 @@ export interface MastermindConfig {
   typeSet: string
   /** id of the chosen monospace face (code, filenames, CriticMarkup source) */
   monoFont: string
+  /** id of the chosen code-color scheme; `none` = uncolored (see src/ui/theme/codeThemes.ts) */
+  codeTheme: string
   uiLang: 'en' | 'zh-CN'
   /** the reading-language toggle pair (translation always routes to the user's agent) */
   langPair: { a: string; b: string }

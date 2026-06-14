@@ -5,6 +5,7 @@ import type { TextEdit } from '../../shared/types'
 import { useT } from '../i18n'
 import { AlertIcon, ChatIcon, PendingDot } from '../icons'
 import { CALLOUT_HEADING, MarkdownView } from '../modes/reading/Renderer'
+import { useConfig } from '../app/configStore'
 import { useTranslation } from './translationStore'
 
 /** Heading depth + callout-ness from a block's SOURCE text (never the translation). */
@@ -69,6 +70,7 @@ function TransBlock({
   onEdit: (edits: TextEdit[]) => void
 }) {
   const t = useT()
+  const highlightCode = (useConfig((s) => s.config?.codeTheme) ?? 'none') !== 'none'
   const [composing, setComposing] = useState(false)
   const [comment, setComment] = useState('')
   const shown = translated ?? block.text
@@ -85,7 +87,7 @@ function TransBlock({
   return (
     <div className={`trans-block${failed ? ' failed' : ''}`}>
       <div className="trans-block-body md-root">
-        <MarkdownView tree={analysis.tree} ctx={{ source: shown }} />
+        <MarkdownView tree={analysis.tree} ctx={{ source: shown, highlightCode }} />
       </div>
       <div className="trans-block-side">
         {block.translatable && translated === undefined && (

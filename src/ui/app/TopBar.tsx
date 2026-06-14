@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from 'react'
 import { ToggleGroup } from 'radix-ui'
 import { useT } from '../i18n'
-import { ChatIcon, GearIcon, SwapIcon } from '../icons'
+import { ChatIcon, CodeIcon, EyeIcon, GearIcon, LanguageIcon, PencilIcon } from '../icons'
 import { useDirty, useDoc, type ViewMode } from './store'
 
 interface TopBarProps {
@@ -38,30 +38,71 @@ export function TopBar({
   const saving = useDoc((s) => s.saving)
   const savingKind = useDoc((s) => s.savingKind)
   const dirty = useDirty()
+  // Collapsed = the floating bar has shrunk into its compact island (scrolled
+  // down, away from the top). Scrolling up / hover / focus-within re-expands it
+  // (hover & focus are handled purely in CSS so they win without a re-render).
+  const [collapsed, setCollapsed] = useState(false)
 
-  const MODES: { id: ViewMode; label: string }[] = [
-    { id: 'reading', label: t('reading') },
-    { id: 'editing', label: t('editing') },
-    { id: 'source', label: t('source') },
+  const MODES: { id: ViewMode; label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
+    { id: 'reading', label: t('reading'), Icon: EyeIcon },
+    { id: 'editing', label: t('editing'), Icon: PencilIcon },
+    { id: 'source', label: t('source'), Icon: CodeIcon },
   ]
+  const modeLabel = MODES.find((m) => m.id === mode)?.label ?? ''
 
-  // The bar never wraps (Phase E), so --topbar-h is effectively constant; keep
-  // the observer so anchored overlays still self-correct if the font size changes.
+  // Publish the floating bar's measured height so overlays/content can reserve
+  // clearance above it (--bar-h drives --bar-clear in app.css).
   useLayoutEffect(() => {
     const el = headerRef.current
     if (!el) return
-    const apply = () => document.documentElement.style.setProperty('--topbar-h', `${el.offsetHeight}px`)
+    const apply = () => document.documentElement.style.setProperty('--bar-h', `${el.offsetHeight}px`)
     apply()
     const ro = new ResizeObserver(apply)
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
+  // Drive the collapse on scroll direction and feed the reading-progress
+  // hairline. rAF-throttled passive listener, mirroring MarkGutter's pattern.
+  useEffect(() => {
+    const el = headerRef.current
+    const EXPAND_AT = 24 // always expanded within this many px of the top
+    const JITTER = 4 // ignore sub-pixel scroll noise before flipping state
+    let lastY = window.scrollY
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const y = window.scrollY
+      const doc = document.documentElement
+      const max = doc.scrollHeight - doc.clientHeight
+      const progress = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0
+      el?.style.setProperty('--read-progress', String(progress))
+      const dy = y - lastY
+      if (y <= EXPAND_AT) setCollapsed(false)
+      else if (dy > JITTER) setCollapsed(true)
+      else if (dy < -JITTER) setCollapsed(false)
+      lastY = y
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
   return (
-    <header className="topbar" ref={headerRef}>
+    <header className={`topbar${collapsed ? ' collapsed' : ''}`} ref={headerRef}>
       <div className="topbar-left">
-        <span className="topbar-filename">{meta?.displayName ?? '…'}</span>
         <span className={`dirty-dot${dirty ? ' visible' : ''}`} title={dirty ? t('unsavedChanges') : t('saved')} />
+        <span className="topbar-filename">{meta?.displayName ?? '…'}</span>
+        {/* Shown only in the collapsed island — the current view mode at a glance. */}
+        <span className="topbar-mode-label" aria-hidden>
+          {modeLabel}
+        </span>
         {agentWaiting && (
           <span className={`agent-chip${handbackPulse ? ' released' : ''}`} title={t('handBackTitle')}>
             <span className="agent-chip-dot" />
@@ -80,23 +121,24 @@ export function TopBar({
           aria-label={t('viewMode')}
           title={`⌘E ${t('viewMode')}`}
         >
-          {MODES.map((m) => (
-            <ToggleGroup.Item key={m.id} value={m.id} className="seg-btn">
-              {m.label}
+          {MODES.map(({ id, label, Icon }) => (
+            <ToggleGroup.Item key={id} value={id} className="seg-btn">
+              <Icon />
+              {label}
             </ToggleGroup.Item>
           ))}
         </ToggleGroup.Root>
         {translation && (
           <button
             type="button"
-            className={`topbar-trans${translation.active ? ' active' : ''}`}
+            className={`topbar-trans${translation.active ? ' active' : ''}${translation.loading ? ' loading' : ''}`}
             onClick={translation.onToggle}
             disabled={translation.disabled || translation.loading}
             aria-pressed={translation.active}
+            aria-label={translation.loading ? t('translating') : translation.label}
             title={translation.disabled ? (translation.disabledTitle ?? t('toggleLang')) : t('toggleLang')}
           >
-            <SwapIcon />
-            <span>{translation.loading ? t('translating') : translation.label}</span>
+            <LanguageIcon />
           </button>
         )}
       </div>

@@ -1,9 +1,11 @@
 import { useConfig, type ConfigPatch } from '../app/configStore'
 import { ToggleGroup } from 'radix-ui'
 import { SlideOver } from '../app/SlideOver'
-import { SwapIcon } from '../icons'
+import { SwapIcon, ChevronDownIcon } from '../icons'
+import { LangSelect } from './LangSelect'
 import { useT, type MsgKey } from '../i18n'
 import { TYPE_SETS, MONO_FONTS, displayStack, monoStack } from '../theme/fonts'
+import { CODE_THEMES, type CodeTheme } from '../theme/codeThemes'
 import { GrainOffGlyph, GrainSwatch, INTENSITY_STEPS, TEXTURE_STEPS, resolveGrain } from '../theme/grain'
 import type { GrainIntensity, GrainTexture } from '../../shared/types'
 
@@ -49,6 +51,22 @@ function LineGapGlyph({ gap }: { gap: number }) {
     <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden focusable={false}>
       {[8 - gap, 8, 8 + gap].map((y, i) => (
         <rect key={i} x={3} y={y - 0.6} width={10} height={1.2} rx={0.6} fill="currentColor" />
+      ))}
+    </svg>
+  )
+}
+
+/** Three code-token bars previewing a color scheme on the active appearance. */
+function CodeSwatch({ theme, appearance }: { theme: CodeTheme; appearance: 'light' | 'dark' }) {
+  const pal = theme.palettes?.[appearance]
+  const cols = pal
+    ? [pal.keyword, pal.function, pal.string]
+    : ['var(--color-text-faint)', 'var(--color-text-muted)', 'var(--color-text-faint)']
+  const widths = [10, 7, 9]
+  return (
+    <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden focusable={false} style={{ flex: 'none' }}>
+      {cols.map((c, i) => (
+        <rect key={i} x={2} y={3 + i * 3} width={widths[i]} height={1.6} rx={0.8} fill={c} />
       ))}
     </svg>
   )
@@ -189,6 +207,23 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             </div>
           </div>
           <div className="settings-row">
+            <span>{t('codeColor')}</span>
+            <div className="settings-theme-row">
+              {CODE_THEMES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`theme-chip code-chip${config.codeTheme === c.id ? ' active' : ''}`}
+                  aria-pressed={config.codeTheme === c.id}
+                  onClick={() => patch({ codeTheme: c.id })}
+                >
+                  <CodeSwatch theme={c} appearance={activeTheme?.appearance ?? 'light'} />
+                  {c.id === 'none' ? t('codeColorNone') : c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="settings-row">
             <span>
               {t('fontSize')} <span className="settings-val">{config.fontSize}px</span>
             </span>
@@ -263,33 +298,41 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </label>
           <label className="settings-row">
             <span>{t('uiLanguage')}</span>
-            <select
-              className="settings-input"
-              value={config.uiLang}
-              onChange={(e) => patch({ uiLang: e.target.value as 'en' | 'zh-CN' })}
-            >
-              <option value="en">English</option>
-              <option value="zh-CN">简体中文</option>
-            </select>
+            <div className="settings-select">
+              <select
+                className="settings-input"
+                value={config.uiLang}
+                onChange={(e) => patch({ uiLang: e.target.value as 'en' | 'zh-CN' })}
+              >
+                <option value="en">English</option>
+                <option value="zh-CN">简体中文</option>
+              </select>
+              <ChevronDownIcon className="settings-select-icon" />
+            </div>
           </label>
-          <label className="settings-row">
+          <div className="settings-row">
             <span>{t('readingPair')}</span>
-            <span className="settings-pair">
-              <input
-                type="text"
-                className="settings-input narrow"
-                defaultValue={config.langPair.a}
-                onBlur={(e) => patch({ langPair: { ...config.langPair, a: e.target.value.trim() || 'en' } })}
+            <div className="settings-langpair">
+              <LangSelect
+                label={`${t('readingPair')} 1`}
+                value={config.langPair.a}
+                onChange={(a) => patch({ langPair: { ...config.langPair, a } })}
               />
-              <SwapIcon />
-              <input
-                type="text"
-                className="settings-input narrow"
-                defaultValue={config.langPair.b}
-                onBlur={(e) => patch({ langPair: { ...config.langPair, b: e.target.value.trim() || 'zh-CN' } })}
+              <button
+                type="button"
+                className="btn-ghost settings-langswap"
+                aria-label={t('swapLangs')}
+                onClick={() => patch({ langPair: { a: config.langPair.b, b: config.langPair.a } })}
+              >
+                <SwapIcon />
+              </button>
+              <LangSelect
+                label={`${t('readingPair')} 2`}
+                value={config.langPair.b}
+                onChange={(b) => patch({ langPair: { ...config.langPair, b } })}
               />
-            </span>
-          </label>
+            </div>
+          </div>
         </section>
       </div>
     </SlideOver>

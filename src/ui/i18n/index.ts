@@ -97,6 +97,8 @@ const en = {
   readingSection: 'Reading',
   typeface: 'Typeface',
   codeFont: 'Code font',
+  codeColor: 'Code color',
+  codeColorNone: 'None',
   fontSize: 'Font size',
   lineHeight: 'Line height',
   contentWidth: 'Content width',
@@ -104,6 +106,11 @@ const en = {
   authorTag: 'Author tag',
   uiLanguage: 'UI language',
   readingPair: 'Reading pair',
+  langSearchPlaceholder: 'Search languages…',
+  langNoMatch: 'No matching language',
+  langUseCustom: 'Use',
+  langCustomTag: 'custom',
+  swapLangs: 'Swap languages',
   viewMode: 'View mode',
 } as const
 
@@ -204,6 +211,8 @@ const zhCN: Record<MsgKey, string> = {
   readingSection: '阅读',
   typeface: '字体方案',
   codeFont: '代码字体',
+  codeColor: '代码配色',
+  codeColorNone: '无',
   fontSize: '字号',
   lineHeight: '行高',
   contentWidth: '内容宽度',
@@ -211,6 +220,11 @@ const zhCN: Record<MsgKey, string> = {
   authorTag: '作者标签',
   uiLanguage: '界面语言',
   readingPair: '阅读语言对',
+  langSearchPlaceholder: '搜索语言…',
+  langNoMatch: '没有匹配的语言',
+  langUseCustom: '使用',
+  langCustomTag: '自定义',
+  swapLangs: '交换语言',
   viewMode: '视图模式',
 }
 

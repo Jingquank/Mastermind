@@ -10,6 +10,7 @@ import type {
 } from 'mdast'
 import { Fragment, type ReactNode, createElement } from 'react'
 import type { CriticCommentNode, CriticSubNode, CriticWrapNode } from '../../../shared/markdown/critic-mdast'
+import { highlight } from '../../../shared/highlight'
 import { toggleTaskEdit } from '../../../shared/markdown/tasklist'
 import type { TextEdit } from '../../../shared/types'
 import { DiamondIcon } from '../../icons'
@@ -20,6 +21,19 @@ export interface RenderCtx {
   onEdit?: (edit: TextEdit) => void
   /** spanIndexes of highlights that anchor a comment thread (dotted underline). */
   anchoredHighlights?: ReadonlySet<number>
+  /** When set, paint fenced code with syntax-token spans (the user's code-color scheme). */
+  highlightCode?: boolean
+}
+
+/** Tokenized children for a fenced code block — plain strings for `text`, colored spans otherwise. */
+function codeChildren(value: string, lang: string | undefined): ReactNode[] {
+  return highlight(value, lang).map((tok, i) =>
+    tok.type === 'text' ? tok.value : (
+      <span key={i} className={`tok tok-${tok.type}`}>
+        {tok.value}
+      </span>
+    ),
+  )
 }
 
 function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): ReactNode | undefined {
@@ -245,7 +259,7 @@ function renderBlock(node: BlockContent | DefinitionContent | RootContent, key: 
     case 'code':
       return (
         <pre key={key} className="md-code" data-lang={node.lang ?? undefined} {...posAttrs(node)}>
-          <code>{node.value}</code>
+          <code>{ctx.highlightCode ? codeChildren(node.value, node.lang ?? undefined) : node.value}</code>
         </pre>
       )
     case 'table': {

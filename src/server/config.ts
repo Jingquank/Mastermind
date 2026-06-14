@@ -13,8 +13,9 @@ export const DEFAULT_CONFIG: MastermindConfig = {
   authorTag: DEFAULT_AUTHOR_TAG,
   typeSet: 'grid',
   monoFont: 'geist',
+  codeTheme: 'none',
   uiLang: 'en',
-  langPair: { a: 'en', b: 'zh-CN' },
+  langPair: { a: 'English', b: 'Simplified Chinese' },
   grain: {},
 }
 

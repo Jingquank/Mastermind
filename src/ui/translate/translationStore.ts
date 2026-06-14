@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { detectDocScript, segmentBlocks } from '../../shared/blocks'
+import { isCjkLang } from '../../shared/languages'
 
 interface TranslateResponse {
   results: Array<{ hash: string; text?: string; error?: string; cached: boolean }>
@@ -23,12 +24,12 @@ export function previewTargetLang(source: string, pair: { a: string; b: string }
 }
 
 function pickTarget(source: string, pair: { a: string; b: string }): { sourceLang: string; targetLang: string } {
-  const zhish = (l: string) => /^(zh|cjk|中文)/i.test(l)
   const docIsCjk = detectDocScript(source) === 'cjk'
+  const aIsCjk = isCjkLang(pair.a)
   if (docIsCjk) {
-    return zhish(pair.a) ? { sourceLang: pair.a, targetLang: pair.b } : { sourceLang: pair.b, targetLang: pair.a }
+    return aIsCjk ? { sourceLang: pair.a, targetLang: pair.b } : { sourceLang: pair.b, targetLang: pair.a }
   }
-  return zhish(pair.a) ? { sourceLang: pair.b, targetLang: pair.a } : { sourceLang: pair.a, targetLang: pair.b }
+  return aIsCjk ? { sourceLang: pair.b, targetLang: pair.a } : { sourceLang: pair.a, targetLang: pair.b }
 }
 
 async function fetchTranslations(

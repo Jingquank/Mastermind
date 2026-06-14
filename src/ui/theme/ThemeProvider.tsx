@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useConfig } from '../app/configStore'
 import { FONT_FACES, bodyStack, displayStack, monoById, monoStack, typeSetById } from './fonts'
+import { COLOR_TOKS, codeThemeById, codeThemeVars } from './codeThemes'
 import { INTENSITY_SCALE, TEXTURES, resolveGrain } from './grain'
 
 const TOKENS_LINK_ID = 'theme-tokens'
@@ -90,7 +91,16 @@ export function ThemeEffects() {
     root.setProperty('--weight-bold', String(set.displayWeight))
     root.setProperty('--ls-heading', set.displayTracking)
     root.setProperty('--font-mono', monoStack(monoById(config.monoFont)))
-  }, [config])
+
+    // code-color scheme → --code-* tokens, picked for the active theme's appearance.
+    // `none` clears them; the renderer also skips tokenizing, so it's a no-op there.
+    const vars = codeThemeVars(codeThemeById(config.codeTheme), theme?.appearance ?? 'light')
+    for (const tok of COLOR_TOKS) {
+      const name = `--code-${tok}`
+      if (vars) root.setProperty(name, vars[name]!)
+      else root.removeProperty(name)
+    }
+  }, [config, theme?.appearance])
 
   return null
 }

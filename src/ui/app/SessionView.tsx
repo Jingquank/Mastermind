@@ -82,6 +82,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const [walkIndex, setWalkIndex] = useState<number | null>(null)
   const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
   const langPair = useConfig((s) => s.config?.langPair) ?? { a: 'en', b: 'zh-CN' }
+  const highlightCode = (useConfig((s) => s.config?.codeTheme) ?? 'none') !== 'none'
   // translation routes to the user's agent, so it's ready iff a `mastermind assist` listener is live
   const translationReady = assistAvailable
   const transActive = useTranslation((s) => s.active)
@@ -406,7 +407,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             <article className="md-root" ref={articleRef} onClick={onArticleClick} onKeyDown={onArticleKeyDown}>
               <MarkdownView
                 tree={analysis.tree}
-                ctx={{ source, onEdit: (edit) => applyEdits([edit]), anchoredHighlights }}
+                ctx={{ source, onEdit: (edit) => applyEdits([edit]), anchoredHighlights, highlightCode }}
               />
               {commentFootnotes.length > 0 && (
                 <section className="print-footnotes">

@@ -8,7 +8,12 @@
 /* ---------- base ---------- */
 
 :root {
-  --topbar-h: 57px;
+  /* Floating bottom nav: --bar-h is the bar's measured height (written by
+     TopBar's ResizeObserver); --bar-gap is its inset from the viewport edges;
+     --bar-clear is the vertical room content/overlays must leave above it. */
+  --bar-gap: calc(var(--space-unit) * 3);
+  --bar-h: 57px;
+  --bar-clear: calc(var(--bar-h) + var(--bar-gap) * 2);
 
   /* Stacking scale (structural, theme-independent). Ordered low→high; the
      topbar deliberately sits ABOVE the navigator so the nav tucks under it. */
@@ -74,6 +79,11 @@ body {
   padding: 0;
 }
 
+/* Keep anchored scrolls (heading nav, find) clear of the floating bottom bar. */
+html {
+  scroll-padding-bottom: var(--bar-clear);
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -92,11 +102,52 @@ body {
   background: var(--color-selection, var(--color-accent-surface));
 }
 
+/* ---------- scrollbars ----------
+   One minimal, theme-aware scrollbar everywhere: a thin translucent pill that
+   floats inset from the edge (transparent border + padding-box clip), over a
+   transparent track. Color derives from --color-text so it adapts to each
+   theme's light/dark surface. WebKit/Blink get the rounded inset pill below;
+   Firefox (no ::-webkit-scrollbar support) gets the thin standard fallback.
+   The two are kept separate because declaring scrollbar-width in Blink would
+   suppress the ::-webkit-scrollbar customization. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text) 30%, transparent) transparent;
+  }
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-text) 24%, transparent);
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-text) 40%, transparent);
+}
+
 /* ---------- top bar ---------- */
 
+/* A floating pill anchored to the BOTTOM of the viewport. It collapses into a
+   compact centered island on scroll-down and re-expands on scroll-up / hover /
+   focus-within (the latter two handled purely in CSS — see the `.collapsed`
+   rules below — so they always win without waiting on a React re-render). */
 .topbar {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  left: var(--bar-gap);
+  right: var(--bar-gap);
+  bottom: var(--bar-gap);
+  top: auto;
+  margin-inline: auto; /* lets max-width center the collapsed island */
+  max-width: 100%;
   z-index: var(--z-topbar);
   display: flex;
   flex-wrap: nowrap; /* Phase E: a fixed inline set + overflow menu — never wraps */
@@ -105,7 +156,68 @@ body {
   gap: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
   padding: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
   background: var(--color-bg-elevated);
-  border-bottom: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .topbar {
+    transition:
+      max-width var(--dur-slow) var(--ease-out),
+      padding var(--dur-slow) var(--ease-out),
+      border-radius var(--dur-slow) var(--ease-out);
+  }
+}
+
+/* Reading-progress hairline — only visible on the collapsed island. Scales with
+   --read-progress (0→1, written by TopBar on scroll). /delight */
+.topbar::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-unit) * 6);
+  right: calc(var(--space-unit) * 6);
+  bottom: calc(var(--space-unit) * 1.5);
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-dim);
+  transform: scaleX(var(--read-progress, 0));
+  transform-origin: left center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-base) var(--ease-standard),
+    transform var(--dur-fast) linear;
+}
+
+/* ---- collapsed island (suppressed while hovered or keyboard-focused) ---- */
+.topbar.collapsed:not(:hover):not(:focus-within) {
+  max-width: 22rem;
+  justify-content: center;
+  padding-block: calc(var(--space-unit) * 1.5);
+  border-radius: var(--radius-full);
+}
+.topbar.collapsed:not(:hover):not(:focus-within)::after {
+  opacity: 1;
+}
+/* Centered seg + translation toggle live in .topbar-center (absolute on desktop,
+   in-flow on mobile) — fade, and collapse the box so the mobile pill can shrink. */
+.topbar.collapsed:not(:hover):not(:focus-within) .topbar-center {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* The right-hand action cluster is in flow — collapse its box so the pill can
+   shrink, not just fade. */
+.topbar.collapsed:not(:hover):not(:focus-within) .topbar-right {
+  max-width: 0;
+  opacity: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.topbar.collapsed:not(:hover):not(:focus-within) .topbar-mode-label {
+  display: inline;
 }
 
 .topbar-left {
@@ -121,6 +233,20 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: calc(var(--space-unit) * 50);
+}
+
+/* Current view mode, surfaced only in the collapsed island (e.g. "· Reading"). */
+.topbar-mode-label {
+  display: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.topbar-mode-label::before {
+  content: '·';
+  margin-inline: calc(var(--space-unit) * 1.5);
 }
 
 .dirty-dot {
@@ -142,6 +268,16 @@ body {
   align-items: center;
   gap: calc(var(--space-unit) * 2);
   flex-shrink: 0; /* the action cluster keeps its size; the filename shrinks instead */
+}
+@media (prefers-reduced-motion: no-preference) {
+  .topbar-right {
+    transition:
+      opacity var(--dur-slow) var(--ease-out),
+      max-width var(--dur-slow) var(--ease-out);
+  }
+  .topbar-center {
+    transition: opacity var(--dur-slow) var(--ease-out);
+  }
 }
 .topbar .seg {
   flex-shrink: 0;
@@ -171,14 +307,12 @@ body {
   margin-left: calc(var(--space-unit) * 2);
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--space-unit) * 1.5);
-  white-space: nowrap;
+  justify-content: center;
   background: transparent;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2.5);
+  padding: calc(var(--space-unit) * 1.5); /* square: icon-only toggle */
 }
 .topbar-trans:hover:not(:disabled) {
   color: var(--color-text);
@@ -186,6 +320,12 @@ body {
 .topbar-trans.active {
   color: var(--color-accent-dim);
   border-color: var(--color-accent-dim);
+}
+/* gentle pulse while a translation is in flight (icon-only, no text label) */
+@media (prefers-reduced-motion: no-preference) {
+  .topbar-trans.loading {
+    animation: agent-pulse 1.4s ease-in-out infinite;
+  }
 }
 
 /* topbar tool icons (comments / settings) — ghost buttons that show an icon only */
@@ -331,7 +471,8 @@ button:disabled {
 .doc-column {
   width: 100%;
   max-width: var(--content-max-width);
-  padding: calc(var(--space-unit) * 8) calc(var(--space-unit) * 4) calc(var(--space-unit) * 24);
+  /* bottom padding clears the floating bar so the last lines stay readable */
+  padding: calc(var(--space-unit) * 8) calc(var(--space-unit) * 4) calc(var(--bar-clear) + var(--space-unit) * 10);
   min-width: 0;
 }
 
@@ -593,6 +734,32 @@ button:disabled {
 
 .md-code code {
   font-family: inherit;
+}
+
+/* Syntax tokens — colored only when the user opts into a code-color scheme
+   (ThemeProvider sets the --code-* vars; otherwise the renderer emits no spans).
+   The document body is otherwise monochrome by design — review marks own color. */
+.md-code .tok-comment {
+  color: var(--code-comment);
+  font-style: italic;
+}
+.md-code .tok-keyword {
+  color: var(--code-keyword);
+}
+.md-code .tok-string {
+  color: var(--code-string);
+}
+.md-code .tok-number {
+  color: var(--code-number);
+}
+.md-code .tok-function {
+  color: var(--code-function);
+}
+.md-code .tok-property {
+  color: var(--code-property);
+}
+.md-code .tok-constant {
+  color: var(--code-constant);
 }
 
 .md-root blockquote {
@@ -918,31 +1085,37 @@ mark.critic-hl.critic-anchor:hover {
 
 .slide-over {
   position: fixed;
-  top: calc(var(--topbar-h) + 8px);
-  right: calc(var(--space-unit) * 3);
+  /* Rises from just above the floating bottom bar (where its gear/find/comment
+     triggers live) — anchored to the bottom, growing up, never touching the top
+     or bottom viewport edge so all four corners stay rounded and visible. */
+  bottom: var(--bar-clear);
+  right: var(--bar-gap);
   z-index: var(--z-panel);
   width: 340px;
-  max-height: calc(100vh - var(--topbar-h) - 24px);
-  overflow-y: auto;
+  max-height: calc(100vh - var(--bar-clear) - var(--bar-gap));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* clip the inner scroll area to the rounded corners — scrollbar lives in the body, not on the rounded edge */
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg); /* uniform on all four corners — reads as a floating card, not a drawer */
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
-  animation: slide-over-in var(--dur-base) var(--ease-standard);
+  transform-origin: bottom right;
+  animation: slide-over-in var(--dur-base) var(--ease-spring);
 }
+/* Pops up from the bottom (rise + subtle scale) rather than sliding in from the right edge. */
 @keyframes slide-over-in {
   from {
     opacity: 0;
-    transform: translateX(8px);
+    transform: translateY(14px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0) scale(1);
   }
 }
 .slide-over-head {
-  position: sticky;
-  top: 0;
+  flex: none; /* fixed header; the body below it scrolls */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -965,6 +1138,9 @@ mark.critic-hl.critic-anchor:hover {
   padding: 2px 6px;
 }
 .slide-over-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: calc(var(--space-unit) * 4);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1091,14 +1267,113 @@ mark.critic-hl.critic-anchor:hover {
   width: 100%;
 }
 
-.settings-input.narrow {
-  width: 90px;
+/* ---- reading-pair language pickers (searchable, replaces the two code inputs) ---- */
+.settings-langpair {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-unit) * 1.5);
+  margin-top: calc(var(--space-unit) * 1.5);
+}
+.settings-langswap {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--space-unit) * 0.5);
+  color: var(--color-text-muted);
+  transform: rotate(90deg); /* SwapIcon is horizontal; the pair stacks vertically */
+}
+.settings-langswap:hover {
+  color: var(--color-text);
 }
 
-.settings-pair {
+.lang-select {
+  position: relative;
+}
+.lang-trigger {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: calc(var(--space-unit) * 2);
+  cursor: pointer;
+  text-align: left;
+}
+.lang-trigger:hover {
+  border-color: var(--color-border-hover);
+}
+.lang-trigger-text {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--space-unit) * 2);
+  min-width: 0;
+  overflow: hidden;
+}
+.lang-name {
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lang-native {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.lang-custom-tag {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-nano);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+.lang-chevron {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.lang-menu {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-unit) * 1.5);
+  margin-top: calc(var(--space-unit) * 1.5);
+  padding: calc(var(--space-unit) * 1.5);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.lang-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 216px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.lang-option {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--space-unit) * 2);
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.lang-option.active {
+  background: var(--color-accent-surface);
+}
+.lang-option[aria-selected='true'] .lang-name {
+  font-weight: var(--weight-medium);
+}
+.lang-option-custom {
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  margin-top: calc(var(--space-unit) * 1);
+  padding-top: calc(var(--space-unit) * 2);
+}
+.lang-empty {
+  padding: calc(var(--space-unit) * 2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .settings-theme-row {
@@ -1115,6 +1390,12 @@ mark.critic-hl.critic-anchor:hover {
   padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 3);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+.code-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 1.5);
 }
 
 .theme-chip:hover:not(.active) {
@@ -1149,7 +1430,7 @@ input[type='checkbox'] {
 
 .trans-loading {
   position: sticky;
-  top: calc(var(--topbar-h) + 8px);
+  top: calc(var(--bar-gap) + 8px);
   z-index: var(--z-sticky);
   display: inline-block;
   background: var(--color-invert-bg);
@@ -1335,10 +1616,10 @@ input[type='checkbox'] {
 
 .mark-gutter {
   position: fixed;
-  top: var(--topbar-h);
+  top: var(--bar-gap);
   right: 0;
   width: 12px;
-  height: calc(100vh - var(--topbar-h));
+  height: calc(100vh - var(--bar-gap) - var(--bar-clear));
   z-index: var(--z-rail);
   cursor: pointer;
 }
@@ -1610,7 +1891,7 @@ input[type='checkbox'] {
 
 .find-bar {
   position: fixed;
-  top: calc(var(--topbar-h) + 8px);
+  top: calc(var(--bar-gap) + 8px);
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-panel);
@@ -1786,7 +2067,7 @@ input[type='checkbox'] {
 
 .navigator {
   position: fixed;
-  inset: var(--topbar-h) auto 0 0; /* tucked below the bar; floats OVER the page, never pushes it */
+  inset: var(--bar-gap) auto var(--bar-clear) 0; /* floats OVER the page, clearing the bottom bar */
   width: var(--nav-w);
   display: flex;
   flex-direction: column;
@@ -1876,7 +2157,7 @@ input[type='checkbox'] {
 .nav-reveal {
   position: fixed;
   left: 10px;
-  top: calc(var(--topbar-h) + 10px);
+  top: calc(var(--bar-gap) + 10px);
   z-index: var(--z-nav);
   width: 32px;
   height: 32px;
