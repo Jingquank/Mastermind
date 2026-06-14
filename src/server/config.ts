@@ -16,6 +16,7 @@ export const DEFAULT_CONFIG: MastermindConfig = {
   codeTheme: 'none',
   uiLang: 'en',
   langPair: { a: 'English', b: 'Simplified Chinese' },
+  browser: '',
   grain: {},
 }
 

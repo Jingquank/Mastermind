@@ -100,6 +100,7 @@ function WidthGlyph({ w }: { w: number }) {
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const config = useConfig((s) => s.config)
   const themes = useConfig((s) => s.themes)
+  const browsers = useConfig((s) => s.browsers)
   const update = useConfig((s) => s.update)
 
   const t = useT()
@@ -197,6 +198,43 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 </>
               )
             })()}
+          {(browsers.length > 0 || (config.browser !== '' && !browsers.some((b) => b.id === config.browser))) && (
+            <div className="settings-row">
+              <span>{t('openInBrowser')}</span>
+              <div className="settings-theme-row">
+                <button
+                  type="button"
+                  className={`theme-chip${config.browser === '' ? ' active' : ''}`}
+                  aria-pressed={config.browser === ''}
+                  onClick={() => patch({ browser: '' })}
+                >
+                  {t('browserSystemDefault')}
+                </button>
+                {browsers.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className={`theme-chip${config.browser === b.id ? ' active' : ''}`}
+                    aria-pressed={config.browser === b.id}
+                    onClick={() => patch({ browser: b.id })}
+                  >
+                    {b.name}
+                  </button>
+                ))}
+                {config.browser !== '' && !browsers.some((b) => b.id === config.browser) && (
+                  <button
+                    type="button"
+                    className="theme-chip active"
+                    aria-pressed={true}
+                    title={config.browser}
+                    onClick={() => patch({ browser: '' })}
+                  >
+                    {config.browser}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ---------- Reading ---------- */}
@@ -353,7 +391,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             <span>{t('readingPair')}</span>
             <div className="settings-langpair">
               <LangSelect
-                label={`${t('readingPair')} 1`}
+                label={t('preferredLanguage')}
                 value={config.langPair.a}
                 onChange={(a) => patch({ langPair: { ...config.langPair, a } })}
               />
@@ -366,7 +404,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 <SwapIcon />
               </button>
               <LangSelect
-                label={`${t('readingPair')} 2`}
+                label={t('secondaryLanguage')}
                 value={config.langPair.b}
                 onChange={(b) => patch({ langPair: { ...config.langPair, b } })}
               />

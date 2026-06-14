@@ -116,6 +116,10 @@ const en = {
   langUseCustom: 'Use',
   langCustomTag: 'custom',
   swapLangs: 'Swap languages',
+  preferredLanguage: 'Preferred language',
+  secondaryLanguage: 'Secondary language',
+  openInBrowser: 'Open in browser',
+  browserSystemDefault: 'System default',
   viewMode: 'View mode',
 } as const
 
@@ -235,6 +239,10 @@ const zhCN: Record<MsgKey, string> = {
   langUseCustom: '使用',
   langCustomTag: '自定义',
   swapLangs: '交换语言',
+  preferredLanguage: '首选语言',
+  secondaryLanguage: '次选语言',
+  openInBrowser: '打开浏览器',
+  browserSystemDefault: '系统默认',
   viewMode: '视图模式',
 }
 

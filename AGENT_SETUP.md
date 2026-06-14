@@ -16,6 +16,38 @@ through Mastermind's revision diff. Re-open with the same command for the
 next round until the user approves.
 ```
 
+## Automated setup & the `/mastermind` skills
+
+Instead of pasting the block above by hand, run once (after `npm link`):
+
+```sh
+mastermind install-agents          # for detected agents; add --all for every supported agent
+```
+
+This installs two skills — `mastermind` and its `master` alias — for each detected coding
+agent (`~/.claude`, `~/.cursor`, `~/.gemini`, `~/.agents`) and appends the always-translate-
+first / plan→visualize instruction block to each agent's global memory (`~/.claude/CLAUDE.md`,
+`~/.gemini/GEMINI.md`; skipped where the path is unknown). Undo with `mastermind
+uninstall-agents`. Then, in any agent:
+
+- `/mastermind setup` — pick Preferred + Secondary language, browser, and color/font theme (written via `mastermind config set`).
+- `/mastermind demo` — open a bilingual showcase document.
+- `/mastermind <file>` (bare = the latest `.md` from the chat) and `/master <file>` — visualize any doc.
+
+### Translate first, offline (`translate-blocks`)
+
+The skills pre-translate a doc into both reading languages **before** opening it, writing the
+on-disk translation cache directly — no live assist loop required:
+
+```sh
+mastermind translate-blocks <file>          # → { "targetLang", "cachePath", "blocks":[{"hash","text"}] }
+# translate each block's text (preserve all Markdown + CriticMarkup), then:
+printf '%s' '[{"hash":"…","text":"<translated>"}]' | mastermind translate-blocks <file> --save
+mastermind open <file>                       # the language toggle is warm; the cache survives offline
+```
+
+`mastermind config`, `browsers`, `themes`, and `typefaces` round out the CLI the skills drive.
+
 ## How the protocol behaves
 
 - `mastermind open --wait <file>` prints the review URL to stdout immediately, then blocks. It now **serves the assist channel by default** — the reading-language toggle goes live and Mastermind pre-translates the document while the user reads (answer the `mastermind-assist:` lines it prints; see below). Pass `--no-assist` to review without it.

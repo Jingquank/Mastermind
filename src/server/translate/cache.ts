@@ -8,7 +8,7 @@ import fs from 'node:fs/promises'
  * the document under `.mastermind/translations/`, the same sibling dir the rest
  * of Mastermind's on-disk state uses (and which the workspace tree hides).
  */
-function cacheFile(realPath: string, targetLang: string): string {
+export function cacheFile(realPath: string, targetLang: string): string {
   // targetLang is a language code (en, zh-CN, …); sanitize anyway for the filename.
   const safeLang = targetLang.replace(/[^a-zA-Z0-9_-]/g, '_') || 'x'
   return path.join(path.dirname(realPath), '.mastermind', 'translations', `${path.basename(realPath)}.${safeLang}.json`)

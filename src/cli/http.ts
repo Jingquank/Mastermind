@@ -69,6 +69,32 @@ export async function postNoContent(port: number, pathName: string, body: unknow
   }
 }
 
+export async function getJson<T>(port: number, pathName: string): Promise<T> {
+  const res = await fetch(`http://127.0.0.1:${port}${pathName}`, { signal: AbortSignal.timeout(5000) })
+  if (!res.ok) throw new Error(`${res.status}`)
+  return (await res.json()) as T
+}
+
+export async function putJson<T>(port: number, pathName: string, body: unknown): Promise<T> {
+  const res = await fetch(`http://127.0.0.1:${port}${pathName}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(5000),
+  })
+  if (!res.ok) {
+    let detail = `${res.status}`
+    try {
+      const j = (await res.json()) as { error?: string }
+      if (j.error) detail = j.error
+    } catch {
+      /* not json */
+    }
+    throw new Error(detail)
+  }
+  return (await res.json()) as T
+}
+
 export async function requestShutdown(port: number): Promise<void> {
   try {
     await fetch(`http://127.0.0.1:${port}/api/admin/shutdown`, {

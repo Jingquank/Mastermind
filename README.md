@@ -24,6 +24,9 @@ mastermind new                     # blank draft (prompts for a name on first sa
 mastermind assist plan.md          # let your agent answer translate/suggest requests
 mastermind status                  # daemon status
 mastermind stop                    # shut the daemon down
+mastermind install-agents          # add the /mastermind + /master skills to your coding agents
+mastermind config set langPair.a=English langPair.b=Japanese   # preferences (also theme, browser, typeSet…)
+mastermind translate-blocks plan.md  # offline pre-translate a doc into both reading languages
 ```
 
 `open` prints the review URL to stdout. The daemon serves on `127.0.0.1:5173` (or the next free port; `--port <n>` pins one) and is shared by all sessions.

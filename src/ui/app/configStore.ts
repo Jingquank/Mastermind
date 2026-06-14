@@ -1,11 +1,12 @@
 import { create } from 'zustand'
-import type { ClientConfig, ThemeInfo } from '../../shared/types'
+import type { BrowserInfo, ClientConfig, ThemeInfo } from '../../shared/types'
 
 export type ConfigPatch = Partial<Omit<ClientConfig, 'version'>>
 
 interface ConfigState {
   config: ClientConfig | null
   themes: ThemeInfo[]
+  browsers: BrowserInfo[]
   load(): Promise<void>
   update(patch: ConfigPatch): Promise<void>
 }
@@ -19,13 +20,17 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 export const useConfig = create<ConfigState>((set, get) => ({
   config: null,
   themes: [],
+  browsers: [],
 
   async load() {
-    const [config, themes] = await Promise.all([
+    const [config, themes, browsers] = await Promise.all([
       fetchJson<ClientConfig>('/api/config'),
       fetchJson<ThemeInfo[]>('/api/themes'),
+      // Non-essential + newer endpoint: a missing/older /api/browsers (version skew) must
+      // never reject the whole load and blank `config` — degrade to no detected browsers.
+      fetchJson<BrowserInfo[]>('/api/browsers').catch(() => [] as BrowserInfo[]),
     ])
-    set({ config, themes })
+    set({ config, themes, browsers })
   },
 
   async update(patch) {

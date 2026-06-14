@@ -128,21 +128,29 @@ export interface MastermindConfig {
   /** px */
   contentWidth: number
   authorTag: string
-  /** id of the chosen curated type set (display + body); see src/ui/theme/fonts.ts */
+  /** id of the chosen curated type set (display + body); see src/shared/fonts.ts */
   typeSet: string
   /** id of the chosen monospace face (code, filenames, CriticMarkup source) */
   monoFont: string
-  /** id of the chosen code-color scheme; `none` = uncolored (see src/ui/theme/codeThemes.ts) */
+  /** id of the chosen code-color scheme; `none` = uncolored (see src/shared/codeThemes.ts) */
   codeTheme: string
   uiLang: 'en' | 'zh-CN'
-  /** the reading-language toggle pair (translation always routes to the user's agent) */
+  /** the reading-language toggle pair (a = Preferred, b = Secondary; routes to the user's agent) */
   langPair: { a: string; b: string }
+  /** app name / bundle id to open Mastermind in; '' = the system default browser */
+  browser: string
   /** per-theme grain overrides; `enabled` is the legacy on/off, superseded by `intensity` */
   grain: Record<string, { enabled?: boolean; intensity?: GrainIntensity; texture?: GrainTexture }>
 }
 
 /** What the browser sees. No secrets to redact — translation is agent-only, no keys stored. */
 export type ClientConfig = MastermindConfig
+
+/** An installed, launchable browser (macOS); `id` is the `open -a <id>` app name. */
+export interface BrowserInfo {
+  id: string
+  name: string
+}
 
 export interface ThemeFontInfo {
   family: string

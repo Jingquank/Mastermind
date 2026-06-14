@@ -1,6 +1,9 @@
 import { create } from 'zustand'
-import { detectDocScript, segmentBlocks } from '../../shared/blocks'
-import { isCjkLang } from '../../shared/languages'
+import { segmentBlocks } from '../../shared/blocks'
+import { pickTarget, previewTargetLang } from '../../shared/translate-direction'
+
+// re-exported so existing importers (SessionView) keep their translationStore import
+export { previewTargetLang }
 
 interface TranslateResponse {
   results: Array<{ hash: string; text?: string; error?: string; cached: boolean }>
@@ -25,18 +28,7 @@ interface TransState {
 // effect or a second tab doesn't launch duplicate background warm-ups.
 const prefetchInFlight = new Set<string>()
 
-export function previewTargetLang(source: string, pair: { a: string; b: string }): string {
-  return pickTarget(source, pair).targetLang
-}
-
-function pickTarget(source: string, pair: { a: string; b: string }): { sourceLang: string; targetLang: string } {
-  const docIsCjk = detectDocScript(source) === 'cjk'
-  const aIsCjk = isCjkLang(pair.a)
-  if (docIsCjk) {
-    return aIsCjk ? { sourceLang: pair.a, targetLang: pair.b } : { sourceLang: pair.b, targetLang: pair.a }
-  }
-  return aIsCjk ? { sourceLang: pair.b, targetLang: pair.a } : { sourceLang: pair.a, targetLang: pair.b }
-}
+// pickTarget / previewTargetLang now live in ../../shared/translate-direction (imported above).
 
 async function fetchTranslations(
   sessionId: string,

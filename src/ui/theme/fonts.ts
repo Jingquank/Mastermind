@@ -1,36 +1,17 @@
 /**
- * App-level font registry — the single source of truth for typeface selection.
+ * DOM/asset side of the font registry — the `@font-face` URL table and the CSS
+ * font-family stack builders. The cross-theme DATA (type sets, mono fonts, ids,
+ * lookups) lives in src/shared/fonts.ts and is re-exported here so existing
+ * `theme/fonts` importers keep working unchanged.
  *
- * Font choice is a cross-theme USER preference (like font size), so it lives here
- * and overrides the --font-* tokens at runtime, rather than in any one theme.json.
  * Every face is a self-hosted `.woff2` under /themes/… — local-first, no CDN at
  * runtime (the binaries were vendored in at build time). `@font-face` only fetches
  * a family once text actually renders in it, so unselected sets cost nothing.
  */
 
-export interface FontFace {
-  family: string
-  url: string
-  /** CSS font-weight descriptor — a range for variable faces, a single value for static. */
-  weight: string
-}
+import type { FontFace, MonoFont, TypeSet } from '../../shared/fonts'
 
-export interface TypeSet {
-  id: string
-  name: string
-  displayFamily: string
-  /** display weight → --weight-bold (Fraunces wants less than Schibsted's 800) */
-  displayWeight: number
-  /** display letter-spacing → --ls-heading */
-  displayTracking: string
-  bodyFamily: string
-}
-
-export interface MonoFont {
-  id: string
-  name: string
-  family: string
-}
+export * from '../../shared/fonts'
 
 const SANS_FALLBACK = 'system-ui, -apple-system, sans-serif'
 const SERIF_FALLBACK = 'Georgia, Cambria, "Times New Roman", serif'
@@ -52,27 +33,6 @@ export const FONT_FACES: FontFace[] = [
   { family: 'Ubuntu Sans Mono', url: '/themes/fonts/UbuntuSansMono-Variable.woff2', weight: '100 800' },
 ]
 
-/** Curated display+body pairings. `grid` is the default and matches the base tokens. */
-export const TYPE_SETS: TypeSet[] = [
-  { id: 'grid', name: 'Grid', displayFamily: 'Schibsted Grotesk', displayWeight: 800, displayTracking: '-0.02em', bodyFamily: 'Schibsted Grotesk' },
-  { id: 'geist', name: 'Geist', displayFamily: 'Geist', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Geist' },
-  { id: 'bricolage', name: 'Bricolage', displayFamily: 'Bricolage Grotesque', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Inter' },
-  { id: 'lora', name: 'Lora', displayFamily: 'Lora', displayWeight: 600, displayTracking: '-0.01em', bodyFamily: 'Lora' },
-  { id: 'crimson', name: 'Crimson', displayFamily: 'Crimson Pro', displayWeight: 600, displayTracking: '0', bodyFamily: 'Crimson Pro' },
-  { id: 'manrope', name: 'Manrope', displayFamily: 'Manrope', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Manrope' },
-  { id: 'outfit', name: 'Outfit', displayFamily: 'Outfit', displayWeight: 700, displayTracking: '-0.02em', bodyFamily: 'Outfit' },
-]
-
-export const MONO_FONTS: MonoFont[] = [
-  { id: 'geist', name: 'Geist Mono', family: 'Geist Mono' },
-  { id: 'jetbrains', name: 'JetBrains Mono', family: 'JetBrains Mono' },
-  { id: 'spline', name: 'Spline Sans Mono', family: 'Spline Sans Mono' },
-  { id: 'ubuntu', name: 'Ubuntu Sans Mono', family: 'Ubuntu Sans Mono' },
-]
-
-export const DEFAULT_TYPE_SET = 'grid'
-export const DEFAULT_MONO = 'geist'
-
 const SERIF_FAMILIES = new Set(['Lora', 'Crimson Pro'])
 
 function stack(family: string, fallback: string): string {
@@ -87,11 +47,4 @@ export function bodyStack(set: TypeSet): string {
 }
 export function monoStack(m: MonoFont): string {
   return stack(m.family, MONO_FALLBACK)
-}
-
-export function typeSetById(id: string | undefined): TypeSet {
-  return TYPE_SETS.find((s) => s.id === id) ?? TYPE_SETS[0]!
-}
-export function monoById(id: string | undefined): MonoFont {
-  return MONO_FONTS.find((m) => m.id === id) ?? MONO_FONTS[0]!
 }

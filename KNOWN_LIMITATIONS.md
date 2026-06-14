@@ -45,6 +45,14 @@ Edge cases punted deliberately, with the behavior you get instead.
 - **Agent-channel translations are session-scoped and never written to the on-disk cache** — one agent's answers must not masquerade as another's cache hit. Switching back to an API provider repopulates the persistent cache.
 - **Inline suggestions are a staging gate.** Proposed marks live in the browser only; the server validates that returned markup contains only ins/del/sub *and* reduces (all-rejected) back to the exact original selection, so a "suggestion" can never smuggle a silent rewrite to disk. Nothing is written until you accept, and what lands is plain user-approved text.
 
+## Agent skills, setup & preferred browser
+
+- **`/mastermind setup | demo | <file>` and `/master <file>` are agent skills**, installed by `mastermind install-agents` (run once after `npm link`). It writes the `mastermind`/`master` skills for every detected agent (`~/.claude`, `~/.cursor`, `~/.gemini`, `~/.agents`); `--all` provisions all four even if absent.
+- **The always-translate-first / plan→visualize global block is appended only where a global-memory file is known** — `~/.claude/CLAUDE.md` and `~/.gemini/GEMINI.md`. For Cursor and the portable `.agents` format the block is skipped (their global-memory path isn't fixed); the skills still install, and the block can be added by hand. `mastermind uninstall-agents` reverses everything (marker-wrapped; the surrounding file is restored byte-for-byte).
+- **"Translate first" re-translates every block the first time** a doc is visualized — real agent tokens for a large doc — but the content-hashed cache means only *changed* blocks re-translate on later opens.
+- **Preferred-browser launch is macOS-only** (`open -a <app>`). A configured/`--in` browser that isn't installed falls back to the system default (with a stderr note); other platforms always use the system default. Detection scans `/Applications`, `/System/Applications`, and `~/Applications`.
+- **Publishing the package must ship `.claude/skills/mastermind` + `assets/agent/`** — `install-agents` reads the skill source from the package root. The package is `private` today, so this only matters if it is ever published.
+
 ## Files & platform
 
 - One file per session; one daemon per machine. Mixed-EOL files normalize to the dominant flavor on save.
