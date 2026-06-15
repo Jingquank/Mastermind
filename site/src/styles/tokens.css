@@ -31,6 +31,10 @@
   --term-dot: #46443a;
   --term-dim: #8a877c;
   --term-prompt: #7ddc92;
+  /* window-chrome traffic lights (terminal screenshot surface only) */
+  --term-close: #ff5f56;
+  --term-min: #febc2e;
+  --term-max: #28c840;
 
   /* type */
   --font-display: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;

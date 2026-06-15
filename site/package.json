@@ -9,8 +9,9 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^6.4.6",
     "@astrojs/preact": "^5.1.5",
-    "preact": "^10.29.2"
+    "astro": "^6.4.6",
+    "preact": "^10.29.2",
+    "slot-text": "^0.3.1"
   }
 }

@@ -8,3 +8,6 @@ dist/
 
 # brainstorming visual companion artifacts
 .superpowers/
+
+# impeccable live-mode local state (config + session journals)
+.impeccable/

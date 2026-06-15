@@ -6,6 +6,7 @@ import '../styles/base.css'
 import '../styles/components.css'
 import { wordmark } from '../data/hero'
 import { repoUrl } from '../data/skills'
+import I18n from '../components/I18n.astro'
 
 interface Props {
   title?: string
@@ -43,7 +44,7 @@ const cols = Array.from({ length: 12 })
     </script>
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip" href="#main"><I18n k="skip" /></a>
 
     <!-- press-G grid overlay (shares the .wrap content box) -->
     <div class="grid-overlay" aria-hidden="true">
@@ -54,13 +55,13 @@ const cols = Array.from({ length: 12 })
     <!-- 00 · app-chrome -->
     <header class="chrome">
       <div class="wrap chrome-in">
-        <div class="chrome-file"><span class="dirty"></span> mastermind.md</div>
+        <a class="chrome-mast" href="#main" aria-label="Mastermind — back to top"><pre class="masthead" lang="en" aria-hidden="true">{wordmark}</pre></a>
         <div class="chrome-right">
           <div class="lang-seg" role="radiogroup" aria-label="Reading language">
             <button data-lang-btn="en" role="radio" aria-checked="true" tabindex="0">EN</button>
             <button data-lang-btn="zh" role="radio" aria-checked="false" tabindex="-1"><span lang="zh-Hans">中文</span></button>
           </div>
-          <button class="cta sm" data-install>Install</button>
+          <button class="cta sm" data-install><I18n k="ctaInstall" /></button>
         </div>
       </div>
     </header>
@@ -70,10 +71,10 @@ const cols = Array.from({ length: 12 })
     <!-- 08 · footer -->
     <footer class="footer">
       <div class="wrap footer-row">
-        <pre class="masthead" aria-hidden="true">{wordmark}</pre>
+        <pre class="masthead" lang="en" aria-hidden="true">{wordmark}</pre>
         <div class="note-aside">
           <a href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
-          &nbsp;·&nbsp; MIT &nbsp;·&nbsp; the file is the protocol.
+          &nbsp;·&nbsp; MIT &nbsp;·&nbsp; <I18n k="footerTagline" />.
         </div>
       </div>
     </footer>
@@ -105,13 +106,15 @@ const cols = Array.from({ length: 12 })
         if (localStorage.getItem('mm-lang') === 'zh') initial = 'zh'
       } catch {}
       setLang(initial)
-      // the segmented control owns aria-checked; data-set-lang buttons just trigger a switch
+      // the segmented control owns aria-checked; [data-lang-toggle] buttons just flip the language
       document
         .querySelectorAll('[data-lang-btn]')
         .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-lang-btn') || 'en')))
       document
-        .querySelectorAll('[data-set-lang]')
-        .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-set-lang') || 'en')))
+        .querySelectorAll('[data-lang-toggle]')
+        .forEach((b) =>
+          b.addEventListener('click', () => setLang(root.getAttribute('data-lang') === 'zh' ? 'en' : 'zh')),
+        )
       // radio-group keyboard pattern (APG): arrows/Home/End move selection + focus together
       const langBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-lang-btn]'))
       document.querySelector('.lang-seg')?.addEventListener('keydown', (e) => {
@@ -150,7 +153,7 @@ const cols = Array.from({ length: 12 })
       // copy + toast only — no scroll-jump (the hero terminal is the visible payoff)
       document.querySelectorAll('[data-install]').forEach((b) =>
         b.addEventListener('click', async () => {
-          const cmd = 'npm i -g mastermind-md'
+          const cmd = 'npm i -g mastermind-md && mastermind install-agents'
           let ok = false
           try {
             if (navigator.clipboard?.writeText) {
@@ -158,8 +161,9 @@ const cols = Array.from({ length: 12 })
               ok = true
             }
           } catch {}
-          // never claim success if the write failed — just surface the command
-          showToast(ok ? 'Copied  ›  ' + cmd : cmd)
+          // never claim success if the write failed — just surface the command to copy by hand
+          const done = root.getAttribute('data-lang') === 'zh' ? '已复制安装命令' : 'Copied install command'
+          showToast(ok ? done : cmd)
         }),
       )
     </script>

@@ -2,25 +2,26 @@
 import { Picture } from 'astro:assets'
 import Base from '../layouts/Base.astro'
 import I18n from '../components/I18n.astro'
+import Bi from '../components/Bi.astro'
 import MarkPlayground from '../islands/MarkPlayground'
 import Terminal from '../islands/Terminal'
 import { renderHtml } from '../lib/criticmarkup'
-import { wordmark, heroReview, heroReviewZh } from '../data/hero'
+import { heroReview, heroReviewZh } from '../data/hero'
 import { marks } from '../data/marks'
 import { skills, repoUrl } from '../data/skills'
 import reviewMarksShot from '../assets/shots/review-marks.png'
 import bilingualShot from '../assets/shots/bilingual.png'
 
 const loop = [
-  { n: '01', t: 'Agent drafts', d: 'It writes the plan as a .md file — not a chat message.' },
-  { n: '02', t: 'You mark it up', d: 'Review in the browser with CriticMarkup: insert, cut, swap, highlight, comment.' },
-  { n: '03', t: 'Hand back', d: 'Save & hand back; the marks travel in the file.' },
-  { n: '04', t: 'Agent revises', d: 'It re-reads the same file and applies your review. Repeat until approved.' },
+  { n: '01', t: 'Agent drafts', tZh: 'Agent 起草', d: 'It writes the plan as a .md file — not a chat message.', dZh: '它把计划写成 .md 文件 —— 而不是一条聊天消息。' },
+  { n: '02', t: 'You mark it up', tZh: '你来批注', d: 'Review in the browser with CriticMarkup: insert, cut, swap, highlight, comment.', dZh: '在浏览器里用 CriticMarkup 评审：插入、删除、替换、高亮、评论。' },
+  { n: '03', t: 'Hand back', tZh: '交回', d: 'Save & hand back; the marks travel in the file.', dZh: '保存并交回；标记随文件一同传递。' },
+  { n: '04', t: 'Agent revises', tZh: 'Agent 修订', d: 'It re-reads the same file and applies your review.', dZh: '它重新读取同一个文件并应用你的评审。' },
 ]
 const trust = [
-  { t: 'No cloud', d: 'Pure localhost. The daemon binds 127.0.0.1 and never phones home.' },
-  { t: 'No accounts', d: 'Nothing to sign up for. Clone or npm-install and run.' },
-  { t: 'The file is yours', d: 'Every edit round-trips through one .md on your disk — no database, no lock-in.' },
+  { t: 'No cloud', tZh: '无云端', d: 'Pure localhost. The daemon binds 127.0.0.1 and never phones home.', dZh: '纯本地。守护进程绑定 127.0.0.1，绝不回传。' },
+  { t: 'No accounts', tZh: '无账户', d: 'Nothing to sign up for. Clone or npm-install and run.', dZh: '无需注册。clone 或 npm 安装即可运行。' },
+  { t: 'The file is yours', tZh: '文件归你', d: 'Every edit round-trips through one .md on your disk — no database, no lock-in.', dZh: '每次编辑都经由你磁盘上的一个 .md 往返 —— 无数据库，无锁定。' },
 ]
 ---
 
@@ -28,24 +29,21 @@ const trust = [
   <!-- 01 · hero -->
   <section class="section hero">
     <div class="wrap"><div class="grid hero-grid">
-      <div class="c-full hero-mast">
-        <pre class="masthead big" role="img" aria-label="Mastermind">{wordmark}</pre>
-      </div>
-      <div class="c-1-7 hero-lead">
+      <div class="c-1-6 hero-lead">
         <h1 class="display hero-tag"><I18n k="tagline" /></h1>
         <p class="hero-pitch">
           <span data-lang-en set:html={renderHtml(heroReview)}></span>
           <span data-lang-zh lang="zh-Hans" set:html={renderHtml(heroReviewZh)}></span>
         </p>
         <div class="hero-ctas">
-          <button class="cta" data-install>Install</button>
+          <button class="cta" data-install><I18n k="ctaInstall" /></button>
           <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
         <p class="hero-meta">
-          <button class="grid-hint" data-grid-toggle aria-hidden="true" tabindex="-1">press <kbd>G</kbd> for the grid</button>
+          <button class="grid-hint" data-grid-toggle aria-hidden="true" tabindex="-1"><I18n k="gridHint" /></button>
         </p>
       </div>
-      <div class="c-8-12 hero-term">
+      <div class="c-7-12 hero-term">
         <Terminal client:visible />
       </div>
     </div></div>
@@ -60,15 +58,21 @@ const trust = [
       </div>
       <div class="c-6-12 body">
         <p class="measure" style="color:var(--muted)"><I18n k="protocolBody" /></p>
-        <div class="loop">
+        <ol class="loop">
           {loop.map((s) => (
-            <div class="loop-step">
-              <div class="n">{s.n}</div>
-              <div class="t">{s.t}</div>
-              <div class="d">{s.d}</div>
-            </div>
+            <li class="loop-step">
+              <span class="n">{s.n}</span>
+              <div class="loop-text">
+                <div class="t"><Bi en={s.t} zh={s.tZh} /></div>
+                <div class="d"><Bi en={s.d} zh={s.dZh} /></div>
+              </div>
+            </li>
           ))}
-        </div>
+          <li class="loop-return">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4"></path><path d="M3 3v4h4"></path></svg>
+            <Bi en="Repeat until approved" zh="如此往复，直到通过" />
+          </li>
+        </ol>
       </div>
     </div></div>
   </section>
@@ -77,12 +81,9 @@ const trust = [
   <section class="section" id="marks">
     <div class="wrap"><div class="grid">
       <div class="c-1-9">
-        <div class="kicker-row"><span class="folio">02</span><span class="kicker">The marks</span></div>
-        <h2 class="shead">Five marks. One file. <span class="m-hl" style="white-space:nowrap">No copy-paste.</span></h2>
-        <p class="body measure" style="margin-top:16px;color:var(--muted)">
-          CriticMarkup is the whole review vocabulary — readable in plain text, rendered as a
-          visual diff. Try it below; the marks render as you type.
-        </p>
+        <div class="kicker-row"><span class="folio">02</span><span class="kicker"><I18n k="marksKicker" /></span></div>
+        <h2 class="shead"><I18n k="marksHead" /></h2>
+        <p class="body measure" style="margin-top:16px;color:var(--muted)"><I18n k="marksBody" /></p>
       </div>
     </div>
 
@@ -92,8 +93,8 @@ const trust = [
             <div class="chip">
               <div class="syntax">{m.syntax}</div>
               <div class="ex" set:html={renderHtml(m.example)} />
-              <div class="label">{m.label}</div>
-              <div class="blurb">{m.blurb}</div>
+              <div class="label"><Bi en={m.label} zh={m.labelZh} /></div>
+              <div class="blurb"><Bi en={m.blurb} zh={m.blurbZh} /></div>
             </div>
           ))}
         </div>
@@ -121,7 +122,7 @@ const trust = [
         <div class="kicker-row"><span class="folio">03</span><span class="kicker"><I18n k="bilingualKicker" /></span></div>
         <h2 class="shead"><I18n k="bilingualHead" /></h2>
         <p class="body measure" style="margin-top:18px;color:var(--muted)"><I18n k="bilingualBody" /></p>
-        <button class="ghost" data-set-lang="zh" style="margin-top:20px">Try <span lang="zh-Hans">中文</span> →</button>
+        <button class="ghost" data-lang-toggle style="margin-top:20px"><I18n k="tryLangEn" /></button>
       </div>
       <figure class="c-6-12 shot">
         <Picture src={bilingualShot} formats={['avif', 'webp']}
@@ -136,20 +137,17 @@ const trust = [
   <section class="section" id="skills">
     <div class="wrap"><div class="grid">
       <div class="c-1-9">
-        <div class="kicker-row"><span class="folio">04</span><span class="kicker">In your agent</span></div>
-        <h2 class="shead">One command. Any agent.</h2>
+        <div class="kicker-row"><span class="folio">04</span><span class="kicker"><I18n k="skillsKicker" /></span></div>
+        <h2 class="shead"><I18n k="skillsHead" /></h2>
         <div class="skills">
           {skills.map((s) => (
             <div class="skill">
               <div class="cmd">{s.cmd}</div>
-              <div class="desc">{s.desc}</div>
+              <div class="desc"><Bi en={s.desc} zh={s.descZh} /></div>
             </div>
           ))}
         </div>
-        <p class="note-aside" style="margin-top:18px">
-          Installed by <code>mastermind install-agents</code> for Claude Code, Cursor, Gemini, and the
-          portable <code>.agents</code> format. Finished plans can open in Mastermind automatically.
-        </p>
+        <p class="note-aside" style="margin-top:18px"><I18n k="skillsNote" /></p>
       </div>
     </div></div>
   </section>
@@ -158,13 +156,13 @@ const trust = [
   <section class="section" id="local">
     <div class="wrap"><div class="grid">
       <div class="c-1-4">
-        <div class="kicker-row"><span class="folio">05</span><span class="kicker">Local-first</span></div>
-        <h2 class="shead">Yours. On disk.</h2>
+        <div class="kicker-row"><span class="folio">05</span><span class="kicker"><I18n k="localKicker" /></span></div>
+        <h2 class="shead"><I18n k="localHead" /></h2>
       </div>
       <div class="c-6-12">
         <div class="trust">
           {trust.map((x) => (
-            <div><div class="t">{x.t}</div><div class="d">{x.d}</div></div>
+            <div><div class="t"><Bi en={x.t} zh={x.tZh} /></div><div class="d"><Bi en={x.d} zh={x.dZh} /></div></div>
           ))}
         </div>
       </div>
@@ -175,17 +173,84 @@ const trust = [
   <section class="section" id="setup">
     <div class="wrap"><div class="grid">
       <div class="c-1-4">
-        <div class="kicker-row"><span class="folio">06</span><span class="kicker">Requirements</span></div>
-        <h2 class="shead">Before you start.</h2>
+        <div class="kicker-row"><span class="folio">06</span><span class="kicker"><I18n k="setupKicker" /></span></div>
+        <h2 class="shead"><I18n k="setupHead" /></h2>
         <div class="hero-ctas" style="margin-top:24px">
-          <button class="cta" data-install>Install</button>
+          <button class="cta" data-install><I18n k="ctaInstall" /></button>
           <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
       </div>
       <div class="c-6-12 body measure" style="color:var(--muted)">
-        <p><b style="color:var(--ink)">Runtime.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does the translation.</p>
-        <p style="margin-top:16px"><b style="color:var(--ink)">From source.</b> <code>git clone</code> the repo, <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>, then <code>mastermind install-agents</code>.</p>
+        <p><I18n k="setupRuntime" /></p>
+        <p style="margin-top:16px"><I18n k="setupSource" /></p>
       </div>
     </div></div>
   </section>
 </Base>
+
+<!-- Hero tagline: roll it in glyph-by-glyph with slot-text, and re-roll it on the EN ⇄ 中文 toggle. -->
+<script>
+  import { animateSlotText, buildSlotText } from 'slot-text'
+  import 'slot-text/style.css'
+
+  const tag = document.querySelector<HTMLElement>('.hero-tag')
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  // No JS / reduced motion: the span renders as plain server-side text, untouched.
+  if (tag && !reduce) {
+    const spans = Array.from(tag.querySelectorAll<HTMLElement>('[data-lang-en],[data-lang-zh]'))
+    // Capture each language's clean text once, *before* slot-text rewrites the
+    // span into per-glyph cells (which doubles textContent into hidden sizers).
+    const original = new Map(spans.map((el) => [el, el.textContent ?? '']))
+
+    const lang = () => (document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en')
+    const visible = () => spans.find((el) => el.hasAttribute(`data-lang-${lang()}`)) ?? null
+
+    // slot-text builds one non-wrapping inline-flex row, so a whole-line build
+    // would overflow the 15ch headline into the terminal. Instead wrap each word
+    // in its own slot-text unit and leave the spaces as plain text nodes — the
+    // line then wraps at word boundaries like normal text. Each word's roll is
+    // delayed by its character offset so the glyph sweep stays continuous across
+    // the wrapped lines. Seed every word with same-length blanks so its glyphs
+    // roll up out of empty cells one frame later (cells must measure first).
+    const STAGGER = 26
+    const roll = (host: HTMLElement | null) => {
+      if (!host) return
+      const text = original.get(host) ?? ''
+      if (!text) return
+      host.setAttribute('aria-label', text) // keep the h1's accessible name clean
+      host.replaceChildren()
+      const units: { el: HTMLElement; word: string; at: number }[] = []
+      let at = 0
+      for (const part of text.split(/(\s+)/)) {
+        if (part === '') continue
+        if (/\s/.test(part)) {
+          host.append(part) // whitespace stays a text node → a wrap opportunity
+        } else {
+          const w = document.createElement('span')
+          host.append(w)
+          buildSlotText(w, part.replace(/\S/g, ' '))
+          units.push({ el: w, word: part, at })
+        }
+        at += [...part].length
+      }
+      requestAnimationFrame(() => {
+        for (const u of units)
+          window.setTimeout(
+            () => animateSlotText(u.el, u.word, { stagger: STAGGER, duration: 440 }),
+            u.at * STAGGER,
+          )
+      })
+    }
+
+    roll(visible()) // reveal the active language on load…
+
+    // …and re-roll whenever the top-bar toggle flips <html data-lang>.
+    let current = lang()
+    new MutationObserver(() => {
+      if (lang() === current) return
+      current = lang()
+      roll(visible())
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-lang'] })
+  }
+</script>

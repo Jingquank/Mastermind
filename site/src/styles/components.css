@@ -46,19 +46,21 @@
   min-height: 48px;
   padding-block: 6px;
 }
-.chrome-file {
-  display: flex;
+/* the brand mark — a mini render of the hero wordmark, links back to top */
+.chrome-mast {
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--muted);
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 4px;
 }
-.chrome-file .dirty {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ink); /* the reserved red belongs to the Install pill alone */
+.chrome-mast .masthead {
+  margin: 0;
+  font-size: clamp(7px, 1.1vw, 10px);
+}
+.chrome-mast:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
 .chrome-right {
   display: flex;
@@ -98,16 +100,16 @@
 }
 
 /* ============ 01 hero ============ */
-.masthead.big {
-  font-size: clamp(8px, 2.05vw, 22px);
-  color: var(--ink);
-  letter-spacing: 0;
-  margin-bottom: clamp(28px, 4vw, 48px);
-}
 .hero-tag {
   font-size: clamp(32px, 1rem + 3.2vw, 60px);
   margin-bottom: 24px;
   max-width: 15ch;
+}
+/* The animated headline is built from slot-text cells whose own 1.3 line-height
+   sets the wrapped-line pitch; pull it in one level so the title sits tight, the
+   way display type should. (Reduced-motion / no-JS keeps .display's 1.03.) */
+.hero-tag .char-slot {
+  line-height: 1.1;
 }
 /* caret blink — used by the terminal prompt cursor (.term-caret) */
 @keyframes blink {
@@ -122,19 +124,16 @@
   margin-top: 32px;
   flex-wrap: wrap;
 }
-/* hero split: wordmark spans the top, then headline (left) + terminal (right) both
-   top-anchored to the same baseline — no floating, no magic offset */
+/* hero split: headline (left) + terminal (right), both top-anchored to the same
+   baseline — no floating, no magic offset (the wordmark now lives in the nav) */
 .hero-grid {
   align-items: start;
   row-gap: clamp(28px, 4vw, 44px);
 }
-.hero-mast .masthead {
-  margin-bottom: 0; /* the grid row-gap owns the space below the wordmark */
-}
 .hero-term {
-  /* share the headline's top baseline (the two columns read as one unit); the
-     height slack pools below, beside the lighter CTAs — intentional asymmetry */
-  align-self: start;
+  /* center the terminal against the tall left column so it reads opposite the
+     pitch + CTAs ("what it is" beside "how to get it"), not stranded up top */
+  align-self: center;
 }
 .hero-term .term {
   margin-top: 0;
@@ -180,36 +179,73 @@
   margin: 0 1px;
 }
 
-/* ============ 02 loop diagram ============ */
+/* ============ 02 protocol loop — numbered spine ============ */
+/* a vertical sequence, not boxes: mono number-nodes threaded on a hairline rail,
+   closing with a return row that ties 04 back to 01. */
 .loop {
+  list-style: none;
+  position: relative;
   display: grid;
-  /* a balanced 2×2 in the half-width column (no lone orphan step); stacks to 1-up on phones */
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--gutter) calc(var(--gutter) * 1.4);
+  gap: 26px;
   margin-top: 36px;
 }
-@media (max-width: 560px) {
-  .loop {
-    grid-template-columns: 1fr;
-  }
+/* the connecting thread runs down through the node centers, stopping before the return */
+.loop::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 8px;
+  bottom: 38px;
+  width: 1px;
+  background: var(--border);
 }
-/* de-carded: a numbered editorial sequence, not boxes — a top ink rule per step */
 .loop-step {
-  border-top: 2px solid var(--ink);
-  padding-top: 14px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 16px;
+  align-items: start;
 }
 .loop-step .n {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--muted);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--paper); /* the node masks the rail passing behind it */
+  position: relative;
+  z-index: 1;
 }
 .loop-step .t {
   font-weight: 800;
-  margin: 10px 0 4px;
+  letter-spacing: var(--ls-display);
+  margin: 5px 0 4px;
 }
 .loop-step .d {
   font-size: 14px;
+  line-height: 1.5;
   color: var(--muted);
+  max-width: 42ch;
+}
+/* the loop closes: a quiet return, the only place 04 points back to 01 */
+.loop-return {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-left: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.loop-return svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--faint);
 }
 /* touch devices (any width, incl. the 720–900px tablet band) get ≥44px targets */
 @media (pointer: coarse) {
@@ -382,6 +418,16 @@
   border-radius: 50%;
   background: var(--term-dot);
 }
+/* macOS-style traffic lights — recognizable window chrome on the screenshot surface */
+.term-bar i:nth-child(1) {
+  background: var(--term-close);
+}
+.term-bar i:nth-child(2) {
+  background: var(--term-min);
+}
+.term-bar i:nth-child(3) {
+  background: var(--term-max);
+}
 .term-bar span {
   margin-left: 8px;
   font-size: 12px;
@@ -390,7 +436,7 @@
 .term-body {
   padding: 16px 18px;
   line-height: 24px;
-  min-height: 180px; /* reserve the 3-step height so the box doesn't jump as it types */
+  min-height: 120px; /* reserve the finished-session height so the box doesn't jump as it types */
 }
 .term-cmd .prompt {
   color: var(--term-prompt);
@@ -408,6 +454,35 @@
   vertical-align: text-bottom;
   margin-left: 2px;
   animation: blink 1.05s steps(2, start) infinite;
+}
+/* Copy button — a flex child of the title bar, pushed right and vertically centered with
+   the dots + title (margin-left:auto, not absolute positioning) */
+.term-copy {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--term-dot);
+  background: var(--term-bg);
+  color: var(--term-dim);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.term-copy:hover {
+  color: var(--term-text);
+  border-color: var(--term-dim);
+}
+.term-copy:focus-visible {
+  outline: 2px solid var(--term-text);
+  outline-offset: 2px;
+}
+.term-copy[data-copied='true'] {
+  color: var(--term-prompt);
+  border-color: var(--term-prompt);
 }
 
 /* ============ 06 trust row ============ */
@@ -466,6 +541,9 @@
   font-size: 13px;
   padding: 9px 14px;
   border-radius: 999px;
+  /* the clipboard-blocked fallback surfaces the full command — keep it on-screen, not off-edge */
+  max-width: min(92vw, 560px);
+  overflow-wrap: anywhere;
   opacity: 0;
   pointer-events: none;
   transition: 0.2s ease;

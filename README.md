@@ -23,9 +23,11 @@ languages, toggled live.
 ## Install
 
 ```sh
-npm i -g mastermind-md        # installs the `mastermind` command
-mastermind install-agents     # add the /mastermind + /master skills to your agent(s)
+npm i -g mastermind-md && mastermind install-agents
 ```
+
+The first half installs the `mastermind` command; `install-agents` adds the `/mastermind` +
+`/master` skills to every coding agent it finds.
 
 <details>
 <summary>Install from source</summary>

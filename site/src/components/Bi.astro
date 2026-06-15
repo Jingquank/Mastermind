@@ -1,0 +1,11 @@
+---
+// Inline bilingual text for data that isn't keyed in i18n.ts (loop steps, mark chips,
+// skills, trust). Renders both languages; base.css shows one per <html data-lang>.
+interface Props {
+  en: string
+  zh: string
+}
+const { en, zh } = Astro.props
+---
+
+<span data-lang-en set:html={en}></span><span data-lang-zh lang="zh-Hans" set:html={zh}></span>
