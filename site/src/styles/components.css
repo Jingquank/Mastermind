@@ -116,7 +116,7 @@
   display: inline-block;
   width: 2px;
   height: 1.05em;
-  background: var(--accent);
+  background: var(--ink); /* red stays on the Install pill alone; the caret blinks in ink */
   vertical-align: text-bottom;
   margin-left: 2px;
   animation: blink 1.05s steps(2, start) infinite;

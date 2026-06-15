@@ -135,10 +135,17 @@ const cols = Array.from({ length: 12 })
       }
       // copy + toast only — no scroll-jump (the hero terminal is the visible payoff)
       document.querySelectorAll('[data-install]').forEach((b) =>
-        b.addEventListener('click', () => {
+        b.addEventListener('click', async () => {
           const cmd = 'npm i -g mastermind-md'
-          navigator.clipboard?.writeText(cmd).catch(() => {})
-          showToast('Copied  ›  ' + cmd)
+          let ok = false
+          try {
+            if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(cmd)
+              ok = true
+            }
+          } catch {}
+          // never claim success if the write failed — just surface the command
+          showToast(ok ? 'Copied  ›  ' + cmd : cmd)
         }),
       )
     </script>
