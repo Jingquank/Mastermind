@@ -14,7 +14,7 @@ import bilingualShot from '../assets/shots/bilingual.png'
 
 const loop = [
   { n: '01', t: 'Agent drafts', d: 'It writes the plan as a .md file — not a chat message.' },
-  { n: '02', t: 'You mark it up', d: 'Review in the browser with CriticMarkup: insert, cut, highlight, comment.' },
+  { n: '02', t: 'You mark it up', d: 'Review in the browser with CriticMarkup: insert, cut, swap, highlight, comment.' },
   { n: '03', t: 'Hand back', d: 'Save & hand back; the marks travel in the file.' },
   { n: '04', t: 'Agent revises', d: 'It re-reads the same file and applies your review. Repeat until approved.' },
 ]
@@ -163,7 +163,7 @@ const trust = [
     <div class="wrap"><div class="grid">
       <div class="c-1-4">
         <div class="kicker-row"><span class="folio">05</span><span class="kicker">Local-first</span></div>
-        <h2 class="shead">Yours. <span class="notable" tabindex="0" role="note" aria-label="On disk: no telemetry, no network except localhost">On disk.<span class="note">no telemetry, no network except localhost</span></span></h2>
+        <h2 class="shead">Yours. On disk.</h2>
       </div>
       <div class="c-6-12">
         <div class="trust">
@@ -188,7 +188,7 @@ const trust = [
       </div>
       <div class="c-6-12 body measure" style="color:var(--muted)">
         <p><b style="color:var(--ink)">Install.</b> <code>npm i -g mastermind-md</code>, then <code>mastermind install-agents</code> to add the skills to your agent(s).</p>
-        <p style="margin-top:16px"><b style="color:var(--ink)">Runtime.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does translation — no API key.</p>
+        <p style="margin-top:16px"><b style="color:var(--ink)">Runtime.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does the translation.</p>
         <p style="margin-top:16px"><b style="color:var(--ink)">From source.</b> <code>git clone</code> the repo, <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>, then <code>mastermind install-agents</code>.</p>
       </div>
     </div></div>

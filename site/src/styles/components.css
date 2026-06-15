@@ -305,40 +305,16 @@
     padding: 11px 16px;
     min-height: 44px;
   }
+  /* primary actions (hero/setup Install + GitHub + Try 中文) meet the same target */
+  .cta,
+  .ghost {
+    min-height: 44px;
+  }
   /* the grid overlay is a keyboard-only easter egg — drop its hint (and separator) on touch */
   .grid-sep,
   .grid-hint {
     display: none;
   }
-}
-.notable {
-  border-bottom: 1.5px dotted var(--muted);
-  cursor: help;
-  position: relative;
-}
-.notable .note {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 8px);
-  width: max(180px, 100%);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--muted);
-  background: var(--paper-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xs);
-  padding: 6px 9px;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: 0.16s ease;
-  pointer-events: none;
-  z-index: 5;
-}
-.notable:hover .note,
-.notable:focus-visible .note {
-  opacity: 1;
-  transform: none;
 }
 
 /* ============ 03 marks chips + playground ============ */
