@@ -12,8 +12,8 @@ export const i18n: Record<string, Pair> = {
     zh: '用你的编码 agent 评审 Markdown。',
   },
   lede: {
-    en: 'The agent proposes edits as CriticMarkup; you accept only the ones you want.',
-    zh: 'agent 以 CriticMarkup 的形式提出修改；你只接受想要的那些。',
+    en: 'Your edits and comments ride back to the agent in the file as CriticMarkup — no chat thread, no copy-paste.',
+    zh: '你的编辑和评论都以 CriticMarkup 的形式随文件回到 agent —— 没有聊天线程，无需复制粘贴。',
   },
   protocolKicker: { en: 'The protocol', zh: '协议' },
   protocolHead: { en: 'The file is the protocol', zh: '文件就是协议' },
