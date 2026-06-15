@@ -1,6 +1,6 @@
 {
   "name": "mastermind-md",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Review Markdown with your coding agent — local-first, CriticMarkup review loop, bilingual, the file is the protocol",
   "license": "MIT",
