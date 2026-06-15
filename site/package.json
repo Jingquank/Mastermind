@@ -1,0 +1,16 @@
+{
+  "name": "mastermind-site",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^6.4.6",
+    "@astrojs/preact": "^5.1.5",
+    "preact": "^10.29.2"
+  }
+}

@@ -1,0 +1,40 @@
+/* Mastermind design tokens — the canonical Grid-theme values (DESIGN.md / themes/grid).
+   Color discipline: the accent red is for ONE thing (Install); CriticMarkup marks are
+   the only other color allowed in the document body. */
+:root {
+  /* surfaces */
+  --paper: #fcfcfa;
+  --paper-2: #f2f2ef; /* elevated chrome */
+  --ink: #141414;
+  --muted: #66665f;
+  --faint: #9a968c;
+  --border: #e2e1db;
+
+  /* accent — chrome only (the single Install button / focus) */
+  --accent: #e5241b;
+  --accent-dim: #c01a12;
+  --on-accent: #ffffff;
+
+  /* CriticMarkup review marks — the ONLY other body color */
+  --ins: #1b7a35;
+  --ins-bg: rgba(27, 122, 53, 0.1);
+  --del: #a23618;
+  --del-bg: rgba(162, 54, 24, 0.1);
+  --hl-bg: rgba(224, 176, 18, 0.22);
+  --hl-bd: rgba(224, 176, 18, 0.55);
+  --comment: #2f5fd0;
+  --comment-bg: rgba(47, 95, 208, 0.1);
+
+  /* type */
+  --font-display: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-cjk: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  --w-bold: 800;
+  --ls-display: -0.02em;
+
+  /* radius */
+  --r-xs: 4px;
+  --r-md: 12px;
+  --r-lg: 20px;
+}

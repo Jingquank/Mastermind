@@ -1,0 +1,96 @@
+---
+import '../styles/tokens.css'
+import '../styles/grid.css'
+import '../styles/fonts.css'
+import '../styles/base.css'
+import '../styles/components.css'
+
+interface Props {
+  title?: string
+  description?: string
+}
+const {
+  title = 'Mastermind — review Markdown with your coding agent',
+  description = 'A local-first Markdown reviewer for AI coding agents. CriticMarkup review loop, bilingual, the file is the protocol.',
+} = Astro.props
+const cols = Array.from({ length: 12 })
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preload" href="/fonts/SchibstedGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <!-- press-G grid overlay (shares the .wrap content box) -->
+    <div class="grid-overlay" aria-hidden="true">
+      <div class="wrap"><div class="cols">{cols.map(() => <i></i>)}</div></div>
+    </div>
+    <div class="grid-readout">12 cols · 8px baseline · press G</div>
+
+    <slot />
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      const root = document.documentElement
+      // EN ⇄ 中文 toggle — text swap is pure CSS; JS only flips the attribute + persists.
+      function setLang(l: string) {
+        if (l === 'zh') root.setAttribute('data-lang', 'zh')
+        else root.removeAttribute('data-lang')
+        try {
+          localStorage.setItem('mm-lang', l)
+        } catch {}
+        document
+          .querySelectorAll('[data-lang-btn]')
+          .forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-btn') === l)))
+      }
+      let initial = 'en'
+      try {
+        if (localStorage.getItem('mm-lang') === 'zh') initial = 'zh'
+      } catch {}
+      setLang(initial)
+      document
+        .querySelectorAll('[data-lang-btn]')
+        .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-lang-btn') || 'en')))
+
+      // press-G grid overlay
+      const toggleGrid = () => document.body.classList.toggle('grid-on')
+      document.addEventListener('keydown', (e) => {
+        const tag = ((e.target as HTMLElement)?.tagName || '').toLowerCase()
+        if ((e.key === 'g' || e.key === 'G') && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'input' && tag !== 'textarea')
+          toggleGrid()
+      })
+      document.querySelectorAll('[data-grid-toggle]').forEach((b) => b.addEventListener('click', toggleGrid))
+
+      // Install: copy the npm command + toast + smooth-scroll to §07
+      const toast = document.getElementById('toast')
+      let tT: number
+      function showToast(msg: string) {
+        if (!toast) return
+        toast.textContent = msg
+        toast.classList.add('show')
+        clearTimeout(tT)
+        tT = window.setTimeout(() => toast.classList.remove('show'), 1900)
+      }
+      document.querySelectorAll('[data-install]').forEach((b) =>
+        b.addEventListener('click', () => {
+          const cmd = 'npm i -g mastermind-md'
+          navigator.clipboard?.writeText(cmd).catch(() => {})
+          showToast('Copied  ›  ' + cmd)
+          document.getElementById('install')?.scrollIntoView({ behavior: 'smooth' })
+        }),
+      )
+    </script>
+  </body>
+</html>

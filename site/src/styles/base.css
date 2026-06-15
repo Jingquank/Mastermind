@@ -1,0 +1,203 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+* {
+  margin: 0;
+  padding: 0;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern', 'liga', 'calt';
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+}
+::selection {
+  background: rgba(20, 20, 20, 0.12);
+}
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- type scale (Swiss: big display, mono labels) ---------- */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.display {
+  font-family: var(--font-display);
+  font-weight: var(--w-bold);
+  letter-spacing: var(--ls-display);
+  line-height: 1.03;
+}
+.shead {
+  font-family: var(--font-display);
+  font-weight: var(--w-bold);
+  letter-spacing: var(--ls-display);
+  line-height: 1.06;
+  font-size: clamp(28px, 4.4vw, 46px);
+}
+.lede {
+  font-size: clamp(18px, 2.1vw, 23px);
+  line-height: 1.5;
+}
+.body {
+  font-size: 17px;
+  line-height: 24px;
+}
+.measure {
+  max-width: var(--measure);
+}
+.cap {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+}
+.folio {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.masthead {
+  font-family: var(--font-mono);
+  white-space: pre;
+  line-height: 1;
+}
+strong,
+b {
+  font-weight: var(--w-bold);
+}
+:lang(zh),
+[data-cjk] {
+  font-family: var(--font-cjk);
+}
+
+/* live EN ⇄ 中文 toggle: render both, show one (no JS needed to swap text) */
+html[data-lang='zh'] [data-lang-en] {
+  display: none;
+}
+html:not([data-lang='zh']) [data-lang-zh] {
+  display: none;
+}
+
+/* ---------- CriticMarkup marks (the only body color) ---------- */
+.m-ins {
+  color: var(--ins);
+  background: var(--ins-bg);
+  border-radius: var(--r-xs);
+  padding: 0 0.14em;
+  box-decoration-break: clone;
+}
+.m-del {
+  color: var(--del);
+  background: var(--del-bg);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  border-radius: var(--r-xs);
+  padding: 0 0.14em;
+  box-decoration-break: clone;
+}
+.m-sub .o {
+  color: var(--del);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.m-sub .arrow {
+  color: var(--faint);
+  padding: 0 0.22em;
+}
+.m-sub .n {
+  color: var(--ins);
+}
+.m-hl {
+  background: var(--hl-bg);
+  box-shadow: 0 0 0 1px var(--hl-bd) inset;
+  border-radius: var(--r-xs);
+  padding: 0 0.1em;
+  box-decoration-break: clone;
+}
+.m-comment {
+  color: var(--comment);
+  border-bottom: 1.5px dotted var(--comment);
+  cursor: help;
+}
+
+/* the page's single red — the Install pill */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+  font-size: 15px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+.cta:hover {
+  background: var(--accent-dim);
+  transform: translateY(-1px);
+}
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--ink);
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.12s ease;
+}
+.ghost:hover {
+  border-color: var(--ink);
+}

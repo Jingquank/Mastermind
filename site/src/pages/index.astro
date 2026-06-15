@@ -1,0 +1,203 @@
+---
+import Base from '../layouts/Base.astro'
+import I18n from '../components/I18n.astro'
+import AgentCursor from '../islands/AgentCursor'
+import MarkPlayground from '../islands/MarkPlayground'
+import Terminal from '../islands/Terminal'
+import { renderHtml } from '../lib/criticmarkup'
+import { wordmark, heroReview, tagline } from '../data/hero'
+import { marks } from '../data/marks'
+import { skills, repoUrl } from '../data/skills'
+
+const loop = [
+  { n: '01', t: 'Agent drafts', d: 'It writes the plan as a .md file — not a chat message.' },
+  { n: '02', t: 'You mark it up', d: 'Review in the browser with CriticMarkup: insert, cut, highlight, comment.' },
+  { n: '03', t: 'Hand back', d: 'Save & hand back; the marks travel in the file.' },
+  { n: '04', t: 'Agent revises', d: 'It re-reads the same file and applies your review. Repeat until approved.' },
+]
+const trust = [
+  { t: 'No cloud', d: 'Pure localhost. The daemon binds 127.0.0.1 and never phones home.' },
+  { t: 'No accounts', d: 'Nothing to sign up for. Clone or npm-install and run.' },
+  { t: 'The file is yours', d: 'Every edit round-trips through one .md on your disk — no database, no lock-in.' },
+]
+---
+
+<Base>
+  <!-- 00 · chrome -->
+  <header class="chrome">
+    <div class="wrap chrome-in">
+      <div class="chrome-file"><span class="dirty"></span> mastermind.md</div>
+      <div class="chrome-right">
+        <div class="lang-seg" role="group" aria-label="Reading language">
+          <button data-lang-btn="en" aria-pressed="true">EN</button>
+          <button data-lang-btn="zh">中文</button>
+        </div>
+        <button class="cta sm" data-install>Install</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 01 · hero -->
+  <section class="section hero">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-9">
+        <pre class="masthead big" aria-label="Mastermind">{wordmark}</pre>
+        <h1 class="display hero-tag">{tagline}</h1>
+        <p><AgentCursor source={heroReview} client:visible /></p>
+        <p class="lede hero-lede measure"><I18n k="lede" /></p>
+        <div class="hero-ctas">
+          <button class="cta" data-install>Install</button>
+          <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
+          <button class="ghost" data-grid-toggle>Show the grid · G</button>
+        </div>
+        <p class="hero-cmd">$ <b>npm i -g mastermind-md</b> &nbsp;·&nbsp; macOS · Node 20+</p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 02 · protocol -->
+  <section class="section" id="protocol">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-4">
+        <div class="kicker-row"><span class="kicker"><I18n k="protocolKicker" /></span></div>
+        <h2 class="shead"><I18n k="protocolHead" /></h2>
+      </div>
+      <div class="c-6-12 body measure">
+        <p><I18n k="protocolBody" /></p>
+        <div class="loop">
+          {loop.map((s) => (
+            <div class="loop-step">
+              <div class="n">{s.n}</div>
+              <div class="t">{s.t}</div>
+              <div class="d">{s.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 03 · the five marks -->
+  <section class="section" id="marks">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-9">
+        <div class="kicker-row"><span class="folio">03</span><span class="kicker">The marks</span></div>
+        <h2 class="shead">Five marks. One file. <span class="m-hl">No copy-paste.</span></h2>
+        <p class="lede measure" style="margin-top:16px;color:var(--muted)">
+          CriticMarkup is the whole review vocabulary — readable in plain text, rendered as a
+          visual diff. Try it below; the marks render as you type.
+        </p>
+      </div>
+    </div>
+
+      <div class="grid" style="margin-top:8px">
+        <div class="c-full chips">
+          {marks.map((m) => (
+            <div class="chip">
+              <div class="syntax">{m.syntax}</div>
+              <div class="ex" set:html={renderHtml(m.example)} />
+              <div class="label">{m.label}</div>
+              <div class="blurb">{m.blurb}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="c-full"><MarkPlayground client:visible /></div>
+      </div>
+
+      <div class="grid" style="margin-top:var(--gutter)">
+        <figure class="c-full shot">
+          <img src="/shots/review-marks.png" width="1440" height="900" loading="lazy"
+            alt="CriticMarkup review marks in Mastermind: insertion, substitution, deletion, highlight, and a margin comment." />
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 · bilingual -->
+  <section class="section" id="bilingual">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-6">
+        <div class="kicker-row"><span class="kicker"><I18n k="bilingualKicker" /></span></div>
+        <h2 class="shead"><I18n k="bilingualHead" /></h2>
+        <p class="body measure" style="margin-top:18px;color:var(--muted)"><I18n k="bilingualBody" /></p>
+        <button class="ghost" data-lang-btn="zh" style="margin-top:20px">Try 中文 →</button>
+      </div>
+      <figure class="c-7-12 shot">
+        <img src="/shots/bilingual.png" width="1440" height="900" loading="lazy"
+          alt="The same document toggled to Simplified Chinese in Mastermind." />
+      </figure>
+    </div></div>
+  </section>
+
+  <!-- 05 · skills -->
+  <section class="section" id="skills">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-9">
+        <div class="kicker-row"><span class="folio">05</span><span class="kicker">In your agent</span></div>
+        <h2 class="shead">Four commands, any agent.</h2>
+        <div class="skills">
+          {skills.map((s) => (
+            <div class="skill">
+              <div class="cmd">{s.cmd}</div>
+              <div class="desc">{s.desc}</div>
+            </div>
+          ))}
+        </div>
+        <p class="note-aside" style="margin-top:18px">
+          Installed by <code>mastermind install-agents</code> for Claude Code, Cursor, Gemini, and the
+          portable <code>.agents</code> format. Finished plans can open in Mastermind automatically.
+        </p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 06 · local-first -->
+  <section class="section" id="local">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-4">
+        <div class="kicker-row"><span class="folio">06</span><span class="kicker">Local-first</span></div>
+        <h2 class="shead">Yours. <span class="notable">On disk.<span class="note">no telemetry, no network except localhost</span></span></h2>
+      </div>
+      <div class="c-6-12">
+        <div class="trust">
+          {trust.map((x) => (
+            <div><div class="t">{x.t}</div><div class="d">{x.d}</div></div>
+          ))}
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 07 · install -->
+  <section class="section" id="install">
+    <div class="wrap"><div class="grid">
+      <div class="c-1-6">
+        <div class="kicker-row"><span class="folio">07</span><span class="kicker">Install</span></div>
+        <h2 class="shead">Two lines and you're reviewing.</h2>
+        <Terminal client:visible />
+        <div class="hero-ctas" style="margin-top:20px">
+          <button class="cta" data-install>Copy install</button>
+          <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
+        </div>
+      </div>
+      <div class="c-7-12 body measure" style="color:var(--muted)">
+        <p><b style="color:var(--ink)">Requirements.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does translation — no API key.</p>
+        <p style="margin-top:16px"><b style="color:var(--ink)">From source?</b> <code>git clone</code> the repo, <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>, then <code>mastermind install-agents</code>.</p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 08 · footer -->
+  <footer class="footer">
+    <div class="wrap footer-row">
+      <pre class="masthead" aria-label="Mastermind">{wordmark}</pre>
+      <div class="note-aside">
+        <a href={repoUrl} target="_blank" rel="noreferrer" class="m-comment" style="border:none">GitHub ↗</a>
+        &nbsp;·&nbsp; <span class="m-ins">MIT</span> &nbsp;·&nbsp; the file is the protocol.
+      </div>
+    </div>
+  </footer>
+</Base>

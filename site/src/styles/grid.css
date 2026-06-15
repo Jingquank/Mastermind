@@ -1,0 +1,114 @@
+/* A genuine modular grid — one CSS-variable source of truth.
+   12 columns in a centered content box; an 8px baseline rhythm; a press-G overlay
+   that shares the SAME `.wrap` content box as the content (so it's load-bearing,
+   not slapped on top). */
+:root {
+  --cols: 12;
+  --gutter: 24px;
+  --maxw: 1296px; /* content box */
+  --margin: clamp(20px, 5.2vw, 84px); /* page outer margin */
+  --bl: 8px; /* baseline unit — every vertical value is a multiple of this */
+  --measure: 38rem; /* prose measure */
+}
+
+/* the centered content box that every section AND the overlay share */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--margin);
+  position: relative;
+}
+
+/* the column grid; children place themselves with `grid-column` */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+
+/* ---------- press-G overlay ---------- */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+body.grid-on .grid-overlay {
+  opacity: 1;
+}
+.grid-overlay .wrap {
+  height: 100%;
+}
+.grid-overlay .cols {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+.grid-overlay .cols i {
+  display: block;
+  background: rgba(229, 36, 27, 0.05);
+  border-inline: 0.5px solid rgba(229, 36, 27, 0.26);
+}
+/* baseline rules, painted across the page only while grid-on */
+body.grid-on::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 8999;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(20, 20, 20, 0.055) 0,
+    rgba(20, 20, 20, 0.055) 1px,
+    transparent 1px,
+    transparent var(--bl)
+  );
+}
+.grid-readout {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 9001;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+body.grid-on .grid-readout {
+  opacity: 1;
+}
+
+/* column-placement helpers (end line is exclusive; -1 = last line) */
+.c-1-9 {
+  grid-column: 1 / 9;
+}
+.c-1-4 {
+  grid-column: 1 / 5;
+}
+.c-6-12 {
+  grid-column: 6 / -1;
+}
+.c-1-6 {
+  grid-column: 1 / 7;
+}
+.c-7-12 {
+  grid-column: 7 / -1;
+}
+.c-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --cols: 6;
+    --gutter: 16px;
+  }
+  [class*='c-'] {
+    grid-column: 1 / -1;
+  }
+}
