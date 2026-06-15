@@ -57,8 +57,8 @@ const cols = Array.from({ length: 12 })
         <div class="chrome-file"><span class="dirty"></span> mastermind.md</div>
         <div class="chrome-right">
           <div class="lang-seg" role="radiogroup" aria-label="Reading language">
-            <button data-lang-btn="en" role="radio" aria-checked="true">EN</button>
-            <button data-lang-btn="zh" role="radio" aria-checked="false">中文</button>
+            <button data-lang-btn="en" role="radio" aria-checked="true" tabindex="0">EN</button>
+            <button data-lang-btn="zh" role="radio" aria-checked="false" tabindex="-1">中文</button>
           </div>
           <button class="cta sm" data-install>Install</button>
         </div>
@@ -94,9 +94,11 @@ const cols = Array.from({ length: 12 })
         try {
           localStorage.setItem('mm-lang', l)
         } catch {}
-        document
-          .querySelectorAll('[data-lang-btn]')
-          .forEach((b) => b.setAttribute('aria-checked', String(b.getAttribute('data-lang-btn') === l)))
+        document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+          const on = b.getAttribute('data-lang-btn') === l
+          b.setAttribute('aria-checked', String(on))
+          b.setAttribute('tabindex', on ? '0' : '-1') // roving tabindex for the radio group
+        })
       }
       let initial = 'en'
       try {
@@ -110,6 +112,20 @@ const cols = Array.from({ length: 12 })
       document
         .querySelectorAll('[data-set-lang]')
         .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-set-lang') || 'en')))
+      // radio-group keyboard pattern (APG): arrows/Home/End move selection + focus together
+      const langBtns = Array.from(document.querySelectorAll<HTMLElement>('[data-lang-btn]'))
+      document.querySelector('.lang-seg')?.addEventListener('keydown', (e) => {
+        const i = langBtns.indexOf(document.activeElement as HTMLElement)
+        let n = -1
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % langBtns.length
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + langBtns.length) % langBtns.length
+        else if (e.key === 'Home') n = 0
+        else if (e.key === 'End') n = langBtns.length - 1
+        if (n < 0) return
+        e.preventDefault()
+        setLang(langBtns[n].getAttribute('data-lang-btn') || 'en')
+        langBtns[n].focus()
+      })
 
       // press-G grid overlay
       const toggleGrid = () => {

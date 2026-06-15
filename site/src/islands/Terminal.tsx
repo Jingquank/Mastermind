@@ -34,7 +34,7 @@ export default function Terminal() {
 
   const running = done.length < installSteps.length
   return (
-    <div class="term" role="img" aria-label="Installing mastermind-md from npm">
+    <div class="term" role="img" aria-label={`Terminal — ${installSteps.map((s) => s.cmd).join('; ')}`}>
       <div class="term-bar">
         <i></i>
         <i></i>
