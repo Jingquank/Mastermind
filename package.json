@@ -1,23 +1,52 @@
 {
-  "name": "mastermind",
+  "name": "mastermind-md",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "description": "Local-first markdown viewer/editor for reviewing and discussing documents with AI coding agents",
-  "license": "UNLICENSED",
+  "description": "Review Markdown with your coding agent — local-first, CriticMarkup review loop, bilingual, the file is the protocol",
+  "license": "MIT",
+  "author": "Kevin Ding <kevincentding@gmail.com>",
+  "homepage": "https://github.com/Jingquank/Mastermind#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jingquank/Mastermind.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jingquank/Mastermind/issues"
+  },
+  "keywords": [
+    "markdown",
+    "review",
+    "criticmarkup",
+    "ai-agents",
+    "claude",
+    "cli",
+    "bilingual",
+    "local-first"
+  ],
   "engines": {
     "node": ">=20"
   },
   "bin": {
-    "mastermind": "bin/mastermind.js"
+    "mastermind": "bin/mastermind.js",
+    "mastermind-md": "bin/mastermind.js"
   },
+  "files": [
+    "dist/",
+    "bin/",
+    "themes/",
+    ".claude/skills/",
+    "assets/agent/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "rm -rf dist && vite build && tsup",
     "dev": "concurrently -k \"MASTERMIND_PORT=5199 tsx watch src/server/index.ts\" \"vite\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",

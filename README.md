@@ -11,7 +11,7 @@ re-reads the same file. No database, no accounts, no cloud — just localhost an
 Mastermind also renders any doc **bilingually**: your agent translates it into your two reading
 languages, toggled live.
 
-![Mastermind Reading view](assets/screenshots/reading.png)
+![Mastermind Reading view](https://raw.githubusercontent.com/Jingquank/Mastermind/main/assets/screenshots/reading.png)
 
 *The Reading view — rendered Markdown with the heading outline on the left.*
 
@@ -22,16 +22,23 @@ languages, toggled live.
 
 ## Install
 
-Not on npm yet — install from a clone:
+```sh
+npm i -g mastermind-md        # installs the `mastermind` command
+mastermind install-agents     # add the /mastermind + /master skills to your agent(s)
+```
+
+<details>
+<summary>Install from source</summary>
 
 ```sh
 git clone https://github.com/Jingquank/Mastermind.git
 cd Mastermind
 npm install
 npm run build
-npm link                     # puts `mastermind` on your PATH
-mastermind install-agents    # add the /mastermind + /master skills to your agent(s)
+npm link                      # puts `mastermind` on your PATH
+mastermind install-agents
 ```
+</details>
 
 `install-agents` writes the skills for every coding agent it finds (`~/.claude`, `~/.cursor`,
 `~/.gemini`) and, where it can, a one-line rule so finished plans open in Mastermind automatically.
@@ -49,7 +56,7 @@ Undo any time with `mastermind uninstall-agents`.
   Preferred and Secondary languages (default English ⇄ 简体中文), toggled live, cached on disk
   (`.mastermind/translations/`) so the toggle is instant and keeps working offline once warmed.
 
-![The same document toggled to Simplified Chinese](assets/screenshots/bilingual.png)
+![The same document toggled to Simplified Chinese](https://raw.githubusercontent.com/Jingquank/Mastermind/main/assets/screenshots/bilingual.png)
 
 *One click flips the whole doc to your second language; code and inline literals stay put.*
 
@@ -83,7 +90,7 @@ All five marks work inline anywhere: `{++ins++}`, `{--del--}`, `{~~old~>new~~}`,
 `{>>comment<<}`. A highlight directly followed by a comment anchors it to that span; consecutive
 comments form a thread; comments carry `@author:` tags.
 
-![CriticMarkup review marks](assets/screenshots/review-marks.png)
+![CriticMarkup review marks](https://raw.githubusercontent.com/Jingquank/Mastermind/main/assets/screenshots/review-marks.png)
 
 *An insertion, a substitution, a struck deletion, a highlight, and a margin comment — all CriticMarkup.*
 
@@ -106,7 +113,7 @@ mastermind config set langPair.a=English langPair.b=Japanese theme=sepia browser
 
 Themes are just data — drop a `themes/<id>/{theme.json,tokens.css}` folder in and it shows up in Settings.
 
-![Settings panel](assets/screenshots/settings.png)
+![Settings panel](https://raw.githubusercontent.com/Jingquank/Mastermind/main/assets/screenshots/settings.png)
 
 *Themes, typeface, code font, code-color scheme, and your two reading languages — all in Settings.*
 
