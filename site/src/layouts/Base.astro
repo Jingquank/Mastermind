@@ -72,8 +72,8 @@ const cols = Array.from({ length: 12 })
       <div class="wrap footer-row">
         <pre class="masthead" aria-hidden="true">{wordmark}</pre>
         <div class="note-aside">
-          <a href={repoUrl} target="_blank" rel="noreferrer" class="m-comment" style="border:none">GitHub ↗</a>
-          &nbsp;·&nbsp; <span class="m-ins">MIT</span> &nbsp;·&nbsp; the file is the protocol.
+          <a href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
+          &nbsp;·&nbsp; MIT &nbsp;·&nbsp; the file is the protocol.
         </div>
       </div>
     </footer>
@@ -112,7 +112,10 @@ const cols = Array.from({ length: 12 })
         .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-set-lang') || 'en')))
 
       // press-G grid overlay
-      const toggleGrid = () => document.body.classList.toggle('grid-on')
+      const toggleGrid = () => {
+        const on = document.body.classList.toggle('grid-on')
+        document.querySelectorAll('[data-grid-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(on)))
+      }
       document.addEventListener('keydown', (e) => {
         const tag = ((e.target as HTMLElement)?.tagName || '').toLowerCase()
         if ((e.key === 'g' || e.key === 'G') && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'input' && tag !== 'textarea')
@@ -130,12 +133,12 @@ const cols = Array.from({ length: 12 })
         clearTimeout(tT)
         tT = window.setTimeout(() => toast.classList.remove('show'), 1900)
       }
+      // copy + toast only — no scroll-jump (the hero terminal is the visible payoff)
       document.querySelectorAll('[data-install]').forEach((b) =>
         b.addEventListener('click', () => {
           const cmd = 'npm i -g mastermind-md'
           navigator.clipboard?.writeText(cmd).catch(() => {})
           showToast('Copied  ›  ' + cmd)
-          document.getElementById('install')?.scrollIntoView({ behavior: 'smooth' })
         }),
       )
     </script>

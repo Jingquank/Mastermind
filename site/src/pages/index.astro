@@ -6,7 +6,7 @@ import AgentCursor from '../islands/AgentCursor'
 import MarkPlayground from '../islands/MarkPlayground'
 import Terminal from '../islands/Terminal'
 import { renderHtml } from '../lib/criticmarkup'
-import { wordmark, heroReview } from '../data/hero'
+import { wordmark, heroReview, heroReviewZh } from '../data/hero'
 import { marks } from '../data/marks'
 import { skills, repoUrl } from '../data/skills'
 import reviewMarksShot from '../assets/shots/review-marks.png'
@@ -28,18 +28,29 @@ const trust = [
 <Base>
   <!-- 01 · hero -->
   <section class="section hero">
-    <div class="wrap"><div class="grid">
-      <div class="c-1-9">
+    <div class="wrap"><div class="grid hero-grid">
+      <div class="c-full hero-mast">
         <pre class="masthead big" aria-label="Mastermind">{wordmark}</pre>
+      </div>
+      <div class="c-1-7 hero-lead">
         <h1 class="display hero-tag"><I18n k="tagline" /></h1>
-        <p><AgentCursor source={heroReview} client:visible /></p>
+        <p class="hero-pitch">
+          <span data-lang-en><AgentCursor source={heroReview} client:visible /></span>
+          <span data-lang-zh lang="zh"><AgentCursor source={heroReviewZh} client:visible /></span>
+        </p>
         <p class="lede hero-lede measure"><I18n k="lede" /></p>
         <div class="hero-ctas">
           <button class="cta" data-install>Install</button>
           <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
-          <button class="ghost" data-grid-toggle>Show the grid · G</button>
         </div>
-        <p class="hero-cmd">$ <b>npm i -g mastermind-md</b> &nbsp;·&nbsp; macOS · Node 20+</p>
+        <p class="hero-meta">
+          macOS · Node 20+
+          <span class="grid-sep" aria-hidden="true">·</span>
+          <button class="grid-hint" data-grid-toggle aria-pressed="false">press <kbd>G</kbd> for the grid</button>
+        </p>
+      </div>
+      <div class="c-8-12 hero-term">
+        <Terminal client:visible />
       </div>
     </div></div>
   </section>
@@ -48,7 +59,7 @@ const trust = [
   <section class="section" id="protocol">
     <div class="wrap"><div class="grid">
       <div class="c-1-4">
-        <div class="kicker-row"><span class="kicker"><I18n k="protocolKicker" /></span></div>
+        <div class="kicker-row"><span class="folio">01</span><span class="kicker"><I18n k="protocolKicker" /></span></div>
         <h2 class="shead"><I18n k="protocolHead" /></h2>
       </div>
       <div class="c-6-12 body measure">
@@ -70,7 +81,7 @@ const trust = [
   <section class="section" id="marks">
     <div class="wrap"><div class="grid">
       <div class="c-1-9">
-        <div class="kicker-row"><span class="folio">03</span><span class="kicker">The marks</span></div>
+        <div class="kicker-row"><span class="folio">02</span><span class="kicker">The marks</span></div>
         <h2 class="shead">Five marks. One file. <span class="m-hl">No copy-paste.</span></h2>
         <p class="lede measure" style="margin-top:16px;color:var(--muted)">
           CriticMarkup is the whole review vocabulary — readable in plain text, rendered as a
@@ -110,13 +121,13 @@ const trust = [
   <!-- 04 · bilingual -->
   <section class="section" id="bilingual">
     <div class="wrap"><div class="grid">
-      <div class="c-1-6">
-        <div class="kicker-row"><span class="kicker"><I18n k="bilingualKicker" /></span></div>
+      <div class="c-1-5">
+        <div class="kicker-row"><span class="folio">03</span><span class="kicker"><I18n k="bilingualKicker" /></span></div>
         <h2 class="shead"><I18n k="bilingualHead" /></h2>
         <p class="body measure" style="margin-top:18px;color:var(--muted)"><I18n k="bilingualBody" /></p>
         <button class="ghost" data-set-lang="zh" style="margin-top:20px">Try 中文 →</button>
       </div>
-      <figure class="c-7-12 shot">
+      <figure class="c-6-12 shot">
         <Picture src={bilingualShot} formats={['avif', 'webp']}
           widths={[480, 560, 800, 1120]} sizes="(max-width: 900px) 100vw, 560px"
           loading="lazy" decoding="async"
@@ -129,8 +140,8 @@ const trust = [
   <section class="section" id="skills">
     <div class="wrap"><div class="grid">
       <div class="c-1-9">
-        <div class="kicker-row"><span class="folio">05</span><span class="kicker">In your agent</span></div>
-        <h2 class="shead">Four commands, any agent.</h2>
+        <div class="kicker-row"><span class="folio">04</span><span class="kicker">In your agent</span></div>
+        <h2 class="shead">Three commands, any agent.</h2>
         <div class="skills">
           {skills.map((s) => (
             <div class="skill">
@@ -151,7 +162,7 @@ const trust = [
   <section class="section" id="local">
     <div class="wrap"><div class="grid">
       <div class="c-1-4">
-        <div class="kicker-row"><span class="folio">06</span><span class="kicker">Local-first</span></div>
+        <div class="kicker-row"><span class="folio">05</span><span class="kicker">Local-first</span></div>
         <h2 class="shead">Yours. <span class="notable" tabindex="0" role="note" aria-label="On disk: no telemetry, no network except localhost">On disk.<span class="note">no telemetry, no network except localhost</span></span></h2>
       </div>
       <div class="c-6-12">
@@ -164,21 +175,20 @@ const trust = [
     </div></div>
   </section>
 
-  <!-- 07 · install -->
-  <section class="section" id="install">
+  <!-- 07 · setup reference -->
+  <section class="section" id="setup">
     <div class="wrap"><div class="grid">
-      <div class="c-1-6">
-        <div class="kicker-row"><span class="folio">07</span><span class="kicker">Install</span></div>
-        <h2 class="shead">Two lines and you're reviewing.</h2>
-        <Terminal client:visible />
-        <div class="hero-ctas" style="margin-top:20px">
-          <button class="cta" data-install>Copy install</button>
+      <div class="c-1-4">
+        <div class="kicker-row"><span class="folio">06</span><span class="kicker">Requirements</span></div>
+        <h2 class="shead">Before you start.</h2>
+        <div class="hero-ctas" style="margin-top:24px">
+          <button class="cta" data-install>Install</button>
           <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
       </div>
-      <div class="c-7-12 body measure" style="color:var(--muted)">
-        <p><b style="color:var(--ink)">Requirements.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does translation — no API key.</p>
-        <p style="margin-top:16px"><b style="color:var(--ink)">From source?</b> <code>git clone</code> the repo, <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>, then <code>mastermind install-agents</code>.</p>
+      <div class="c-6-12 body measure" style="color:var(--muted)">
+        <p><b style="color:var(--ink)">Runtime.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does translation — no API key.</p>
+        <p style="margin-top:16px"><b style="color:var(--ink)">From source.</b> <code>git clone</code> the repo, <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>, then <code>mastermind install-agents</code>.</p>
       </div>
     </div></div>
   </section>
