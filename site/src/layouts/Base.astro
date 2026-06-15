@@ -56,9 +56,9 @@ const cols = Array.from({ length: 12 })
       <div class="wrap chrome-in">
         <div class="chrome-file"><span class="dirty"></span> mastermind.md</div>
         <div class="chrome-right">
-          <div class="lang-seg" role="group" aria-label="Reading language">
-            <button data-lang-btn="en" aria-pressed="true">EN</button>
-            <button data-lang-btn="zh">中文</button>
+          <div class="lang-seg" role="radiogroup" aria-label="Reading language">
+            <button data-lang-btn="en" role="radio" aria-checked="true">EN</button>
+            <button data-lang-btn="zh" role="radio" aria-checked="false">中文</button>
           </div>
           <button class="cta sm" data-install>Install</button>
         </div>
@@ -96,14 +96,14 @@ const cols = Array.from({ length: 12 })
         } catch {}
         document
           .querySelectorAll('[data-lang-btn]')
-          .forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-btn') === l)))
+          .forEach((b) => b.setAttribute('aria-checked', String(b.getAttribute('data-lang-btn') === l)))
       }
       let initial = 'en'
       try {
         if (localStorage.getItem('mm-lang') === 'zh') initial = 'zh'
       } catch {}
       setLang(initial)
-      // the segmented control owns aria-pressed; data-set-lang buttons just trigger a switch
+      // the segmented control owns aria-checked; data-set-lang buttons just trigger a switch
       document
         .querySelectorAll('[data-lang-btn]')
         .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-lang-btn') || 'en')))
