@@ -385,24 +385,23 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     <>
       <TopBar
         railOpen={railOpen}
-        onToggleRail={mode === 'reading' && hasThreads ? () => setRailOpen((v) => !v) : undefined}
-        translation={
-          mode === 'reading'
-            ? {
-                label: transActive
-                  ? t('original')
-                  : (() => {
-                      const target = previewTargetLang(source, langPair)
-                      return /^(zh|中文)/i.test(target) ? '中文' : target
-                    })(),
-                active: transActive,
-                loading: transLoading,
-                // always clickable: it toggles instantly from the on-disk cache, and when a
-                // block isn't cached and no agent is listening, the toggle surfaces a notice.
-                onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
-              }
-            : undefined
-        }
+        // Both controls stay mounted so the bar morphs between layouts; their
+        // applicability (not their presence) is what changes per view.
+        onToggleRail={() => setRailOpen((v) => !v)}
+        commentsAvailable={mode === 'reading' && hasThreads && !showTranslated}
+        translation={{
+          label: transActive
+            ? t('original')
+            : (() => {
+                const target = previewTargetLang(source, langPair)
+                return /^(zh|中文)/i.test(target) ? '中文' : target
+              })(),
+          active: transActive,
+          loading: transLoading,
+          // always clickable: it toggles instantly from the on-disk cache, and when a
+          // block isn't cached and no agent is listening, the toggle surfaces a notice.
+          onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
+        }}
       />
       {/* "Agent waiting" status floats at the top-right of the UI, outside the bar. */}
       {agentWaiting && (
@@ -466,7 +465,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         <div className="doc-column">
           {showTranslated && (
             <Suspense fallback={<div className="center-note loading-note">{t('loadingDocument')}</div>}>
-              <TranslatedView sessionId={sessionId} source={source} authorTag={authorTag} onEdit={applyEdits} />
+              <TranslatedView sessionId={sessionId} source={source} />
             </Suspense>
           )}
           {mode === 'reading' && !showTranslated && analysis && (

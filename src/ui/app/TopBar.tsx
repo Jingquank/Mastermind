@@ -9,6 +9,9 @@ import { useDoc, type ViewMode } from './store'
 interface TopBarProps {
   railOpen?: boolean
   onToggleRail?: () => void
+  /** Whether the comment-rail toggle applies in the current view. It collapses
+      out (animated) rather than unmounting when false, so the pill morphs. */
+  commentsAvailable?: boolean
   /** Reading-language toggle, rendered beside the centered mode switch. */
   translation?: {
     label: string
@@ -18,12 +21,18 @@ interface TopBarProps {
   }
 }
 
-export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
+export function TopBar({ railOpen, onToggleRail, commentsAvailable, translation }: TopBarProps) {
   const t = useT()
   const headerRef = useRef<HTMLElement | null>(null)
   const meta = useDoc((s) => s.meta)
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
+  // The bar's two optional controls morph in/out (max-width/opacity) rather than
+  // mount/unmount, so the floating pill resizes smoothly instead of snapping.
+  // Translation applies only in reading view; the comment toggle only when the
+  // caller says comments are present (reading the original, with threads).
+  const transVisible = mode === 'reading'
+  const commentsVisible = mode === 'reading' && !!commentsAvailable
   // mtimeMs changes only when the file is (re)loaded from disk — never on local
   // edits — so it's the clean signal to re-roll the filename on a refresh.
   const mtimeMs = useDoc((s) => s.mtimeMs)
@@ -79,9 +88,10 @@ export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
         {translation && (
           <button
             type="button"
-            className={`topbar-trans${translation.active ? ' active' : ''}${translation.loading ? ' loading' : ''}`}
+            className={`topbar-trans topbar-collapsible${transVisible ? '' : ' is-collapsed'}${translation.active ? ' active' : ''}${translation.loading ? ' loading' : ''}`}
             onClick={translation.onToggle}
             disabled={translation.loading}
+            inert={!transVisible}
             aria-pressed={translation.active}
             aria-label={translation.loading ? t('translating') : translation.label}
             title={t('toggleLang')}
@@ -92,8 +102,9 @@ export function TopBar({ railOpen, onToggleRail, translation }: TopBarProps) {
         {onToggleRail && (
           <button
             type="button"
-            className={`btn-ghost topbar-icon-btn${railOpen ? ' active' : ''}`}
+            className={`btn-ghost topbar-icon-btn topbar-collapsible${commentsVisible ? '' : ' is-collapsed'}${railOpen ? ' active' : ''}`}
             onClick={onToggleRail}
+            inert={!commentsVisible}
             aria-label={railOpen ? t('hideComments') : t('showComments')}
             aria-pressed={railOpen}
             title={t('toggleRail')}

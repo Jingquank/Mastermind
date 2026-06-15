@@ -209,13 +209,41 @@ body {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: calc(var(--space-unit) * 2);
   flex-shrink: 0; /* the action cluster keeps its size; the filename shrinks instead */
+  /* No flex gap: spacing rides on each collapsible control's trailing margin so a
+     collapsed control leaves no orphaned gap. See .topbar-collapsible. */
+}
+
+/* The bar's two optional controls (reading-language toggle, comment toggle)
+   collapse with a morph rather than unmounting: as a control animates its width
+   to zero, the max-content pill shrinks and re-centers frame-by-frame. Its
+   trailing margin carries the spacing before the next control, so collapsing it
+   removes both the control and its gap. */
+.topbar-collapsible {
+  margin-inline-end: calc(var(--space-unit) * 2);
+  max-width: calc(var(--space-unit) * 16); /* generous cap; natural width is smaller */
+  overflow: hidden;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .topbar-right {
-    transition: opacity var(--dur-slow) var(--ease-out);
+  .topbar-collapsible {
+    transition:
+      max-width var(--dur-slow) var(--ease-out),
+      margin-inline-end var(--dur-slow) var(--ease-out),
+      padding var(--dur-slow) var(--ease-out),
+      border-width var(--dur-slow) var(--ease-out),
+      opacity var(--dur-base) var(--ease-out),
+      transform var(--dur-base) var(--ease-out);
   }
+}
+.topbar-collapsible.is-collapsed {
+  max-width: 0;
+  min-width: 0; /* defeat the coarse-pointer min so it can fully collapse */
+  margin-inline-end: 0;
+  padding-inline: 0;
+  border-width: 0; /* border-box would otherwise leave a 2px sliver at width 0 */
+  opacity: 0;
+  transform: scale(0.82);
+  pointer-events: none;
 }
 .topbar .seg {
   flex-shrink: 0;
@@ -1583,44 +1611,6 @@ input[type='checkbox'] {
 .trans-miss {
   color: var(--review-delete-text);
   font-size: var(--font-size-sm);
-}
-
-.trans-comment-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  min-height: 28px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.trans-comment-btn:hover {
-  color: var(--color-text);
-  border-color: var(--color-border-hover);
-}
-
-.trans-composer {
-  margin: calc(var(--space-unit) * 2) 0;
-  padding: calc(var(--space-unit) * 2);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.trans-composer textarea {
-  width: 100%;
-  resize: vertical;
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  padding: calc(var(--space-unit) * 1.5);
-  color: var(--color-text);
 }
 
 .lang-toggle.active {

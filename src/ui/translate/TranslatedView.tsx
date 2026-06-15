@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { segmentBlocks, type SourceBlock } from '../../shared/blocks'
 import { analyzeMarkdown } from '../../shared/markdown/analyze'
-import type { TextEdit } from '../../shared/types'
 import { useT } from '../i18n'
-import { AlertIcon, ChatIcon, PendingDot } from '../icons'
+import { AlertIcon, PendingDot } from '../icons'
 import { CALLOUT_HEADING, MarkdownView, calloutKind, type CalloutKind } from '../modes/reading/Renderer'
 import { useConfig } from '../app/configStore'
 import { useTranslation } from './translationStore'
@@ -51,88 +50,32 @@ function groupBlocks(blocks: SourceBlock[]): BlockGroup[] {
 interface Props {
   sessionId: string
   source: string
-  authorTag: string
-  onEdit: (edits: TextEdit[]) => void
-}
-
-function sanitize(text: string): string {
-  return text.trim().replace(/\n[ \t]*\n+/g, '\n').replaceAll('<<}', '<< }')
 }
 
 function TransBlock({
   block,
   translated,
   failed,
-  authorTag,
-  onEdit,
 }: {
   block: SourceBlock
   translated: string | undefined
   failed: boolean
-  authorTag: string
-  onEdit: (edits: TextEdit[]) => void
 }) {
   const t = useT()
   const highlightCode = (useConfig((s) => s.config?.codeTheme) ?? 'none') !== 'none'
-  const [composing, setComposing] = useState(false)
-  const [comment, setComment] = useState('')
   const shown = translated ?? block.text
   const analysis = useMemo(() => analyzeMarkdown(shown), [shown])
-
-  const submit = (): void => {
-    if (!comment.trim()) return
-    // block-granularity anchor: append the comment at the END of the SOURCE block
-    onEdit([{ from: block.end, to: block.end, insert: `{>>@${authorTag}: ${sanitize(comment)}<<}` }])
-    setComposing(false)
-    setComment('')
-  }
 
   return (
     <div className={`trans-block${failed ? ' failed' : ''}`}>
       <div className="trans-block-body md-root">
         <MarkdownView tree={analysis.tree} ctx={{ source: shown, highlightCode }} />
       </div>
-      <div className="trans-block-side">
-        {block.translatable && translated === undefined && (
+      {block.translatable && translated === undefined && (
+        <div className="trans-block-side">
           <span className="trans-miss" title={failed ? t('translationFailedBlock') : t('untranslated')}>
             {failed ? <AlertIcon /> : <PendingDot />}
           </span>
-        )}
-        <button
-          type="button"
-          className="trans-comment-btn"
-          title={t('commentBlockTitle')}
-          aria-label={t('commentBlockTitle')}
-          onClick={() => setComposing((v) => !v)}
-        >
-          <ChatIcon />
-        </button>
-      </div>
-      {composing && (
-        <div className="trans-composer">
-          <textarea
-            autoFocus
-            rows={2}
-            value={comment}
-            placeholder={t('commentBlockPlaceholder')}
-            title={t('commentHint')}
-            onChange={(e) => setComment(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submit()
-              if (e.key === 'Escape') {
-                setComposing(false)
-                e.stopPropagation()
-              }
-            }}
-          />
-          <div className="rail-actions">
-            <button type="button" onClick={() => setComposing(false)}>
-              {t('cancel')}
-            </button>
-            <button type="button" className="primary" disabled={!comment.trim()} onClick={submit}>
-              {t('comment')}
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -142,9 +85,10 @@ function TransBlock({
 /**
  * The reading-language toggle's view: body text is read-only and rendered
  * block-by-block from the translation cache; untranslated/failed blocks fall
- * back to the source with an indicator. Comments anchor at block granularity.
+ * back to the source with an indicator. The translated view is read-only —
+ * review marks and comments are made against the original.
  */
-export function TranslatedView({ sessionId, source, authorTag, onEdit }: Props) {
+export function TranslatedView({ sessionId, source }: Props) {
   const t = useT()
   const [blocks, setBlocks] = useState<SourceBlock[] | null>(null)
   const map = useTranslation((s) => s.map)
@@ -174,8 +118,6 @@ export function TranslatedView({ sessionId, source, authorTag, onEdit }: Props) 
       block={b}
       translated={b.translatable ? map[b.hash] : undefined}
       failed={Boolean(failed[b.hash])}
-      authorTag={authorTag}
-      onEdit={onEdit}
     />
   )
 
