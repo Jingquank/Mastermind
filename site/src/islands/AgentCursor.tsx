@@ -38,13 +38,14 @@ export default function AgentCursor({ source }: { source: string }) {
     const current = order === revealed - 1
     const cls = `mk ${shown ? 'in' : 'pre'}${current ? ' cur' : ''}`
     if (t.t === 'ins') inline.push(<span key={i} class={`m-ins ${cls}`}>{t.v}</span>)
-    else if (t.t === 'del') inline.push(<span key={i} class={`m-del ${cls}`}>{t.v}</span>)
+    // struck/old diff text + the arrow are visual-only — hide from AT so the accepted reading survives
+    else if (t.t === 'del') inline.push(<span key={i} class={`m-del ${cls}`} aria-hidden="true">{t.v}</span>)
     else if (t.t === 'hl') inline.push(<span key={i} class={`m-hl ${cls}`}>{t.v}</span>)
     else if (t.t === 'sub')
       inline.push(
         <span key={i} class={`m-sub ${cls}`}>
-          <span class="o">{t.from}</span>
-          <span class="arrow">→</span>
+          <span class="o" aria-hidden="true">{t.from}</span>
+          <span class="arrow" aria-hidden="true">→</span>
           <span class="n">{t.to}</span>
         </span>,
       )
