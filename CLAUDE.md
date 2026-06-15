@@ -58,4 +58,4 @@ Three layers under `src/`, each with its own tsconfig:
 Themes are data, not code: `themes/<id>/{theme.json,tokens.css}`. Components reference `var(--*)` only — **no hardcoded colors/spacing outside `themes/*/tokens.css`** (enforced by `theme-token-consistency.test.ts`). The token names in `DESIGN.md` are the schema every theme must satisfy; `grid` (light) is the reference. The accent color lives in chrome only — CriticMarkup review marks are the only color allowed in the document body. `scripts/gen-scales.mjs` generates the 12-step OKLCH palettes.
 
 ## Reference docs
-`README.md` (feature tour), `DESIGN.md` (design-system token contract), `AGENT_SETUP.md` (agent + assist-channel protocol — the paste-block for agent instruction files), `KNOWN_LIMITATIONS.md` (punted edge cases), `docs/spec/` (product spec).
+`README.md` (feature tour), `DESIGN.md` (design-system token contract), `AGENT_SETUP.md` (agent + assist-channel protocol — the paste-block for agent instruction files).

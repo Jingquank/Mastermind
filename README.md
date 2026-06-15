@@ -1,86 +1,128 @@
-# Mastermind
+```
+█▀▄▀█ ▄▀█ █▀ ▀█▀ █▀▀ █▀█ █▀▄▀█ █ █▄░█ █▀▄
+█░▀░█ █▀█ ▄█ ░█░ ██▄ █▀▄ █░▀░█ █ █░▀█ █▄▀
+```
 
-A local-first markdown viewer/editor for reviewing and discussing documents with AI coding agents.
+**Review markdown with your coding agent — local-first, the file is the only channel.**
 
-The core loop: an agent writes a plan as a `.md` file → you open it in Mastermind → read, edit, highlight, and comment using [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) → **Save & hand back** → the agent re-reads the same file and continues. **The file on disk is the single source of truth and the only communication channel.** No database, no sync layer, no accounts, no network calls except localhost (plus one opt-in exception: a translation provider you configure yourself).
+An agent writes a plan or doc as `.md`; you read and mark it up in the browser with
+[CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit); you hand it back; the agent
+re-reads the same file. No database, no accounts, no cloud — just localhost and the file on disk.
+Mastermind also renders any doc **bilingually**: your agent translates it into your two reading
+languages, toggled live.
 
-## Install (local clone only — not published to npm)
+![Mastermind Reading view](assets/screenshots/reading.png)
+
+*The Reading view — rendered Markdown with the heading outline on the left.*
+
+## Requirements
+
+- Node 20+ and a desktop browser (macOS is the tested platform).
+- A coding agent (Claude Code, Cursor, Gemini, …) — it drives the review loop and does translation.
+
+## Install
+
+Not on npm yet — install from a clone:
 
 ```sh
 git clone https://github.com/Jingquank/Mastermind.git
 cd Mastermind
 npm install
 npm run build
-npm link
+npm link                     # puts `mastermind` on your PATH
+mastermind install-agents    # add the /mastermind + /master skills to your agent(s)
 ```
 
-Then:
+`install-agents` writes the skills for every coding agent it finds (`~/.claude`, `~/.cursor`,
+`~/.gemini`) and, where it can, a one-line rule so finished plans open in Mastermind automatically.
+Undo any time with `mastermind uninstall-agents`.
 
-```sh
-mastermind open README.md          # open a file in a browser tab
-mastermind open --wait plan.md     # block until "Save & hand back" (the agent protocol)
-mastermind workspace .             # browse a directory as a file tree (alias: ws)
-mastermind new                     # blank draft (prompts for a name on first save)
-mastermind assist plan.md          # let your agent answer translate/suggest requests
-mastermind status                  # daemon status
-mastermind stop                    # shut the daemon down
-mastermind install-agents          # add the /mastermind + /master skills to your coding agents
-mastermind config set langPair.a=English langPair.b=Japanese   # preferences (also theme, browser, typeSet…)
-mastermind translate-blocks plan.md  # offline pre-translate a doc into both reading languages
-```
+## How it works
 
-`open` prints the review URL to stdout. The daemon serves on `127.0.0.1:5173` (or the next free port; `--port <n>` pins one) and is shared by all sessions.
+- **The file is the protocol.** Open a `.md` and Mastermind serves it at `127.0.0.1:5173`. Your
+  edits, comments, and accept/reject decisions round-trip through that one file as CriticMarkup —
+  nothing else, nowhere else.
+- **The review loop.** An agent writes a plan → you review and mark it up → **Save & hand back** →
+  the agent re-reads the file and revises. Repeat until you approve. Suggestions flow one direction
+  only (the agent proposes, you accept); nothing reaches disk until you do.
+- **Bilingual, no API key.** Your coding agent *is* the translator. Mastermind shows the doc in your
+  Preferred and Secondary languages (default English ⇄ 简体中文), toggled live, cached on disk
+  (`.mastermind/translations/`) so the toggle is instant and keeps working offline once warmed.
 
-## Works with your AI agent
+![The same document toggled to Simplified Chinese](assets/screenshots/bilingual.png)
 
-`mastermind open --wait` turns a review into a synchronous step in an agent's loop: the command blocks while you review, then prints
+*One click flips the whole doc to your second language; code and inline literals stay put.*
 
-```
-mastermind: review complete — 3 comments, 2 suggested edits
-```
+## The `/mastermind` skills
 
-and exits 0 when you hand back. See **[AGENT_SETUP.md](AGENT_SETUP.md)** for a paste-ready block for your `CLAUDE.md` / agent instructions, and the exit-code contract.
+After `install-agents`, type these in your agent:
 
-Your agent can also *be* the LLM provider. Run `mastermind open --serve-assist plan.md` (add `--wait` to also block until hand-back) and the reading-language toggle and inline edit-suggestions route to your agent over the same file-is-the-protocol channel — no API key. The listener binds to that file's session and auto-reconnects, so the toggle stays live for the whole review. See AGENT_SETUP.md for the request/response protocol.
+| Command | What it does |
+| --- | --- |
+| `/mastermind setup` | Pick your two reading languages, preferred browser, and color / font theme. |
+| `/mastermind demo` | Open a bilingual demo doc — see the marks and the language toggle in action. |
+| `/mastermind <file>` | Translate any `.md` into both languages and open it. Bare `/mastermind` uses the most recent `.md` from the chat. |
+| `/master <file>` | Shorthand for `/mastermind <file>`. |
+
+Every open **translates first**, so the language toggle is warm the instant the page loads. With the
+global rule installed, finished plans (in plan mode) open in Mastermind automatically, in both
+languages.
 
 ## Reviewing
 
-Three views over the same buffer (`Cmd+E` cycles, `Cmd+S` saves):
+Three views over the same file (`Cmd+E` cycles, `Cmd+S` saves):
 
-- **Reading** — rendered markdown with CriticMarkup as a visual diff: green insertions, struck deletions, paired substitutions, gold highlights, and comment threads in a margin rail. Select text → Comment / Suggest deletion / Highlight. Hover a suggestion → Accept / Reject (plus Accept all / Reject all in the top bar; `Cmd+Z` undoes review operations). Task-list checkboxes are live.
-- **Editing** — true WYSIWYG (Milkdown). Opening a file and saving without changes produces a byte-identical file. Accept/reject hover chips work here too: on an unedited document the resolve is a byte-exact source splice; once you've typed it becomes a ProseMirror edit.
-- **Source** — CodeMirror with CriticMarkup token highlighting.
+- **Reading** — rendered markdown with CriticMarkup as a visual diff: green insertions, struck
+  deletions, paired substitutions, gold highlights, and comment threads in a margin rail. Select
+  text → Comment / Suggest deletion / Highlight. Hover a suggestion → Accept / Reject (`Cmd+Z`
+  undoes review actions). Task-list checkboxes are live.
+- **Editing** — WYSIWYG; opening a file and saving it unchanged produces a byte-identical file.
+- **Source** — raw markdown with CriticMarkup highlighting.
 
-All five CriticMarkup marks are supported, inline anywhere: `{++ins++}`, `{--del--}`, `{~~old~>new~~}`, `{==highlight==}`, `{>>comment<<}`. A highlight immediately followed by a comment (`{==span==}{>>note<<}`) anchors the comment to that span; consecutive comments form a thread; comments carry `@author:` tags.
+All five marks work inline anywhere: `{++ins++}`, `{--del--}`, `{~~old~>new~~}`, `{==highlight==}`,
+`{>>comment<<}`. A highlight directly followed by a comment anchors it to that span; consecutive
+comments form a thread; comments carry `@author:` tags.
 
-**Reading at scale.** The left **navigator** carries both the file tree and the current document's **heading outline** (scroll-spy), switchable by a Files/Outline toggle; a **mark minimap** (right edge, one tick per review item) appears when the comment rail is closed. `Cmd+F` opens a mark-aware find that filters by kind (comments / edits / highlights) and cycles matches, augmenting the browser's own find. **Print / PDF** (`Cmd+P`) hides all chrome, prints ink-on-white regardless of theme, and renders comments as numbered footnotes.
+![CriticMarkup review marks](assets/screenshots/review-marks.png)
 
-**Inline AI suggestions (opt-in, staging gate).** With an agent listening (`mastermind assist`), select text and choose **Suggest edits**. The agent's proposed marks render distinctly on-screen only — nothing reaches disk until you Accept (or Edit, or Dismiss) each one. The file only ever gains edits you approved; marks still flow one direction, user → agent.
+*An insertion, a substitution, a struck deletion, a highlight, and a margin comment — all CriticMarkup.*
 
-## Multi-round reviews
+The **language toggle** (top bar) flips the whole document between your two languages, block by
+block. `Cmd+F` is a mark-aware find (filter by comments / edits / highlights); `Cmd+P` prints
+ink-on-white with comments as numbered footnotes. Reviews are **multi-round**: when the agent
+rewrites the open file, a banner offers a reload so you pick up the new version in place.
 
-Reviews are multi-round: user comments → agent revises → user reviews again. When the agent revises the file on disk while it's open, a banner offers a reload so you pick up the new version in place, then comment again and hand back for the next round.
+## Settings & themes
 
-## Workspaces (file tree)
-
-`mastermind workspace .` (alias `ws`) opens a directory as a collapsible file tree at `/w/:id` (the Files tab of the left navigator) — markdown files show a live review-mark badge, the file you're reviewing is highlighted, and a per-file dot marks anything open or with an agent waiting on it (even in another tab). On narrow windows the navigator collapses to an off-canvas overlay so the document keeps its full measure. Clicking a file opens it as an ordinary session, so `--wait`, hand-back, and every reviewing feature work unchanged. The tree is **strictly contained**: it lists only files under the root, follows symlinks only when they resolve back inside it, and hides `.git` / `.mastermind` / `node_modules` / dotfiles. A file opened directly with `mastermind open` (outside any root) stays a plain single-file session.
-
-## Themes
-
-`themes/<id>/{theme.json,tokens.css}` — drop a folder in and it appears in the navigator's Settings. A **Swiss International** set ships: **Grid** (light, Swiss red — the default), **Nacht** (dark, electric blue), and **Sepia** (warm paper, ochre). One grotesque (Schibsted Grotesk, OFL) carries display + body + labels; Geist Mono for code. Each palette is a 12-step OKLCH scale (Radix-style steps) generated from the theme's Swiss hue, so neutrals and accents stay perceptually even and AA-legible. Settings (in the `⋯` menu) cover theme, reading presets (font size / line height / width, as discrete glyph toggles), author tag, languages, and the translation provider; persisted to `~/.config/mastermind/config.json`.
-
-## Reading-language toggle (optional, off until configured)
-
-Configure a translation provider in settings — **your own coding agent** (no API key; serve it with `mastermind open --serve-assist <file>`), an Anthropic API key, or any OpenAI-compatible endpoint (Ollama and LM Studio work, keeping translation fully on-machine). A toggle then appears that switches the rendered document between its language and your configured pair (default EN ⇄ 中文), block by block with a per-document cache (`.mastermind/translations/`), so the second toggle is instant and editing one paragraph re-translates only that paragraph. CriticMarkup survives translation; blocks that fail validation fall back to the original with an indicator. (Agent-channel translations are session-scoped and not written to the on-disk cache.)
-
-Comments you type in the "wrong" language are translated into the document's language on save (the agent reads feedback in the language it's working in); a settings toggle keeps your original text alongside.
-
-## Development
+Open Settings (the gear, bottom-right) to choose your **color theme** (seven ship — **Grid**, the
+Swiss-red default, plus Mint, Sepia, Carbon, Slate, Cobalt, Rose), **typeface** and **code font**, an
+optional **code-color scheme**, your **reading languages** (Preferred + Secondary), and the
+**browser** Mastermind opens in. Everything persists to `~/.config/mastermind/config.json` and is
+scriptable:
 
 ```sh
-npm run dev        # tsx-watched daemon on :5199 + Vite on :5173 with proxy
-npm test           # vitest — scanner, round-trip corpus, e2e exit codes, …
-npm run typecheck
+mastermind config set langPair.a=English langPair.b=Japanese theme=sepia browser="Google Chrome"
 ```
 
-Limits and punted edge cases are documented in [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md). The full product spec lives in [docs/spec/](docs/spec/).
+Themes are just data — drop a `themes/<id>/{theme.json,tokens.css}` folder in and it shows up in Settings.
+
+![Settings panel](assets/screenshots/settings.png)
+
+*Themes, typeface, code font, code-color scheme, and your two reading languages — all in Settings.*
+
+## Commands
+
+```sh
+mastermind open <file>             # open a file for review
+mastermind open --wait <file>      # block until "Save & hand back" (the agent loop)
+mastermind new                     # start a blank draft
+mastermind workspace .             # browse a directory as a file tree (alias: ws)
+mastermind config get | set …      # read / write preferences
+mastermind translate-blocks <file> # pre-translate a doc into both languages (the skills use this)
+mastermind install-agents          # install the skills + global rule (undo: uninstall-agents)
+mastermind status | stop           # daemon status / shutdown
+```
+
+---
+
+More: **[AGENT_SETUP.md](AGENT_SETUP.md)** — the agent protocol, assist channel, and exit-code contract.
