@@ -312,9 +312,8 @@
   .ghost {
     min-height: 44px;
   }
-  /* the grid overlay is a keyboard-only easter egg — drop its hint (and separator) on touch */
-  .grid-sep,
-  .grid-hint {
+  /* the grid overlay is a keyboard-only easter egg — drop its hint line on touch */
+  .hero-meta {
     display: none;
   }
 }
