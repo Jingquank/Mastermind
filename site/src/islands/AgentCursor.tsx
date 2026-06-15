@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import type { JSX } from 'preact'
-import { tokenize, type Tok } from '../lib/criticmarkup'
+import { tokenize } from '../lib/criticmarkup'
 
 /** Reveals CriticMarkup marks one-by-one over plain text, an agent caret leading
  *  each, as if a coding agent were reviewing the line live. Reduced-motion → final state. */

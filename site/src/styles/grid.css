@@ -103,12 +103,17 @@ body.grid-on .grid-readout {
   grid-column: 1 / -1;
 }
 
+/* tablet: collapse the placement helpers to full-width before the 12-col layout
+   gets too cramped (the half-width text columns would wrap awkwardly under ~900px) */
+@media (max-width: 900px) {
+  [class*='c-'] {
+    grid-column: 1 / -1;
+  }
+}
+/* phone: drop to a 6-col base box with a tighter gutter */
 @media (max-width: 720px) {
   :root {
     --cols: 6;
     --gutter: 16px;
-  }
-  [class*='c-'] {
-    grid-column: 1 / -1;
   }
 }

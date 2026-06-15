@@ -4,6 +4,8 @@ import '../styles/grid.css'
 import '../styles/fonts.css'
 import '../styles/base.css'
 import '../styles/components.css'
+import { wordmark } from '../data/hero'
+import { repoUrl } from '../data/skills'
 
 interface Props {
   title?: string
@@ -30,24 +32,65 @@ const cols = Array.from({ length: 12 })
     <link rel="preload" href="/fonts/SchibstedGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      // no-flash language: apply the stored language before first paint
+      try {
+        if (localStorage.getItem('mm-lang') === 'zh') {
+          document.documentElement.setAttribute('data-lang', 'zh')
+          document.documentElement.lang = 'zh-Hans'
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
+    <a class="skip" href="#main">Skip to content</a>
+
     <!-- press-G grid overlay (shares the .wrap content box) -->
     <div class="grid-overlay" aria-hidden="true">
       <div class="wrap"><div class="cols">{cols.map(() => <i></i>)}</div></div>
     </div>
-    <div class="grid-readout">12 cols · 8px baseline · press G</div>
+    <div class="grid-readout" aria-hidden="true">12 cols · 8px baseline · press G</div>
 
-    <slot />
+    <!-- 00 · app-chrome -->
+    <header class="chrome">
+      <div class="wrap chrome-in">
+        <div class="chrome-file"><span class="dirty"></span> mastermind.md</div>
+        <div class="chrome-right">
+          <div class="lang-seg" role="group" aria-label="Reading language">
+            <button data-lang-btn="en" aria-pressed="true">EN</button>
+            <button data-lang-btn="zh">中文</button>
+          </div>
+          <button class="cta sm" data-install>Install</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main"><slot /></main>
+
+    <!-- 08 · footer -->
+    <footer class="footer">
+      <div class="wrap footer-row">
+        <pre class="masthead" aria-hidden="true">{wordmark}</pre>
+        <div class="note-aside">
+          <a href={repoUrl} target="_blank" rel="noreferrer" class="m-comment" style="border:none">GitHub ↗</a>
+          &nbsp;·&nbsp; <span class="m-ins">MIT</span> &nbsp;·&nbsp; the file is the protocol.
+        </div>
+      </div>
+    </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script>
       const root = document.documentElement
-      // EN ⇄ 中文 toggle — text swap is pure CSS; JS only flips the attribute + persists.
+      // EN ⇄ 中文 toggle — text swap is pure CSS; JS flips the attribute + html lang + persists.
       function setLang(l: string) {
-        if (l === 'zh') root.setAttribute('data-lang', 'zh')
-        else root.removeAttribute('data-lang')
+        if (l === 'zh') {
+          root.setAttribute('data-lang', 'zh')
+          root.lang = 'zh-Hans'
+        } else {
+          root.removeAttribute('data-lang')
+          root.lang = 'en'
+        }
         try {
           localStorage.setItem('mm-lang', l)
         } catch {}
@@ -60,9 +103,13 @@ const cols = Array.from({ length: 12 })
         if (localStorage.getItem('mm-lang') === 'zh') initial = 'zh'
       } catch {}
       setLang(initial)
+      // the segmented control owns aria-pressed; data-set-lang buttons just trigger a switch
       document
         .querySelectorAll('[data-lang-btn]')
         .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-lang-btn') || 'en')))
+      document
+        .querySelectorAll('[data-set-lang]')
+        .forEach((b) => b.addEventListener('click', () => setLang(b.getAttribute('data-set-lang') || 'en')))
 
       // press-G grid overlay
       const toggleGrid = () => document.body.classList.toggle('grid-on')

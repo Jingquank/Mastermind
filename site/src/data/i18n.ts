@@ -7,6 +7,10 @@ export interface Pair {
 }
 
 export const i18n: Record<string, Pair> = {
+  tagline: {
+    en: 'Review Markdown with your coding agent.',
+    zh: '用你的编码 agent 评审 Markdown。',
+  },
   lede: {
     en: 'A local-first Markdown reviewer for AI coding agents. No database, no accounts, no cloud — the file on disk is the only channel.',
     zh: '一个面向 AI 编码 agent 的本地优先 Markdown 评审工具。没有数据库、没有账号、没有云 —— 磁盘上的文件是唯一的通信通道。',

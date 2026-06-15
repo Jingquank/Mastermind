@@ -15,4 +15,3 @@ export const installSteps = [
 ]
 
 export const repoUrl = 'https://github.com/Jingquank/Mastermind'
-export const installCmd = 'npm i -g mastermind-md'

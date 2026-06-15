@@ -96,7 +96,7 @@ pre {
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.04em;
-  color: var(--accent);
+  color: var(--muted);
 }
 .masthead {
   font-family: var(--font-mono);
@@ -118,6 +118,40 @@ html[data-lang='zh'] [data-lang-en] {
 }
 html:not([data-lang='zh']) [data-lang-zh] {
   display: none;
+}
+/* CJK display: PingFang lacks an 800 cut, so drop the weight + Latin tracking to avoid faux-bold */
+:lang(zh) .display,
+:lang(zh) .shead,
+html[data-lang='zh'] .display,
+html[data-lang='zh'] .shead {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* skip link (a11y bypass) */
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: var(--r-xs);
+}
+.skip:focus {
+  left: 8px;
+  top: 8px;
+}
+
+@media (max-width: 720px) {
+  /* ≥44px tap target for the footer comment link */
+  .m-comment {
+    display: inline-block;
+    padding: 6px 2px;
+  }
 }
 
 /* ---------- CriticMarkup marks (the only body color) ---------- */
@@ -143,7 +177,7 @@ html:not([data-lang='zh']) [data-lang-zh] {
   text-decoration-thickness: 1.5px;
 }
 .m-sub .arrow {
-  color: var(--faint);
+  color: var(--muted);
   padding: 0 0.22em;
 }
 .m-sub .n {

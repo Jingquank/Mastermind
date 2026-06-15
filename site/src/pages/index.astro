@@ -1,13 +1,16 @@
 ---
+import { Picture } from 'astro:assets'
 import Base from '../layouts/Base.astro'
 import I18n from '../components/I18n.astro'
 import AgentCursor from '../islands/AgentCursor'
 import MarkPlayground from '../islands/MarkPlayground'
 import Terminal from '../islands/Terminal'
 import { renderHtml } from '../lib/criticmarkup'
-import { wordmark, heroReview, tagline } from '../data/hero'
+import { wordmark, heroReview } from '../data/hero'
 import { marks } from '../data/marks'
 import { skills, repoUrl } from '../data/skills'
+import reviewMarksShot from '../assets/shots/review-marks.png'
+import bilingualShot from '../assets/shots/bilingual.png'
 
 const loop = [
   { n: '01', t: 'Agent drafts', d: 'It writes the plan as a .md file — not a chat message.' },
@@ -23,26 +26,12 @@ const trust = [
 ---
 
 <Base>
-  <!-- 00 · chrome -->
-  <header class="chrome">
-    <div class="wrap chrome-in">
-      <div class="chrome-file"><span class="dirty"></span> mastermind.md</div>
-      <div class="chrome-right">
-        <div class="lang-seg" role="group" aria-label="Reading language">
-          <button data-lang-btn="en" aria-pressed="true">EN</button>
-          <button data-lang-btn="zh">中文</button>
-        </div>
-        <button class="cta sm" data-install>Install</button>
-      </div>
-    </div>
-  </header>
-
   <!-- 01 · hero -->
   <section class="section hero">
     <div class="wrap"><div class="grid">
       <div class="c-1-9">
         <pre class="masthead big" aria-label="Mastermind">{wordmark}</pre>
-        <h1 class="display hero-tag">{tagline}</h1>
+        <h1 class="display hero-tag"><I18n k="tagline" /></h1>
         <p><AgentCursor source={heroReview} client:visible /></p>
         <p class="lede hero-lede measure"><I18n k="lede" /></p>
         <div class="hero-ctas">
@@ -109,7 +98,9 @@ const trust = [
 
       <div class="grid" style="margin-top:var(--gutter)">
         <figure class="c-full shot">
-          <img src="/shots/review-marks.png" width="1440" height="900" loading="lazy"
+          <Picture src={reviewMarksShot} formats={['avif', 'webp']}
+            widths={[480, 800, 1130, 1440]} sizes="(max-width: 900px) 100vw, 1130px"
+            loading="lazy" decoding="async"
             alt="CriticMarkup review marks in Mastermind: insertion, substitution, deletion, highlight, and a margin comment." />
         </figure>
       </div>
@@ -123,10 +114,12 @@ const trust = [
         <div class="kicker-row"><span class="kicker"><I18n k="bilingualKicker" /></span></div>
         <h2 class="shead"><I18n k="bilingualHead" /></h2>
         <p class="body measure" style="margin-top:18px;color:var(--muted)"><I18n k="bilingualBody" /></p>
-        <button class="ghost" data-lang-btn="zh" style="margin-top:20px">Try 中文 →</button>
+        <button class="ghost" data-set-lang="zh" style="margin-top:20px">Try 中文 →</button>
       </div>
       <figure class="c-7-12 shot">
-        <img src="/shots/bilingual.png" width="1440" height="900" loading="lazy"
+        <Picture src={bilingualShot} formats={['avif', 'webp']}
+          widths={[480, 560, 800, 1120]} sizes="(max-width: 900px) 100vw, 560px"
+          loading="lazy" decoding="async"
           alt="The same document toggled to Simplified Chinese in Mastermind." />
       </figure>
     </div></div>
@@ -159,7 +152,7 @@ const trust = [
     <div class="wrap"><div class="grid">
       <div class="c-1-4">
         <div class="kicker-row"><span class="folio">06</span><span class="kicker">Local-first</span></div>
-        <h2 class="shead">Yours. <span class="notable">On disk.<span class="note">no telemetry, no network except localhost</span></span></h2>
+        <h2 class="shead">Yours. <span class="notable" tabindex="0" role="note" aria-label="On disk: no telemetry, no network except localhost">On disk.<span class="note">no telemetry, no network except localhost</span></span></h2>
       </div>
       <div class="c-6-12">
         <div class="trust">
@@ -189,15 +182,4 @@ const trust = [
       </div>
     </div></div>
   </section>
-
-  <!-- 08 · footer -->
-  <footer class="footer">
-    <div class="wrap footer-row">
-      <pre class="masthead" aria-label="Mastermind">{wordmark}</pre>
-      <div class="note-aside">
-        <a href={repoUrl} target="_blank" rel="noreferrer" class="m-comment" style="border:none">GitHub ↗</a>
-        &nbsp;·&nbsp; <span class="m-ins">MIT</span> &nbsp;·&nbsp; the file is the protocol.
-      </div>
-    </div>
-  </footer>
 </Base>
