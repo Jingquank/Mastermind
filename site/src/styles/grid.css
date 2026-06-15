@@ -50,8 +50,8 @@ body.grid-on .grid-overlay {
 }
 .grid-overlay .cols i {
   display: block;
-  background: rgba(229, 36, 27, 0.05);
-  border-inline: 0.5px solid rgba(229, 36, 27, 0.26);
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+  border-inline: 0.5px solid color-mix(in oklab, var(--accent) 26%, transparent);
 }
 /* baseline rules, painted across the page only while grid-on */
 body.grid-on::before {
@@ -62,8 +62,8 @@ body.grid-on::before {
   pointer-events: none;
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(20, 20, 20, 0.055) 0,
-    rgba(20, 20, 20, 0.055) 1px,
+    color-mix(in oklab, var(--ink) 5.5%, transparent) 0,
+    color-mix(in oklab, var(--ink) 5.5%, transparent) 1px,
     transparent 1px,
     transparent var(--bl)
   );

@@ -34,15 +34,17 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: color-mix(in oklab, var(--paper-2) 86%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--paper-2); /* opaque — no per-frame backdrop blur (it bought ~14% at most) */
   border-bottom: 1px solid var(--border);
 }
 .chrome-in {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
+  flex-wrap: wrap; /* the three controls reflow rather than overflow at ~320px portrait */
+  row-gap: 6px;
+  min-height: 48px;
+  padding-block: 6px;
 }
 .chrome-file {
   display: flex;
@@ -107,112 +109,11 @@
   margin-bottom: 24px;
   max-width: 15ch;
 }
-.agent-line {
-  display: inline;
-  font-size: clamp(19px, 2.4vw, 27px);
-  line-height: 1.55;
-}
-.agent-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1.05em;
-  background: var(--ink); /* red stays on the Install pill alone; the caret blinks in ink */
-  vertical-align: text-bottom;
-  margin-left: 2px;
-  animation: blink 1.05s steps(2, start) infinite;
-}
+/* caret blink — used by the terminal prompt cursor (.term-caret) */
 @keyframes blink {
   50% {
     opacity: 0;
   }
-}
-/* marks reveal: text is present, the review styling transitions in */
-.agent-line .m-ins,
-.agent-line .m-del,
-.agent-line .m-hl {
-  transition:
-    color 0.45s ease,
-    background 0.45s ease,
-    box-shadow 0.45s ease,
-    text-decoration-color 0.45s ease;
-}
-.agent-line .m-ins.pre,
-.agent-line .m-del.pre,
-.agent-line .m-hl.pre {
-  color: var(--ink);
-  background: transparent;
-  box-shadow: none;
-  text-decoration-color: transparent;
-}
-.agent-line .m-sub .o {
-  transition:
-    color 0.45s ease,
-    text-decoration-color 0.45s ease;
-}
-.agent-line .m-sub.pre .o {
-  color: var(--ink);
-  text-decoration-color: transparent;
-}
-.agent-line .m-sub .n {
-  display: inline-block;
-  max-width: 0;
-  overflow: hidden;
-  opacity: 0;
-  vertical-align: bottom;
-  transition:
-    max-width 0.45s ease,
-    opacity 0.45s ease;
-}
-.agent-line .m-sub.in .n {
-  max-width: 14ch;
-  opacity: 1;
-}
-.agent-line .m-sub .arrow {
-  opacity: 0;
-  transition: opacity 0.45s ease;
-}
-.agent-line .m-sub.in .arrow {
-  opacity: 1;
-}
-/* no-animation fallback: reveal the substitution's replacement word + arrow at rest,
-   so reduced-motion / pre-JS readers don't lose the accepted text ("hand it back") */
-@media (prefers-reduced-motion: reduce) {
-  .agent-line .m-sub .n {
-    max-width: 14ch;
-    opacity: 1;
-  }
-  .agent-line .m-sub .arrow {
-    opacity: 1;
-  }
-}
-.agent-comment {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-left: 12px;
-  padding: 3px 10px;
-  border: 1px solid var(--comment);
-  border-radius: 999px;
-  font-size: 13px;
-  color: var(--comment);
-  white-space: nowrap;
-  transition:
-    opacity 0.45s ease,
-    transform 0.45s ease;
-}
-.agent-comment .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--comment);
-}
-.agent-comment.pre {
-  opacity: 0;
-  transform: translateX(8px);
-}
-.hero-lede {
-  margin-top: 28px;
-  color: var(--muted);
 }
 .hero-ctas {
   display: flex;
@@ -232,7 +133,7 @@
 }
 .hero-term {
   /* share the headline's top baseline (the two columns read as one unit); the
-     height slack pools below, beside the lighter lede/CTAs — intentional asymmetry */
+     height slack pools below, beside the lighter CTAs — intentional asymmetry */
   align-self: start;
 }
 .hero-term .term {
@@ -241,6 +142,8 @@
 }
 .hero-pitch {
   margin-top: 6px;
+  font-size: clamp(19px, 2.4vw, 27px);
+  line-height: 1.55;
 }
 .hero-meta {
   display: flex;
@@ -459,8 +362,8 @@
   border-radius: var(--r-md);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #15140f;
-  color: #e9e7df;
+  background: var(--term-bg);
+  color: var(--term-text);
   font-family: var(--font-mono);
   font-size: 14px;
   margin-top: 28px;
@@ -471,18 +374,18 @@
   align-items: center;
   gap: 6px;
   padding: 10px 13px;
-  background: #211f18;
+  background: var(--term-bar);
 }
 .term-bar i {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #46443a;
+  background: var(--term-dot);
 }
 .term-bar span {
   margin-left: 8px;
   font-size: 12px;
-  color: #8a877c;
+  color: var(--term-dim);
 }
 .term-body {
   padding: 16px 18px;
@@ -490,18 +393,18 @@
   min-height: 180px; /* reserve the 3-step height so the box doesn't jump as it types */
 }
 .term-cmd .prompt {
-  color: #7ddc92;
+  color: var(--term-prompt);
   margin-right: 6px;
 }
 .term-out {
-  color: #8a877c;
+  color: var(--term-dim);
   margin: 2px 0 12px;
 }
 .term-caret {
   display: inline-block;
   width: 8px;
   height: 15px;
-  background: #e9e7df;
+  background: var(--term-text);
   vertical-align: text-bottom;
   margin-left: 2px;
   animation: blink 1.05s steps(2, start) infinite;

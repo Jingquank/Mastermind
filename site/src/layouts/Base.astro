@@ -127,11 +127,9 @@ const cols = Array.from({ length: 12 })
         langBtns[n].focus()
       })
 
-      // press-G grid overlay
-      const toggleGrid = () => {
-        const on = document.body.classList.toggle('grid-on')
-        document.querySelectorAll('[data-grid-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(on)))
-      }
+      // press-G grid overlay — a sighted/keyboard easter egg; the overlay is decorative
+      // (aria-hidden), and so is its toggle button, so there's no AT state to sync
+      const toggleGrid = () => document.body.classList.toggle('grid-on')
       document.addEventListener('keydown', (e) => {
         const tag = ((e.target as HTMLElement)?.tagName || '').toLowerCase()
         if ((e.key === 'g' || e.key === 'G') && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'input' && tag !== 'textarea')

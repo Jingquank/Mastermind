@@ -50,7 +50,7 @@ export function renderHtml(src: string): string {
         case 'hl':
           return `<span class="m-hl">${esc(t.v)}</span>`
         case 'comment':
-          return `<span class="m-comment" title="comment">${esc(t.v)}</span>`
+          return `<span class="m-comment">${esc(t.v)}</span>`
       }
     })
     .join('')

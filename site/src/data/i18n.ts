@@ -1,4 +1,4 @@
-// EN ⇄ 中文 pairs for the live toggle. Scope: hero lede + §02 protocol + §04 bilingual
+// EN ⇄ 中文 pairs for the live toggle. Scope: hero tagline + §02 protocol + §04 bilingual
 // (the demo set). Chinese vendored from the Mastermind README translation; rendered via
 // the system CJK stack (no CJK webfont).
 export interface Pair {
@@ -10,10 +10,6 @@ export const i18n: Record<string, Pair> = {
   tagline: {
     en: 'Review Markdown with your coding agent.',
     zh: '用你的编码 agent 评审 Markdown。',
-  },
-  lede: {
-    en: 'Your edits and comments ride back to the agent in the file as CriticMarkup — no chat thread, no copy-paste.',
-    zh: '你的编辑和评论都以 CriticMarkup 的形式随文件回到 agent —— 没有聊天线程，无需复制粘贴。',
   },
   protocolKicker: { en: 'The protocol', zh: '协议' },
   protocolHead: { en: 'The file is the protocol', zh: '文件就是协议' },

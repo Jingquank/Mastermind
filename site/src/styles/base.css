@@ -37,7 +37,7 @@ pre {
   font-family: var(--font-mono);
 }
 ::selection {
-  background: rgba(20, 20, 20, 0.12);
+  background: color-mix(in oklab, var(--ink) 12%, transparent);
 }
 :focus-visible {
   outline: 2px solid var(--ink);

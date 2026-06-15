@@ -2,7 +2,6 @@
 import { Picture } from 'astro:assets'
 import Base from '../layouts/Base.astro'
 import I18n from '../components/I18n.astro'
-import AgentCursor from '../islands/AgentCursor'
 import MarkPlayground from '../islands/MarkPlayground'
 import Terminal from '../islands/Terminal'
 import { renderHtml } from '../lib/criticmarkup'
@@ -35,16 +34,15 @@ const trust = [
       <div class="c-1-7 hero-lead">
         <h1 class="display hero-tag"><I18n k="tagline" /></h1>
         <p class="hero-pitch">
-          <span data-lang-en><AgentCursor source={heroReview} client:visible /></span>
-          <span data-lang-zh lang="zh"><AgentCursor source={heroReviewZh} client:visible /></span>
+          <span data-lang-en set:html={renderHtml(heroReview)}></span>
+          <span data-lang-zh lang="zh" set:html={renderHtml(heroReviewZh)}></span>
         </p>
-        <p class="lede hero-lede measure"><I18n k="lede" /></p>
         <div class="hero-ctas">
           <button class="cta" data-install>Install</button>
           <a class="ghost" href={repoUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
         <p class="hero-meta">
-          <button class="grid-hint" data-grid-toggle aria-pressed="false">press <kbd>G</kbd> for the grid</button>
+          <button class="grid-hint" data-grid-toggle aria-hidden="true" tabindex="-1">press <kbd>G</kbd> for the grid</button>
         </p>
       </div>
       <div class="c-8-12 hero-term">

@@ -25,6 +25,14 @@
   --comment: #2f5fd0;
   --comment-bg: rgba(47, 95, 208, 0.1);
 
+  /* terminal — a fixed dark "screenshot" surface (the one sanctioned non-paper region) */
+  --term-bg: #15140f;
+  --term-text: #e9e7df;
+  --term-bar: #211f18;
+  --term-dot: #46443a;
+  --term-dim: #8a877c;
+  --term-prompt: #7ddc92;
+
   /* type */
   --font-display: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
   --font-body: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
