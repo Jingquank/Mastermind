@@ -18,8 +18,8 @@ export const i18n: Record<string, Pair> = {
   protocolKicker: { en: 'The protocol', zh: '协议' },
   protocolHead: { en: 'The file is the protocol', zh: '文件就是协议' },
   protocolBody: {
-    en: 'Open a <code>.md</code> and Mastermind serves it at <code>127.0.0.1:5173</code>. Your edits, comments, and accept/reject decisions round-trip through that one file as CriticMarkup — nothing else, nowhere else. Marks flow one direction: the agent proposes, you accept; nothing reaches disk until you do.',
-    zh: '打开一个 <code>.md</code>，Mastermind 在 <code>127.0.0.1:5173</code> 上提供它。你的编辑、评论以及接受/拒绝的决定都以 CriticMarkup 的形式经由这一个文件往返 —— 别无其他，别处皆无。标记只朝一个方向流动：agent 提议，你接受；在你接受之前，任何东西都不会落盘。',
+    en: 'Open a <code>.md</code> and Mastermind serves it at <code>127.0.0.1:5173</code>. You review in the browser; your marks and comments round-trip back to the agent through that one file as CriticMarkup — nothing else, nowhere else, and nothing reaches disk until you save.',
+    zh: '打开一个 <code>.md</code>，Mastermind 在 <code>127.0.0.1:5173</code> 上提供它。你在浏览器里评审；你的标记和评论都以 CriticMarkup 的形式经由这一个文件往返给 agent —— 别无其他，别处皆无，在你保存之前，任何东西都不会落盘。',
   },
   bilingualKicker: { en: 'Bilingual', zh: '双语' },
   bilingualHead: { en: 'Bilingual, no API key', zh: '双语，无需 API key' },
