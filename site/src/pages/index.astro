@@ -30,7 +30,7 @@ const trust = [
   <section class="section hero">
     <div class="wrap"><div class="grid hero-grid">
       <div class="c-full hero-mast">
-        <pre class="masthead big" aria-label="Mastermind">{wordmark}</pre>
+        <pre class="masthead big" role="img" aria-label="Mastermind">{wordmark}</pre>
       </div>
       <div class="c-1-7 hero-lead">
         <h1 class="display hero-tag"><I18n k="tagline" /></h1>
@@ -62,8 +62,8 @@ const trust = [
         <div class="kicker-row"><span class="folio">01</span><span class="kicker"><I18n k="protocolKicker" /></span></div>
         <h2 class="shead"><I18n k="protocolHead" /></h2>
       </div>
-      <div class="c-6-12 body measure">
-        <p><I18n k="protocolBody" /></p>
+      <div class="c-6-12 body">
+        <p class="measure"><I18n k="protocolBody" /></p>
         <div class="loop">
           {loop.map((s) => (
             <div class="loop-step">
@@ -187,7 +187,8 @@ const trust = [
         </div>
       </div>
       <div class="c-6-12 body measure" style="color:var(--muted)">
-        <p><b style="color:var(--ink)">Runtime.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does translation — no API key.</p>
+        <p><b style="color:var(--ink)">Install.</b> <code>npm i -g mastermind-md</code>, then <code>mastermind install-agents</code> to add the skills to your agent(s).</p>
+        <p style="margin-top:16px"><b style="color:var(--ink)">Runtime.</b> Node 20+ and a desktop browser (macOS is the tested platform). A coding agent drives the review loop and does translation — no API key.</p>
         <p style="margin-top:16px"><b style="color:var(--ink)">From source.</b> <code>git clone</code> the repo, <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>, then <code>mastermind install-agents</code>.</p>
       </div>
     </div></div>

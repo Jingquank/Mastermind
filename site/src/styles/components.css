@@ -295,12 +295,15 @@
   font-size: 14px;
   color: var(--muted);
 }
-@media (max-width: 720px) {
+/* touch devices (any width, incl. the 720–900px tablet band) get ≥44px targets */
+@media (pointer: coarse) {
   .lang-seg button {
     padding: 10px 14px;
+    min-height: 44px;
   }
   .cta.sm {
     padding: 11px 16px;
+    min-height: 44px;
   }
   /* the grid overlay is a keyboard-only easter egg — drop its hint (and separator) on touch */
   .grid-sep,
@@ -341,9 +344,20 @@
 /* ============ 03 marks chips + playground ============ */
 .chips {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* deterministic count so the 5th mark never orphans (5 → 3 → 1) */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--gutter);
   margin-top: 36px;
+}
+@media (max-width: 980px) {
+  .chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .chips {
+    grid-template-columns: 1fr;
+  }
 }
 /* de-carded: hairline-topped spec columns, not boxes */
 .chip {
