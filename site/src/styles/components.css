@@ -174,6 +174,17 @@
 .agent-line .m-sub.in .arrow {
   opacity: 1;
 }
+/* no-animation fallback: reveal the substitution's replacement word + arrow at rest,
+   so reduced-motion / pre-JS readers don't lose the accepted text ("hand it back") */
+@media (prefers-reduced-motion: reduce) {
+  .agent-line .m-sub .n {
+    max-width: 14ch;
+    opacity: 1;
+  }
+  .agent-line .m-sub .arrow {
+    opacity: 1;
+  }
+}
 .agent-comment {
   display: inline-flex;
   align-items: center;
@@ -311,6 +322,11 @@
   .cta,
   .ghost {
     min-height: 44px;
+  }
+  /* footer text link clears 44px too (separators stay static text) */
+  .note-aside a {
+    display: inline-block;
+    padding: 11px 4px;
   }
   /* the grid overlay is a keyboard-only easter egg — drop its hint line on touch */
   .hero-meta {
