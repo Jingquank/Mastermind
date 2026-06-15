@@ -15,10 +15,10 @@ export default function MarkPlayground() {
         aria-label="CriticMarkup input"
         onInput={(e) => setSrc((e.target as HTMLTextAreaElement).value)}
       />
+      {/* visual companion to the textarea the user drives — NOT a live region
+          (a polite region echoing every keystroke floods screen readers) */}
       <div
         class="pg-out body"
-        role="status"
-        aria-live="polite"
         aria-label="Rendered preview"
         dangerouslySetInnerHTML={{ __html: renderHtml(src) || '&nbsp;' }}
       ></div>
