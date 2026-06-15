@@ -105,7 +105,7 @@
   margin-bottom: clamp(28px, 4vw, 48px);
 }
 .hero-tag {
-  font-size: clamp(32px, 5vw, 60px);
+  font-size: clamp(32px, 1rem + 3.2vw, 60px);
   margin-bottom: 24px;
   max-width: 15ch;
 }
@@ -142,7 +142,7 @@
 }
 .hero-pitch {
   margin-top: 6px;
-  font-size: clamp(19px, 2.4vw, 27px);
+  font-size: clamp(19px, 0.8rem + 1.1vw, 27px);
   line-height: 1.55;
 }
 .hero-meta {

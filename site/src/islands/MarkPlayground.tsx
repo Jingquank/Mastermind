@@ -19,6 +19,7 @@ export default function MarkPlayground() {
           (a polite region echoing every keystroke floods screen readers) */}
       <div
         class="pg-out body"
+        role="figure"
         aria-label="Rendered preview"
         dangerouslySetInnerHTML={{ __html: renderHtml(src) || '&nbsp;' }}
       ></div>
