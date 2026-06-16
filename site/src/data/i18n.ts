@@ -30,12 +30,16 @@ export const i18n: Record<string, Pair> = {
   // §03 the marks
   marksKicker: { en: 'The marks', zh: '标记' },
   marksHead: {
-    en: 'Five marks. One file. <span class="m-hl" style="white-space:nowrap">No copy-paste.</span>',
-    zh: '五种标记。一个文件。<span class="m-hl" style="white-space:nowrap">无需复制粘贴。</span>',
+    en: 'Two marks. One file. <span class="m-hl" style="white-space:nowrap">No copy-paste.</span>',
+    zh: '两种标记。一个文件。<span class="m-hl" style="white-space:nowrap">无需复制粘贴。</span>',
   },
   marksBody: {
-    en: 'CriticMarkup is the whole review vocabulary — readable in plain text, rendered as a visual diff. Try it below; the marks render as you type.',
-    zh: 'CriticMarkup 就是全部的评审词汇 —— 纯文本即可读，渲染为可视化差异。在下面试试；标记会随你的输入实时渲染。',
+    en: 'CriticMarkup is the review vocabulary — comment on a passage, or suggest a deletion. Plain text in the file, a live diff in the browser. You flag what to change; the agent does the rewrite on its next pass. Try it below.',
+    zh: 'CriticMarkup 就是评审词汇 —— 对某段评论，或建议删除。在文件里是纯文本，在浏览器里是实时差异。你标出要改之处，下一轮由 agent 来重写。在下面试试。',
+  },
+  marksHow: {
+    en: 'Make a mark by selecting a phrase — or hover a paragraph for a quiet menu of Comment and Suggest deletion.',
+    zh: '选中一段文字即可标注 —— 或将鼠标悬停在段落上，弹出「评论」与「建议删除」菜单。',
   },
 
   // §04 bilingual

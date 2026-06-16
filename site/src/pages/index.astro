@@ -14,7 +14,7 @@ import bilingualShot from '../assets/shots/bilingual.png'
 
 const loop = [
   { n: '01', t: 'Agent drafts', tZh: 'Agent 起草', d: 'It writes the plan as a .md file — not a chat message.', dZh: '它把计划写成 .md 文件 —— 而不是一条聊天消息。' },
-  { n: '02', t: 'You mark it up', tZh: '你来批注', d: 'Review in the browser with CriticMarkup: insert, cut, swap, highlight, comment.', dZh: '在浏览器里用 CriticMarkup 评审：插入、删除、替换、高亮、评论。' },
+  { n: '02', t: 'You mark it up', tZh: '你来批注', d: 'Review in the browser: comment on anything, or suggest a deletion — the marks are CriticMarkup in the file.', dZh: '在浏览器里评审：对任意内容评论，或建议删除 —— 标记就是文件里的 CriticMarkup。' },
   { n: '03', t: 'Hand back', tZh: '交回', d: 'Save & hand back; the marks travel in the file.', dZh: '保存并交回；标记随文件一同传递。' },
   { n: '04', t: 'Agent revises', tZh: 'Agent 修订', d: 'It re-reads the same file and applies your review.', dZh: '它重新读取同一个文件并应用你的评审。' },
 ]
@@ -77,7 +77,7 @@ const trust = [
     </div></div>
   </section>
 
-  <!-- 03 · the five marks -->
+  <!-- 03 · the two marks -->
   <section class="section" id="marks">
     <div class="wrap"><div class="grid">
       <div class="c-1-9">
@@ -88,7 +88,7 @@ const trust = [
     </div>
 
       <div class="grid" style="margin-top:8px">
-        <div class="c-full chips">
+        <div class="c-1-9 chips">
           {marks.map((m) => (
             <div class="chip">
               <div class="syntax">{m.syntax}</div>
@@ -104,12 +104,16 @@ const trust = [
         <div class="c-full"><MarkPlayground client:visible /></div>
       </div>
 
-      <div class="grid" style="margin-top:var(--gutter)">
+      <div class="grid">
+        <p class="c-1-9 note-aside" style="margin-top:var(--gutter)"><I18n k="marksHow" /></p>
+      </div>
+
+      <div class="grid" style="margin-top:14px">
         <figure class="c-full shot">
           <Picture src={reviewMarksShot} formats={['avif', 'webp']}
             widths={[480, 800, 1130, 1440]} sizes="(max-width: 900px) 100vw, 1130px"
             loading="lazy" decoding="async"
-            alt="CriticMarkup review marks in Mastermind: insertion, substitution, deletion, highlight, and a margin comment." />
+            alt="A Mastermind review: a struck-through suggested deletion, a highlighted passage with a margin comment, and the block actions menu offering Comment and Suggest deletion." />
         </figure>
       </div>
     </div>

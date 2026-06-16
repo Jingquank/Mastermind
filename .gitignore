@@ -11,3 +11,13 @@ dist/
 
 # impeccable live-mode local state (config + session journals)
 .impeccable/
+
+# portable design-skill installs (impeccable) — tooling, not product
+.agents/
+.cursor/
+.gemini/
+
+# scratch demo docs generated while dogfooding (the skill regenerates these)
+/dummy-demo.md
+/mastermind-demo.md
+/roadmap-demo.md

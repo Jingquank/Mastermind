@@ -276,15 +276,10 @@
 /* ============ 03 marks chips + playground ============ */
 .chips {
   display: grid;
-  /* deterministic count so the 5th mark never orphans (5 → 3 → 1) */
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* two review marks — paired columns, stacking to one on narrow screens */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gutter);
   margin-top: 36px;
-}
-@media (max-width: 980px) {
-  .chips {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 @media (max-width: 600px) {
   .chips {

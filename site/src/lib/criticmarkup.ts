@@ -43,7 +43,7 @@ export function renderHtml(src: string): string {
         case 'ins':
           return `<span class="m-ins">${esc(t.v)}</span>`
         case 'del':
-          // struck text is removed from the accepted reading — hide it from AT
+          // struck text drops out of the final reading — hide it from AT
           return `<span class="m-del" aria-hidden="true">${esc(t.v)}</span>`
         case 'sub':
           return `<span class="m-sub"><span class="o" aria-hidden="true">${esc(t.from)}</span><span class="arrow" aria-hidden="true">→</span><span class="n">${esc(t.to)}</span></span>`
