@@ -759,6 +759,129 @@ button:disabled {
   opacity: 0.4;
 }
 
+/* ---------- block hover actions ---------- */
+
+/* a bare positioned wrapper: the ⋯ trigger sits at top-left; the menu / composer
+   hang below it (absolute, right-aligned) so they grow leftward over the text. */
+.block-actions {
+  position: fixed;
+  z-index: var(--z-popover);
+}
+
+/* quiet ghost trigger — a faint ⋯ in the right gutter that firms up on hover */
+.block-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.block-trigger:hover,
+.block-trigger[aria-expanded='true'] {
+  color: var(--color-text);
+  background: var(--color-bg-elevated);
+}
+
+/* light elevated dropdown — mirrors .lang-menu / .handback-note, not the dark toolbar */
+.block-menu,
+.block-compose {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: calc(var(--space-unit) * 1);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgb(0 0 0 / calc(0.18 * var(--shadow-strength)));
+}
+
+/* near the viewport bottom, hang the dropdown above the trigger instead */
+.block-actions.flip-up .block-menu,
+.block-actions.flip-up .block-compose {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: calc(var(--space-unit) * 1);
+}
+
+.block-menu {
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--space-unit) * 1);
+  min-width: 168px;
+}
+
+.block-menu > button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2);
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+
+.block-menu > button:hover {
+  background: var(--color-accent-surface);
+  color: var(--color-text);
+}
+
+/* light comment composer, consistent with the menu */
+.block-compose {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-unit) * 1.5);
+  padding: calc(var(--space-unit) * 2);
+  width: 280px;
+}
+
+.block-compose textarea {
+  width: 100%;
+  resize: none;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-text);
+  padding: calc(var(--space-unit) * 1.5);
+}
+
+.block-compose-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(var(--space-unit) * 1);
+}
+
+.block-compose-actions button {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 2);
+  cursor: pointer;
+}
+
+.block-compose-actions button.primary {
+  color: var(--color-accent-dim);
+}
+
+.block-compose-actions button:disabled {
+  opacity: 0.4;
+}
+
 /* ---------- markdown elements ---------- */
 
 .md-root h1,
@@ -1036,6 +1159,7 @@ del.critic-del {
   background: var(--review-delete-bg);
   text-decoration: line-through;
   padding: 0 0.08em;
+  cursor: pointer;
 }
 
 mark.critic-hl {
@@ -1117,54 +1241,6 @@ mark.critic-hl.critic-anchor:hover {
 .cm-critic-comment {
   color: var(--review-comment-anchor);
   background: var(--review-comment-active-bg);
-}
-
-/* ---------- hover accept/reject ---------- */
-
-.hover-actions {
-  position: fixed;
-  z-index: var(--z-popover);
-  display: flex;
-  gap: 2px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 2px;
-  box-shadow: 0 2px 10px rgb(0 0 0 / calc(0.08 * var(--shadow-strength)));
-}
-
-.hover-actions button {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--space-unit) * 1);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-xs);
-  font-size: var(--font-size-micro);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
-  padding: calc(var(--space-unit) * 1.5) calc(var(--space-unit) * 2.5);
-  min-height: 28px;
-}
-
-.hover-actions .accept {
-  color: var(--color-accent-dim);
-}
-
-.hover-actions .reject {
-  color: var(--review-delete-text);
-}
-
-.hover-actions button:hover {
-  background: var(--color-bg);
-}
-
-.btn-ghost.accept-all {
-  color: var(--color-accent-dim);
-}
-
-.btn-ghost.reject-all {
-  color: var(--review-delete-text);
 }
 
 /* ---------- toast ---------- */
@@ -1784,7 +1860,7 @@ input[type='checkbox'] {
   }
 }
 
-/* ---------- keyboard suggestion walker ---------- */
+/* ---------- find-bar focus highlight ---------- */
 
 .kbd-focus {
   outline: 2px solid var(--focus-ring, var(--color-accent));
@@ -1837,131 +1913,6 @@ input[type='checkbox'] {
   .rail-card {
     width: 248px;
   }
-}
-
-/* ---------- agent suggestions (staging gate) ---------- */
-
-.sel-suggest {
-  color: var(--color-cta-text) !important;
-}
-
-.proposal-card {
-  position: fixed;
-  right: calc(var(--space-unit) * 4);
-  bottom: calc(var(--space-unit) * 4);
-  z-index: var(--z-popover);
-  width: 360px;
-  max-height: 70vh;
-  overflow-y: auto;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 28px rgb(0 0 0 / calc(0.16 * var(--shadow-strength)));
-  padding: calc(var(--space-unit) * 3);
-}
-
-.proposal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: calc(var(--space-unit) * 2);
-}
-
-.proposal-title {
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
-  font-size: var(--font-size-sm);
-}
-
-.proposal-status {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  margin: calc(var(--space-unit) * 2) 0;
-}
-
-.proposal-failed {
-  color: var(--review-delete-text);
-}
-
-.proposal-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.proposal-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(var(--space-unit) * 2);
-  padding: calc(var(--space-unit) * 2) 0;
-  border-top: 1px solid var(--color-border);
-}
-
-.proposal-row.rejected {
-  opacity: 0.5;
-}
-
-.proposal-diff {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--font-size-sm);
-  word-break: break-word;
-}
-
-.proposal-edit {
-  display: inline-block;
-  width: auto;
-  min-width: 120px;
-}
-
-.proposal-actions {
-  display: flex;
-  gap: 2px;
-  flex: none;
-}
-
-.proposal-btn {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-micro);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
-  padding: calc(var(--space-unit) * 1) calc(var(--space-unit) * 1.5);
-}
-
-.proposal-btn:hover {
-  color: var(--color-text);
-}
-
-.proposal-btn.accept.on {
-  color: var(--color-accent-dim);
-  border-color: var(--color-accent-dim);
-}
-
-.proposal-btn.reject.on {
-  color: var(--review-delete-text);
-  border-color: var(--review-delete-border);
-}
-
-.proposal-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(var(--space-unit) * 2);
-  margin-top: calc(var(--space-unit) * 3);
-  padding-top: calc(var(--space-unit) * 2);
-  border-top: 1px solid var(--color-border);
-}
-
-/* proposed marks (rendered in place) read as draft, not committed */
-.critic.proposed {
-  outline: 1px dashed var(--review-insert-border);
-  outline-offset: 1px;
-  opacity: 0.85;
 }
 
 /* ---------- mark-aware find bar ---------- */
@@ -2104,8 +2055,18 @@ input[type='checkbox'] {
 .toast {
   animation: mm-toast-in var(--dur-base) var(--ease-out);
 }
-.hover-actions {
+.block-actions {
   animation: mm-pop-in var(--dur-fast) var(--ease-out);
+}
+/* the dropdown / composer pops in when the ⋯ is clicked (parent stays mounted) */
+.block-menu,
+.block-compose {
+  transform-origin: top right;
+  animation: mm-pop-in var(--dur-fast) var(--ease-out);
+}
+.block-actions.flip-up .block-menu,
+.block-actions.flip-up .block-compose {
+  transform-origin: bottom right;
 }
 /* the comment toolbar rises out of the selection it's anchored above */
 .sel-toolbar {
@@ -2147,12 +2108,15 @@ input[type='checkbox'] {
     background-color var(--dur-fast) ease,
     transform var(--dur-fast) var(--ease-standard);
 }
-.hover-actions button,
+.block-menu > button,
 .sel-toolbar > button {
-  transition: transform var(--dur-fast) var(--ease-standard);
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
 }
 .btn-cta:active:not(:disabled),
-.hover-actions button:active,
+.block-menu > button:active,
 .sel-toolbar > button:active {
   transform: scale(0.96);
 }
@@ -2171,7 +2135,9 @@ input[type='checkbox'] {
   .toast,
   .sel-toolbar,
   .sel-toolbar.closing,
-  .hover-actions,
+  .block-actions,
+  .block-menu,
+  .block-compose,
   .rail-card,
   .rail-card.leaving,
   .rail-card.active {
@@ -2180,13 +2146,13 @@ input[type='checkbox'] {
   .seg-btn,
   .btn-cta,
   .cta-split,
-  .hover-actions button,
+  .block-menu > button,
   .sel-toolbar > button {
     transition: none;
   }
   .btn-cta:active:not(:disabled),
   .cta-split:active,
-  .hover-actions button:active,
+  .block-menu > button:active,
   .sel-toolbar > button:active {
     transform: none;
   }
@@ -2472,9 +2438,8 @@ input[type='checkbox'] {
   .rail,
   .mark-gutter,
   .slide-over,
-  .proposal-card,
   .sel-toolbar,
-  .hover-actions,
+  .block-actions,
   .agent-chip,
   .navigator,
   .nav-reveal,
@@ -2590,13 +2555,12 @@ input[type='checkbox'] {
 .rail-actions button,
 .sel-toolbar > button,
 .sel-composer-actions button,
-.hover-actions button,
+.block-menu > button,
+.block-compose-actions button,
 .slide-over-title,
 .tooltip,
 .modal h4,
 .agent-chip,
-.proposal-title,
-.proposal-btn,
 .find-filter {
   text-transform: none;
   letter-spacing: var(--ls-normal);

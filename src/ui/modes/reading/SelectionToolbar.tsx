@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { CriticSpan } from '../../../shared/critic/types'
 import type { TextEdit } from '../../../shared/types'
 import { useT } from '../../i18n'
-import { ChatIcon, StrikethroughIcon, HighlighterIcon, PencilIcon } from '../../icons'
+import { ChatIcon, StrikethroughIcon } from '../../icons'
 import { usePresence } from '../../util/presence'
 import { rangeToSourceRanges, markEdits, type SelRange } from './selection'
+import { commentEdits, deletionWrap } from './marks'
 
 /** matches --dur-fast; the toolbar's pop-out duration */
 const EXIT_MS = 120
@@ -15,9 +16,6 @@ interface Props {
   spans: readonly CriticSpan[]
   authorTag: string
   onEdit: (edits: TextEdit[]) => void
-  /** show "Suggest edits" (agent-channel provider with a live assist listener) */
-  canSuggest?: boolean
-  onSuggest?: (range: { from: number; to: number }, selection: string) => void
 }
 
 interface Active {
@@ -26,12 +24,7 @@ interface Active {
   rect: { top: number; left: number; width: number }
 }
 
-/** Comment bodies must not contain a closer or a blank line. */
-function sanitizeComment(text: string): string {
-  return text.trim().replace(/\n[ \t]*\n+/g, '\n').replaceAll('<<}', '<< }')
-}
-
-export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdit, canSuggest, onSuggest }: Props) {
+export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdit }: Props) {
   const t = useT()
   const [active, setActive] = useState<Active | null>(null)
   const [composing, setComposing] = useState(false)
@@ -113,16 +106,17 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
   const view = active ?? lastActive.current
   if (!present.mounted || !view) return null
 
-  // wrap each spanned block's slice independently — a mark can't cross a block
-  // boundary, so a multi-block selection becomes one mark per block.
-  const apply = (wrap: (text: string, index: number, isLast: boolean) => string): void => {
-    onEdit(markEdits(view.ranges, wrap))
+  const finish = (edits: TextEdit[]): void => {
+    onEdit(edits)
     window.getSelection()?.removeAllRanges()
     setActive(null)
     setComposing(false)
     setComment('')
   }
-  const commentInsert = (s: string): string => `{==${s}==}{>>@${authorTag}: ${sanitizeComment(comment)}<<}`
+  // a deletion can't cross a block boundary, so a multi-block selection becomes
+  // one `{--…--}` per block.
+  const applyDeletion = (): void => finish(markEdits(view.ranges, deletionWrap))
+  const applyComment = (): void => finish(commentEdits(view.ranges, authorTag, comment))
 
   const top = Math.max(8, view.rect.top - (composing ? 150 : 44))
   const left = Math.min(Math.max(8, view.rect.left + view.rect.width / 2 - 130), window.innerWidth - 280)
@@ -143,29 +137,10 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             <ChatIcon width={13} height={13} />
             {t('comment')}
           </button>
-          <button type="button" onClick={() => apply((s) => `{--${s}--}`)}>
+          <button type="button" onClick={applyDeletion}>
             <StrikethroughIcon width={13} height={13} />
             {t('suggestDeletion')}
           </button>
-          <button type="button" onClick={() => apply((s) => `{==${s}==}`)}>
-            <HighlighterIcon width={13} height={13} />
-            {t('highlight')}
-          </button>
-          {canSuggest && onSuggest && view.ranges.length === 1 && (
-            <button
-              type="button"
-              className="sel-suggest"
-              onClick={() => {
-                const r = view.ranges[0]!
-                onSuggest({ from: r.from, to: r.to }, r.text)
-                window.getSelection()?.removeAllRanges()
-                setActive(null)
-              }}
-            >
-              <PencilIcon width={13} height={13} />
-              {t('suggestEdits')}
-            </button>
-          )}
         </>
       ) : (
         <div className="sel-composer">
@@ -178,7 +153,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && comment.trim()) {
-                apply((s, i) => (i === 0 ? commentInsert(s) : `{==${s}==}`))
+                applyComment()
               } else if (e.key === 'Escape') {
                 // the textarea swallows keydowns (stopPropagation below), so
                 // the window-level Escape handler never sees this one
@@ -193,12 +168,7 @@ export function SelectionToolbar({ containerRef, source, spans, authorTag, onEdi
             <button type="button" onClick={() => setComposing(false)}>
               {t('cancel')}
             </button>
-            <button
-              type="button"
-              className="primary"
-              disabled={!comment.trim()}
-              onClick={() => apply((s, i) => (i === 0 ? commentInsert(s) : `{==${s}==}`))}
-            >
+            <button type="button" className="primary" disabled={!comment.trim()} onClick={applyComment}>
               {t('comment')}
             </button>
           </div>

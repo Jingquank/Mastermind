@@ -180,8 +180,6 @@ export type SseEvent =
   | { event: 'assist-availability'; data: { available: boolean } }
   /** server → agent: please do this LLM task and POST the result back */
   | { event: 'assist-request'; data: AssistRequestEvent }
-  /** server → ui: a suggest request settled (translate results return on the HTTP response) */
-  | { event: 'assist-result'; data: { id: string; kind: 'suggest'; ok: boolean } }
   /** workspace → tree: a directory's listing changed (add/remove/rename) */
   | { event: 'file-list-changed'; data: { dir: string } }
   /** workspace → tree: one file's review badge changed (re-fetch its file-meta) */
@@ -196,8 +194,12 @@ export interface AssistBlock {
   text: string
 }
 
-export type AssistRequestEvent =
-  | { id: string; kind: 'translate'; sourceLang: string; targetLang: string; blocks: AssistBlock[] }
-  | { id: string; kind: 'suggest'; scope: 'selection' | 'section' | 'document'; selection: string; context?: string }
+export type AssistRequestEvent = {
+  id: string
+  kind: 'translate'
+  sourceLang: string
+  targetLang: string
+  blocks: AssistBlock[]
+}
 
-export type AssistResultPayload = { kind: 'translate'; blocks: AssistBlock[] } | { kind: 'suggest'; markup: string }
+export type AssistResultPayload = { kind: 'translate'; blocks: AssistBlock[] }

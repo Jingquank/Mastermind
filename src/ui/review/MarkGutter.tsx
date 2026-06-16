@@ -3,7 +3,7 @@ import { scrollToSpan } from '../util/scroll'
 
 export interface MarkTick {
   spanIndex: number
-  kind: 'ins' | 'del' | 'sub' | 'highlight' | 'comment'
+  kind: 'ins' | 'del' | 'sub' | 'comment'
 }
 
 interface PlacedTick extends MarkTick {
@@ -21,7 +21,6 @@ const KIND_CLASS: Record<MarkTick['kind'], string> = {
   ins: 'tick-ins',
   del: 'tick-del',
   sub: 'tick-sub',
-  highlight: 'tick-hl',
   comment: 'tick-comment',
 }
 

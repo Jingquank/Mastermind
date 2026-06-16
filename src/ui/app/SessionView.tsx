@@ -1,19 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_AUTHOR_TAG } from '../../shared/constants'
-import { acceptEdit, rejectEdit } from '../../shared/critic/resolve'
+import { rejectEdit } from '../../shared/critic/resolve'
 import { analyzeMarkdown } from '../../shared/markdown/analyze'
 import { parseMarkdown } from '../../shared/markdown/processor'
 import { MarkdownView } from '../modes/reading/Renderer'
 import { SelectionToolbar } from '../modes/reading/SelectionToolbar'
+import { BlockActions } from '../modes/reading/BlockActions'
 import { CommentRail } from '../review/CommentRail'
-import { HoverActions } from '../review/HoverActions'
-import { ProposalCard } from '../review/ProposalCard'
-import { useProposals } from '../review/proposalStore'
 import { useNav } from './navStore'
 import { MarkGutter, type MarkTick } from '../review/MarkGutter'
 import { extractOutline } from '../modes/reading/outline'
 import { parseAuthor } from '../../shared/critic/scanner'
-import { scrollToSpan } from '../util/scroll'
 import { SlotLabel } from '../util/SlotLabel'
 import { formatCounts, useLang, useT } from '../i18n'
 import { CheckIcon, GearIcon } from '../icons'
@@ -38,13 +35,6 @@ function isTypingTarget(e: KeyboardEvent): boolean {
   const el = e.target as HTMLElement | null
   if (!el) return false
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable
-}
-
-/** Enter/Backspace must activate focused chrome, never the walker. */
-function isInteractiveTarget(e: KeyboardEvent): boolean {
-  const el = e.target as HTMLElement | null
-  if (!el || typeof el.closest !== 'function') return false
-  return el.closest('button, a, [role="button"], [tabindex]') !== null
 }
 
 export function SessionView({ sessionId }: { sessionId: string }) {
@@ -82,7 +72,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const [agentWaiting, setAgentWaiting] = useState(false)
   const [assistAvailable, setAssistAvailable] = useState(false)
-  const [walkIndex, setWalkIndex] = useState<number | null>(null)
   const authorTag = useConfig((s) => s.config?.authorTag) ?? DEFAULT_AUTHOR_TAG
   const langPair = useConfig((s) => s.config?.langPair) ?? { a: 'en', b: 'zh-CN' }
   const highlightCode = (useConfig((s) => s.config?.codeTheme) ?? 'none') !== 'none'
@@ -165,10 +154,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
       const { available } = JSON.parse((e as MessageEvent).data) as { available: boolean }
       setAssistAvailable(available)
     })
-    es.addEventListener('assist-result', (e) => {
-      const { id, kind, ok } = JSON.parse((e as MessageEvent).data) as { id: string; kind: string; ok: boolean }
-      if (kind === 'suggest') void useProposals.getState().onResult(id, ok)
-    })
     return () => es.close()
   }, [sessionId])
 
@@ -189,16 +174,6 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     return set
   }, [analysis])
 
-  const suggestions = useMemo(
-    () =>
-      analysis
-        ? analysis.items
-            .filter((i): i is Extract<typeof i, { type: 'suggestion' }> => i.type === 'suggestion')
-            .map((i) => analysis.spans.indexOf(i.span))
-            .filter((i) => i >= 0)
-        : [],
-    [analysis],
-  )
   // The heading outline drives the left navigator in both modes (so its
   // collapse/expand state persists across Reading/Source). Reading reuses its
   // critic-aware tree; Source parses the source directly.
@@ -230,8 +205,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         const idx = analysis.spans.indexOf(item.span)
         if (idx >= 0) ticks.push({ spanIndex: idx, kind: item.span.kind as MarkTick['kind'] })
       } else if (item.type === 'highlight') {
-        const idx = analysis.spans.indexOf(item.span)
-        if (idx >= 0) ticks.push({ spanIndex: idx, kind: 'highlight' })
+        // standalone highlights are no longer rendered (only comment anchors are),
+        // so they get no gutter tick.
       } else {
         const anchor = item.anchor ?? item.comments[0]?.span
         const idx = anchor ? analysis.spans.indexOf(anchor) : -1
@@ -241,7 +216,7 @@ export function SessionView({ sessionId }: { sessionId: string }) {
     return ticks
   }, [analysis])
 
-  // keyboard suggestion walker: n/p (or j/k) step, Enter accepts, Backspace rejects
+  // global shortcuts: ⌘S (swallow), ⌘E (toggle view), ⌘F (find), ⌘Z (undo)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // ⌘S is a no-op now — the buffer autosaves. Swallow it so the browser's
@@ -277,70 +252,57 @@ export function SessionView({ sessionId }: { sessionId: string }) {
         }
         return
       }
-      if (e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e)) return
-      const s = useDoc.getState()
-      if (s.mode !== 'reading') return
-      const key = e.key.toLowerCase()
-      if (key === 'n' || key === 'j' || key === 'p' || key === 'k') {
-        e.preventDefault()
-        setWalkIndex((prev) => {
-          if (suggestions.length === 0) return null
-          const forward = key === 'n' || key === 'j'
-          if (prev === null) return forward ? 0 : suggestions.length - 1
-          const next = prev + (forward ? 1 : -1)
-          return Math.min(Math.max(next, 0), suggestions.length - 1)
-        })
-      } else if (
-        (e.key === 'Enter' || e.key === 'Backspace' || e.key === 'Delete') &&
-        walkIndex !== null &&
-        !isInteractiveTarget(e)
-      ) {
-        const spanIdx = suggestions[walkIndex]
-        const span = spanIdx !== undefined ? analysis?.spans[spanIdx] : undefined
-        if (span) {
-          e.preventDefault()
-          const edit = e.key === 'Enter' ? acceptEdit(s.source, span) : rejectEdit(s.source, span)
-          applyEdits([edit])
-          setWalkIndex((prev) => (prev === null ? null : suggestions.length - 1 <= 0 ? null : Math.min(prev, suggestions.length - 2)))
-        }
-      } else if (e.key === 'Escape' && !settingsOpen && !findOpen && !renamePrompt) {
-        // layered dismissal: overlays consume Escape before the walker does
-        setWalkIndex(null)
-      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [suggestions, walkIndex, analysis, applyEdits, settingsOpen, findOpen, renamePrompt])
-
-  // paint + scroll the walker's current suggestion
-  useEffect(() => {
-    const doc = articleRef.current
-    if (!doc) return
-    doc.querySelectorAll('.kbd-focus').forEach((el) => el.classList.remove('kbd-focus'))
-    if (walkIndex === null) return
-    const spanIdx = suggestions[walkIndex]
-    if (spanIdx === undefined) return
-    const el = scrollToSpan(articleRef, spanIdx)
-    el?.classList.add('kbd-focus')
-  }, [walkIndex, suggestions, analysis])
-
-  // clicking an anchored highlight or comment marker activates its rail card
-  const onArticleClick = useCallback((e: React.MouseEvent) => {
-    const target = (e.target as HTMLElement).closest('.critic-anchor, .critic-comment-marker')
-    if (target) {
-      const idx = Number((target as HTMLElement).dataset.spanIndex)
-      if (Number.isFinite(idx)) setActiveSpan((prev) => (prev === idx ? null : idx))
-    }
   }, [])
-  const onArticleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return
-    const target = (e.target as HTMLElement).closest('.critic-anchor, .critic-comment-marker')
-    if (target) {
-      e.preventDefault()
-      const idx = Number((target as HTMLElement).dataset.spanIndex)
-      if (Number.isFinite(idx)) setActiveSpan((prev) => (prev === idx ? null : idx))
-    }
-  }, [])
+
+  // Remove a suggested deletion the user placed: rejecting a `del` keeps the
+  // original text (unwraps the `{--…--}`). Reuses the live source/analysis.
+  const undoDeletion = useCallback(
+    (el: HTMLElement): boolean => {
+      const span = analysis?.spans[Number(el.dataset.spanIndex)]
+      if (!span || span.kind !== 'del') return false
+      applyEdits([rejectEdit(source, span)])
+      return true
+    },
+    [analysis, source, applyEdits],
+  )
+
+  // clicking a deletion removes it; clicking an anchored highlight / comment
+  // marker activates its rail card.
+  const onArticleClick = useCallback(
+    (e: React.MouseEvent) => {
+      // a drag-to-select that ends inside a deletion shouldn't also undo it
+      if (window.getSelection()?.isCollapsed === false) return
+      const del = (e.target as HTMLElement).closest('.critic-del') as HTMLElement | null
+      if (del && undoDeletion(del)) return
+      const target = (e.target as HTMLElement).closest('.critic-anchor, .critic-comment-marker')
+      if (target) {
+        const idx = Number((target as HTMLElement).dataset.spanIndex)
+        if (Number.isFinite(idx)) setActiveSpan((prev) => (prev === idx ? null : idx))
+      }
+    },
+    [undoDeletion],
+  )
+  const onArticleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      const del = (e.target as HTMLElement).closest('.critic-del') as HTMLElement | null
+      if (del) {
+        e.preventDefault()
+        undoDeletion(del)
+        return
+      }
+      const target = (e.target as HTMLElement).closest('.critic-anchor, .critic-comment-marker')
+      if (target) {
+        e.preventDefault()
+        const idx = Number((target as HTMLElement).dataset.spanIndex)
+        if (Number.isFinite(idx)) setActiveSpan((prev) => (prev === idx ? null : idx))
+      }
+    },
+    [undoDeletion],
+  )
 
   const activeCardSpan = useMemo(() => {
     if (activeSpan === null || !analysis) return null
@@ -478,10 +440,8 @@ export function SessionView({ sessionId }: { sessionId: string }) {
                   anchoredHighlights,
                   highlightCode,
                   markLabels: {
-                    insertion: t('markInsertion'),
                     deletion: t('markDeletion'),
-                    change: t('markChange'),
-                    hint: t('markResolveHint'),
+                    hint: t('undoDeletion'),
                   },
                 }}
               />
@@ -527,11 +487,14 @@ export function SessionView({ sessionId }: { sessionId: string }) {
             spans={analysis.spans}
             authorTag={authorTag}
             onEdit={applyEdits}
-            canSuggest={assistAvailable}
-            onSuggest={(range, selection) => void useProposals.getState().request(sessionId, range, selection)}
           />
-          <HoverActions articleRef={articleRef} spans={analysis.spans} source={source} onEdit={applyEdits} />
-          <ProposalCard onEdit={applyEdits} />
+          <BlockActions
+            containerRef={articleRef}
+            source={source}
+            spans={analysis.spans}
+            authorTag={authorTag}
+            onEdit={applyEdits}
+          />
           {markTicks.length > 0 && !showRail && (
             <MarkGutter docRef={articleRef} marks={markTicks} version={externalVersion} />
           )}

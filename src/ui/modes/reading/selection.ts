@@ -161,6 +161,41 @@ function markFreeGaps(from: number, to: number, source: string, spans: readonly 
   return out
 }
 
+/** Block/list containers: an element whose nearest one of these is the target
+ *  block belongs to that block directly (not to a nested list/paragraph). */
+const NESTED_CONTAINER = `${BLOCK_SELECTOR},ul,ol`
+
+/**
+ * A whole leaf block's content source ranges — the markdown structural prefix
+ * (`## `, `- `) excluded, inline markdown (`**`, links) included — split around
+ * any existing marks. Unlike a DOM Range mapped through {@link rangeToSourceRanges}
+ * (whose text must equal the source slice, which breaks on inline formatting), this
+ * spans from the block's first inline `[data-ps]` offset to its last `[data-pe]`,
+ * so it's robust for any block. Descendants that live inside a *nested* block or
+ * list (a sub-list under a list item, a loose item's paragraph) are excluded, so
+ * the range never crosses a block boundary or a blank line. Empty array if nothing
+ * directly in the block can be marked.
+ */
+export function blockContentRanges(
+  block: HTMLElement,
+  source: string,
+  spans: readonly CriticSpan[],
+): SelRange[] {
+  let from = Infinity
+  let to = -Infinity
+  for (const el of block.querySelectorAll<HTMLElement>('[data-ps]')) {
+    // only inline content owned directly by `block` — skip nested blocks/lists
+    // (and their descendants), whose nearest container is something else.
+    if (el.closest(NESTED_CONTAINER) !== block) continue
+    const ps = Number(el.dataset.ps)
+    const pe = Number(el.dataset.pe)
+    if (Number.isFinite(ps)) from = Math.min(from, ps)
+    if (Number.isFinite(pe)) to = Math.max(to, pe)
+  }
+  if (from === Infinity || to <= from) return []
+  return markFreeGaps(from, to, source, spans)
+}
+
 /**
  * DOM Range → the source ranges to wrap, one or more per spanned block. A mark
  * can't cross a block boundary or overlap an existing mark, so a big selection is

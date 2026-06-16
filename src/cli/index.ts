@@ -68,8 +68,8 @@ program
   .command('open')
   .argument('<file>', 'markdown file to open')
   .option('--wait', 'block until the user clicks "Save & hand back", then exit 0')
-  .option('--serve-assist', 'answer translation/suggestion requests for this session (on by default with --wait)')
-  .option('--no-assist', 'with --wait, review only — do not serve the assist channel (translation/suggestions)')
+  .option('--serve-assist', 'answer translation requests for this session (on by default with --wait)')
+  .option('--no-assist', 'with --wait, review only — do not serve the assist channel (translation)')
   .option('--no-browser', 'print the URL without opening a browser tab')
   .option('--in <browser>', 'open in a specific browser app, e.g. "Google Chrome" (overrides the configured default)')
   .description('start the server if not running and open a browser tab for this file')
@@ -128,7 +128,7 @@ program
 program
   .command('assist')
   .argument('<file>', 'markdown file under review')
-  .description('listen for translation/suggestion requests and stream them as JSON lines (agent-channel)')
+  .description('listen for translation requests and stream them as JSON lines (agent-channel)')
   .action(async (file: string) => {
     const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
     const abs = path.resolve(file)
@@ -142,9 +142,8 @@ program
   .command('assist-result')
   .argument('<id>', 'the request id from the assist-request line')
   .option('--blocks <json>', 'translate result: JSON [{hash,text}]')
-  .option('--markup <md>', 'suggest result: the selection rewritten with CriticMarkup')
   .description('deliver an agent-channel result back to Mastermind')
-  .action(async (id: string, opts: { blocks?: string; markup?: string }) => {
+  .action(async (id: string, opts: { blocks?: string }) => {
     const state = readServerState()
     if (!state) die(1, 'no daemon running')
     let payload: unknown
@@ -156,10 +155,8 @@ program
         die(2, '--blocks must be valid JSON')
       }
       payload = { kind: 'translate', blocks }
-    } else if (opts.markup !== undefined) {
-      payload = { kind: 'suggest', markup: opts.markup }
     } else {
-      die(2, 'provide --blocks or --markup')
+      die(2, 'provide --blocks')
     }
     try {
       await postNoContent(state.port, `/api/assist/${id}/result`, payload)

@@ -23,29 +23,21 @@ export interface RenderCtx {
   anchoredHighlights?: ReadonlySet<number>
   /** When set, paint fenced code with syntax-token spans (the user's code-color scheme). */
   highlightCode?: boolean
-  /** Localized labels for keyboard / screen-reader mark resolution. When present,
-   *  suggestion marks (ins/del/sub) become tabbable buttons that announce their
-   *  action; absent (e.g. the translated view), the marks stay inert. */
-  markLabels?: { insertion: string; deletion: string; change: string; hint: string }
+  /** Localized labels for the deletion-undo affordance. When present, a deletion
+   *  mark becomes a tabbable button announcing that activating it removes the
+   *  suggestion; absent (e.g. the translated view), the mark stays inert. */
+  markLabels?: { deletion: string; hint: string }
 }
 
-/** Build a keyboard/SR action label for a suggestion mark. */
-function markLabel(labels: NonNullable<RenderCtx['markLabels']>, kind: 'ins' | 'del' | 'sub', text: string): string {
-  const name = kind === 'ins' ? labels.insertion : kind === 'del' ? labels.deletion : labels.change
-  // Trim a trailing period/space so the appended hint reads as one clean sentence.
-  const body = text.replace(/[.\s]+$/, '')
-  return `${name}: ${body}. ${labels.hint}`
-}
-
-/** Props that make a suggestion mark a tabbable, announced button — only when the
- *  view wired resolution (ctx.markLabels). Empty otherwise, so the mark stays inert. */
-function resolveProps(
+/** Props that make a deletion mark a tabbable, announced button (click/Enter to
+ *  remove the suggestion) — only when the view wired resolution (ctx.markLabels). */
+function deletionProps(
   ctx: RenderCtx,
-  kind: 'ins' | 'del' | 'sub',
   text: string,
 ): { tabIndex: 0; role: 'button'; 'aria-label': string } | Record<string, never> {
   if (!ctx.markLabels) return {}
-  return { tabIndex: 0, role: 'button', 'aria-label': markLabel(ctx.markLabels, kind, text) }
+  const body = text.replace(/[.\s]+$/, '')
+  return { tabIndex: 0, role: 'button', 'aria-label': `${ctx.markLabels.deletion}: ${body}. ${ctx.markLabels.hint}` }
 }
 
 /** Tokenized children for a fenced code block — plain strings for `text`, colored spans otherwise. */
@@ -64,12 +56,7 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
     case 'criticInsert': {
       const n = node as CriticWrapNode
       return (
-        <ins
-          key={key}
-          className="critic critic-ins"
-          data-span-index={n.data.spanIndex}
-          {...resolveProps(ctx, 'ins', phrasingText(n.children))}
-        >
+        <ins key={key} className="critic critic-ins" data-span-index={n.data.spanIndex}>
           {renderInline(n.children, ctx)}
         </ins>
       )
@@ -81,7 +68,7 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
           key={key}
           className="critic critic-del"
           data-span-index={n.data.spanIndex}
-          {...resolveProps(ctx, 'del', phrasingText(n.children))}
+          {...deletionProps(ctx, phrasingText(n.children))}
         >
           {renderInline(n.children, ctx)}
         </del>
@@ -89,13 +76,18 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
     }
     case 'criticHighlight': {
       const n = node as CriticWrapNode
-      const anchored = ctx.anchoredHighlights?.has(n.data.spanIndex)
+      // A highlight is only a visual when it anchors a comment thread; a standalone
+      // highlight renders as plain text (the Highlight verb was retired).
+      if (!ctx.anchoredHighlights?.has(n.data.spanIndex)) {
+        return <Fragment key={key}>{renderInline(n.children, ctx)}</Fragment>
+      }
       return (
         <mark
           key={key}
-          className={`critic critic-hl${anchored ? ' critic-anchor' : ''}`}
+          className="critic critic-hl critic-anchor"
           data-span-index={n.data.spanIndex}
-          {...(anchored ? { role: 'button', tabIndex: 0 } : {})}
+          role="button"
+          tabIndex={0}
         >
           {renderInline(n.children, ctx)}
         </mark>
@@ -104,12 +96,7 @@ function renderCritic(node: { type: string }, key: number, ctx: RenderCtx): Reac
     case 'criticSub': {
       const n = node as CriticSubNode
       return (
-        <span
-          key={key}
-          className="critic critic-sub"
-          data-span-index={n.data.spanIndex}
-          {...resolveProps(ctx, 'sub', `${n.data.old} → ${n.data.new}`)}
-        >
+        <span key={key} className="critic critic-sub" data-span-index={n.data.spanIndex}>
           <del>{n.data.old}</del>
           <span className="critic-sub-arrow" aria-hidden>
             →

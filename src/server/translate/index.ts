@@ -56,7 +56,7 @@ export async function translateBlocks(
   let error: string | undefined
   try {
     const payload = await assist.enqueue(session, { kind: 'translate', sourceLang, targetLang, blocks: misses })
-    const byHash = new Map(payload.kind === 'translate' ? payload.blocks.map((b) => [b.hash, b.text]) : [])
+    const byHash = new Map(payload.blocks.map((b) => [b.hash, b.text]))
     for (const block of misses) {
       const text = byHash.get(block.hash)
       if (text === undefined) results.push({ hash: block.hash, error: 'provider', cached: false })

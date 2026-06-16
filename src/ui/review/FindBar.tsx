@@ -5,7 +5,7 @@ import { useT } from '../i18n'
 import { scrollToSpan } from '../util/scroll'
 import { ChevronUpIcon, ChevronDownIcon } from '../icons'
 
-type Filter = 'all' | 'comment' | 'suggestion' | 'highlight'
+type Filter = 'all' | 'comment' | 'suggestion'
 
 interface MarkEntry {
   spanIndex: number
@@ -39,8 +39,9 @@ export function FindBar({ analysis, source, docRef, onClose }: Props) {
         group = 'suggestion'
         text = `${source.slice(span.oldStart!, span.oldEnd!)} ${source.slice(span.newStart!, span.newEnd!)}`
       } else if (span.kind === 'highlight') {
-        group = 'highlight'
-        text = source.slice(span.innerStart, span.innerEnd)
+        // standalone highlights render invisibly and anchored ones are reachable
+        // via their comment; either way they're not their own find target.
+        return
       } else {
         group = 'comment'
         text = parseAuthor(source.slice(span.innerStart, span.innerEnd)).body
@@ -72,7 +73,7 @@ export function FindBar({ analysis, source, docRef, onClose }: Props) {
   const step = (delta: number): void => setIdx((i) => i + delta)
   const current = matches.length ? (((idx % matches.length) + matches.length) % matches.length) + 1 : 0
 
-  const FILTERS: Filter[] = ['all', 'comment', 'suggestion', 'highlight']
+  const FILTERS: Filter[] = ['all', 'comment', 'suggestion']
 
   return (
     <div className="find-bar" role="search">

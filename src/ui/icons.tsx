@@ -11,7 +11,6 @@ import {
   ChevronDownIcon as RChevronDownIcon,
   FileIcon as RFileIcon,
   Cross2Icon,
-  Pencil1Icon,
   StrikethroughIcon as RStrikethroughIcon,
   EyeOpenIcon,
   CounterClockwiseClockIcon,
@@ -67,7 +66,6 @@ export const FileIcon = radix(RFileIcon, 14)
 
 /* ---- new review/chrome verbs ---- */
 export const CrossIcon = radix(Cross2Icon, 14)
-export const PencilIcon = radix(Pencil1Icon, 14)
 export const StrikethroughIcon = radix(RStrikethroughIcon, 14)
 export const EyeIcon = radix(EyeOpenIcon, 14)
 export const HistoryIcon = radix(CounterClockwiseClockIcon, 14)
@@ -105,16 +103,6 @@ export function SwapIcon(props: IconProps) {
   return (
     <svg {...base(props, 13)}>
       <path d="M2.5 5.5h9.5m0 0L9.5 3m2.5 2.5L9.5 8M13.5 10.5H4m0 0L6.5 8M4 10.5 6.5 13" />
-    </svg>
-  )
-}
-
-/** Highlighter — a broad-nib marker over a stroke (the Highlight review verb). */
-export function HighlighterIcon(props: IconProps) {
-  return (
-    <svg {...base(props, 14)}>
-      <path d="M3 13.5h9" />
-      <path d="M10.2 2.6 13.4 5.8 7 12.2l-3.4.5.5-3.4z" />
     </svg>
   )
 }

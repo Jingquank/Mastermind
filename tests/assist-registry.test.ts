@@ -32,6 +32,11 @@ interface FakeAgent {
   requests: { event: string; data: unknown }[]
 }
 
+/** A minimal translate request — the only assist task kind. */
+function translateReq(text = 'x') {
+  return { kind: 'translate' as const, sourceLang: 'en', targetLang: 'zh-CN', blocks: [{ hash: 'h', text }] }
+}
+
 function attachFakeAgent(sessionId: string, assistCapable = true): FakeAgent {
   const requests: { event: string; data: unknown }[] = []
   const conn: Conn = {
@@ -73,7 +78,7 @@ describe('AssistRegistry', () => {
   it('rejects immediately with no-agent when no assist-capable listener', async () => {
     const { session } = sessions.open(file)
     attachFakeAgent(session.id, false) // a plain --wait waiter, NOT assist-capable
-    await expect(assist.enqueue(session, { kind: 'suggest', scope: 'selection', selection: 'x' })).rejects.toMatchObject({
+    await expect(assist.enqueue(session, translateReq())).rejects.toMatchObject({
       code: 'no-agent',
     })
   })
@@ -82,7 +87,7 @@ describe('AssistRegistry', () => {
     vi.useFakeTimers()
     const { session } = sessions.open(file)
     attachFakeAgent(session.id)
-    const promise = assist.enqueue(session, { kind: 'suggest', scope: 'selection', selection: 'x' })
+    const promise = assist.enqueue(session, translateReq())
     const assertion = expect(promise).rejects.toMatchObject({ code: 'timeout' })
     await vi.advanceTimersByTimeAsync(250)
     await assertion
@@ -93,7 +98,7 @@ describe('AssistRegistry', () => {
   it('fail() rejects with agent-error', async () => {
     const { session } = sessions.open(file)
     const agent = attachFakeAgent(session.id)
-    const promise = assist.enqueue(session, { kind: 'suggest', scope: 'selection', selection: 'x' })
+    const promise = assist.enqueue(session, translateReq())
     const id = (agent.requests[0]!.data as { id: string }).id
     expect(assist.fail(id, 'cannot')).toBe(true)
     await expect(promise).rejects.toMatchObject({ code: 'agent-error' })
@@ -102,15 +107,15 @@ describe('AssistRegistry', () => {
   it('cancelForSession rejects all pending (close path)', async () => {
     const { session } = sessions.open(file)
     attachFakeAgent(session.id)
-    const p1 = assist.enqueue(session, { kind: 'suggest', scope: 'selection', selection: 'a' })
-    const p2 = assist.enqueue(session, { kind: 'suggest', scope: 'selection', selection: 'b' })
+    const p1 = assist.enqueue(session, translateReq('a'))
+    const p2 = assist.enqueue(session, translateReq('b'))
     assist.cancelForSession(session.id)
     await expect(p1).rejects.toMatchObject({ code: 'cancelled' })
     await expect(p2).rejects.toMatchObject({ code: 'cancelled' })
   })
 
   it('resolve on an unknown/expired id is a no-op false (dup-safe)', () => {
-    expect(assist.resolve('nope', { kind: 'suggest', markup: 'x' })).toBe(false)
+    expect(assist.resolve('nope', { kind: 'translate', blocks: [] })).toBe(false)
     expect(assist.fail('nope', 'x')).toBe(false)
   })
 

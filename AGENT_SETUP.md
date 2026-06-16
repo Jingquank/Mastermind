@@ -74,7 +74,7 @@ mastermind open <file>                       # the language toggle is warm; the 
 
 ## Acting as Mastermind's LLM provider (agent-channel)
 
-If the user sets the translation provider to **"Your coding agent"** in Settings, Mastermind routes translation (and inline edit-suggestions) to *you* through the file channel — no API key, no cloud.
+If the user sets the translation provider to **"Your coding agent"** in Settings, Mastermind routes translation to *you* through the file channel — no API key, no cloud.
 
 Run a listener alongside the review (a background process is ideal — it streams one JSON line per task to stdout):
 
@@ -82,7 +82,7 @@ Run a listener alongside the review (a background process is ideal — it stream
 mastermind assist <plan-file>.md
 ```
 
-Each task line is prefixed `mastermind-assist: ` followed by JSON. Two kinds:
+Each task line is prefixed `mastermind-assist: ` followed by JSON. There is one kind:
 
 1. **translate** — `mastermind-assist: {"id":"…","kind":"translate","sourceLang":"…","targetLang":"…","blocks":[{"hash":"…","text":"…"}]}`
    Translate each block's text. **Preserve all Markdown and CriticMarkup syntax exactly** (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`); translate only the human-readable text, and keep `@name:` author tags untranslated. Reply:
@@ -90,21 +90,14 @@ Each task line is prefixed `mastermind-assist: ` followed by JSON. Two kinds:
    mastermind assist-result <id> --blocks '[{"hash":"…","text":"<translated>"}]'
    ```
 
-2. **suggest** — `mastermind-assist: {"id":"…","kind":"suggest","scope":"selection|section|document","selection":"<raw md>","context":"<surrounding>"}`
-   Propose improvements **as CriticMarkup over the selection only** — insertions `{++…++}`, deletions `{--…--}`, substitutions `{~~old~>new~~}`. Do **not** add comments or highlights, and do not rewrite text outside the marks (Mastermind rejects any markup whose rejected form differs from the original selection). Return the selection with your marks inline. Reply:
-   ```
-   mastermind assist-result <id> --markup '<selection-with-criticmarkup>'
-   ```
-   The user reviews every proposed mark and accepts/edits/dismisses each before it enters the document — your suggestions never touch the file directly.
-
 If you can't fulfill a task: `mastermind assist-error <id> --reason "…"`. Tasks expire after ~2 minutes; a late reply is ignored.
 
 ### Serving assist alongside an open document
 
-A `--wait` review serves the assist channel **by default**, so the common review flow already pre-translates and answers inline-suggestion requests:
+A `--wait` review serves the assist channel **by default**, so the common review flow already pre-translates:
 
 - `mastermind open --wait <file>` — the blocking review loop; **serves assist by default**. Add `--no-assist` to review without it.
-- `mastermind open --serve-assist <file>` — opens the doc and answers assist tasks **without blocking** on hand-back. Use this when you want translation / inline suggestions to just work while the user reads but don't need the hand-back signal.
+- `mastermind open --serve-assist <file>` — opens the doc and answers assist tasks **without blocking** on hand-back. Use this when you want translation to just work while the user reads but don't need the hand-back signal.
 - `mastermind assist <file>` — a standalone listener (no browser tab of its own).
 
 All bind to the same session by the file's real path, print the same `mastermind-assist:` lines, and auto-reconnect across transient drops so translation stays live for the whole review. **To actually pre-translate, answer those lines** — run the command as a background process and reply to each `translate` task with `mastermind assist-result`; left unanswered, the tasks simply expire and the toggle falls back to whatever is already cached.

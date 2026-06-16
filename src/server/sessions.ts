@@ -30,7 +30,7 @@ async function pruneStaleHistory(realPath: string): Promise<void> {
 
 export interface Conn {
   readonly role: ConnRole
-  /** cli conns that opted into agent-channel work (SSE `assist=1`); answers translate/suggest requests. */
+  /** cli conns that opted into agent-channel work (SSE `assist=1`); answers translate requests. */
   readonly assistCapable?: boolean
   /** Push one SSE event to this connection. */
   readonly send: (event: SseEventName, data: unknown) => Promise<void>
