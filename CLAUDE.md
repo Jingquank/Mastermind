@@ -26,13 +26,18 @@ Running the CLI from a clone (not npm-linked): `node bin/mastermind.js <cmd>` (t
 
 ## Workflow: dogfood plan reviews through Mastermind
 
-This repo *is* Mastermind, so use it to review your own plans. When asked to plan a change, write the plan to a `.md` file instead of chat, then run:
+This repo *is* Mastermind, so use it to review your own plans. When asked to plan a change, write the plan to a `.md` file instead of chat. **Always translate it first, then open** — `open` refuses a cold cache (exit 2) because the reading-language toggle is cache-only and can't fetch on demand:
 
 ```sh
-node bin/mastermind.js open --wait <plan-file>.md   # or `mastermind open --wait …` if npm-linked
+# 1. pre-translate into the cache (the toggle is cache-only — warm it first)
+node bin/mastermind.js translate-blocks <plan-file>.md   # → { targetLang, blocks:[{hash,text}] }
+#    translate each block's text, preserving Markdown + CriticMarkup, then:
+printf '%s' '[{"hash":"…","text":"<translated>"},…]' | node bin/mastermind.js translate-blocks <plan-file>.md --save
+# 2. open for review (cache is warm, so the toggle flips instantly)
+node bin/mastermind.js open --wait <plan-file>.md       # or `mastermind …` if npm-linked
 ```
 
-The command blocks while the user reviews. When it returns, **re-read the file** — CriticMarkup marks (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`) and the `<!-- mastermind:summary -->` block carry the user's feedback. Revise the document directly — apply or argue each suggested edit, address every comment, then remove the resolved marks and the summary block. Do **not** add CriticMarkup of your own (the user sees your changes through Mastermind's revision diff). Re-open with the same command for the next round until approved. Full protocol and exit-code contract: `AGENT_SETUP.md`.
+If `blocks` is empty in step 1 the cache is already warm — skip straight to `open`. (Reviewing a doc you don't need translated? `open --no-translate` bypasses the guard.) The command blocks while the user reviews. When it returns, **re-read the file** — CriticMarkup marks (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`) and the `<!-- mastermind:summary -->` block carry the user's feedback. Revise the document directly — apply or argue each suggested edit, address every comment, then remove the resolved marks and the summary block. Do **not** add CriticMarkup of your own (the user sees your changes through Mastermind's revision diff). Re-open with the same command for the next round until approved. Full protocol and exit-code contract: `AGENT_SETUP.md`.
 
 If the user sets the translation provider to "Your coding agent", you can also serve as the LLM provider over the same file channel — run `mastermind assist <file>` (or `open --serve-assist`) and answer `translate`/`suggest` tasks as documented in `AGENT_SETUP.md`.
 

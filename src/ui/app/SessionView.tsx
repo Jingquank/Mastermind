@@ -360,8 +360,9 @@ export function SessionView({ sessionId }: { sessionId: string }) {
               })(),
           active: transActive,
           loading: transLoading,
-          // always clickable: it toggles instantly from the on-disk cache, and when a
-          // block isn't cached and no agent is listening, the toggle surfaces a notice.
+          // pure toggle: cache + in-memory only, it never enqueues the agent. It flips
+          // instantly from the on-disk cache; uncached blocks fall back to the original
+          // and surface a notice (the agent pre-translates and prefetch warms the cache).
           onToggle: () => void useTranslation.getState().toggle(sessionId, source, langPair),
         }}
       />

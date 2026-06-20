@@ -4,8 +4,13 @@ Paste the block below into your `CLAUDE.md` / agent instruction file to make pla
 
 ```markdown
 ## Plan reviews via Mastermind
-When asked to plan, write the plan to a `.md` file instead of chat, then run:
-`mastermind open --wait <plan-file>.md`
+When asked to plan, write the plan to a `.md` file instead of chat. ALWAYS translate
+it into the cache first, then open — `open` refuses a cold cache (the reading-language
+toggle is cache-only and never fetches on demand):
+`mastermind translate-blocks <plan-file>.md`   # → { targetLang, blocks:[{hash,text}] }
+translate each block's text (preserve all Markdown + CriticMarkup), then:
+`printf '%s' '[{"hash":"…","text":"…"}]' | mastermind translate-blocks <plan-file>.md --save`
+`mastermind open --wait <plan-file>.md`        # cache is warm; the toggle flips instantly
 The command blocks while the user reviews. When it returns, re-read the file:
 CriticMarkup marks ({++ ++}, {-- --}, {~~ ~> ~~}, {== ==}, {>> <<}) and the
 review summary block contain the user's feedback.
@@ -46,18 +51,24 @@ printf '%s' '[{"hash":"…","text":"<translated>"}]' | mastermind translate-bloc
 mastermind open <file>                       # the language toggle is warm; the cache survives offline
 ```
 
+This is mandatory, not optional: the reading-language toggle is **cache-only** — clicking it
+flips between the original and whatever is already cached and never sends a live request. So
+`mastermind open` enforces a warm cache: it exits `2` on a cold/partial cache and points back
+at the two commands above. Use `mastermind open --no-translate <file>` to open a doc you don't
+need translated.
+
 `mastermind config`, `browsers`, `themes`, and `typefaces` round out the CLI the skills drive.
 
 ## How the protocol behaves
 
-- `mastermind open --wait <file>` prints the review URL to stdout immediately, then blocks. It now **serves the assist channel by default** — the reading-language toggle goes live and Mastermind pre-translates the document while the user reads (answer the `mastermind-assist:` lines it prints; see below). Pass `--no-assist` to review without it.
+- `mastermind open --wait <file>` prints the review URL to stdout immediately, then blocks. It **serves the assist channel by default** — a background warm-up that keeps the cache current (e.g. for blocks edited mid-review) by answering the `mastermind-assist:` lines it prints. This is a convenience on top of the mandatory translate-first step, not a substitute for it (the toggle click itself never asks the agent). Pass `--no-assist` to review without it.
 - On **Save & hand back** it prints one machine-readable line and exits `0`:
 
   ```
   mastermind: review complete — 3 comments, 2 suggested edits
   ```
 
-- Exit `1`: the tab was closed without handing back, the browser never connected, or the daemon went away. Exit `130`: Ctrl+C. Exit `2`: bad invocation (missing file, pinned port owned by another process).
+- Exit `1`: the tab was closed without handing back, the browser never connected, or the daemon went away. Exit `130`: Ctrl+C. Exit `2`: bad invocation (missing file, pinned port owned by another process, or a cold translation cache — pre-translate first, or pass `--no-translate`).
 - The same wording lands in the file inside the summary block:
 
   ```markdown

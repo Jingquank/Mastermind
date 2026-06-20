@@ -29,6 +29,12 @@ export interface TranslateOutcome {
  * and fresh results are persisted. A missing/slow agent fails only the misses;
  * cached blocks are unaffected, so translation degrades gracefully instead of
  * going all-or-nothing.
+ *
+ * `cacheOnly` makes this a pure read of the on-disk cache: misses are reported as
+ * `no-agent` and the coding agent is never asked. The reading-language toggle uses
+ * this path so a click only ever flips between the original and already-cached text
+ * — it never sends a live translation request. Background prefetch / `--serve-assist`
+ * leave `cacheOnly` off so they can still warm the cache through the agent.
  */
 export async function translateBlocks(
   session: Session,
@@ -36,6 +42,7 @@ export async function translateBlocks(
   sourceLang: string,
   targetLang: string,
   assist: AssistRegistry,
+  opts: { cacheOnly?: boolean } = {},
 ): Promise<TranslateOutcome> {
   if (blocks.length === 0) return { results: [] }
 
@@ -51,6 +58,12 @@ export async function translateBlocks(
     }
   }
   if (misses.length === 0) return { results }
+
+  if (opts.cacheOnly) {
+    // toggle path: report misses without ever enqueuing the agent (no live request)
+    for (const block of misses) results.push({ hash: block.hash, error: 'no-agent', cached: false })
+    return { results, error: 'no-agent' }
+  }
 
   const fresh: Record<string, string> = {}
   let error: string | undefined
