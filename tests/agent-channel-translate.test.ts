@@ -136,4 +136,56 @@ describe('agent-channel translation via translateBlocks', () => {
     // no agent attached, but empty list must still resolve
     expect(await translateBlocks(session, [], 'en', 'zh-CN', assist)).toEqual({ results: [] })
   })
+
+  describe('cacheOnly (the toggle path — never enqueues the agent)', () => {
+    it('reports misses as no-agent without ever asking the agent', async () => {
+      const { session } = sessions.open(file)
+      const agent = autoAgent(session.id, (t) => `「译」${t}`)
+      const out = await translateBlocks(session, [{ hash: 'h1', text: 'Hello' }], 'en', 'zh-CN', assist, {
+        cacheOnly: true,
+      })
+      expect(out.error).toBe('no-agent')
+      expect(out.results).toEqual([{ hash: 'h1', error: 'no-agent', cached: false }])
+      // the agent is attached but was never enqueued, and nothing is persisted
+      expect(agent.calls()).toBe(0)
+      expect(await loadCache(session.path, 'zh-CN')).toEqual({})
+    })
+
+    it('returns warm cache hits without touching the agent', async () => {
+      const { session } = sessions.open(file)
+      const agent = autoAgent(session.id, (t) => `「译」${t}`)
+      await translateBlocks(session, [{ hash: 'h1', text: 'Hello' }], 'en', 'zh-CN', assist) // warms h1
+      expect(agent.calls()).toBe(1)
+      // a cache-only toggle over one warm + one cold block: hit returns, miss is no-agent, no new call
+      const out = await translateBlocks(
+        session,
+        [
+          { hash: 'h1', text: 'Hello' },
+          { hash: 'h2', text: 'New' },
+        ],
+        'en',
+        'zh-CN',
+        assist,
+        { cacheOnly: true },
+      )
+      expect(out.error).toBe('no-agent')
+      expect(out.results).toEqual([
+        { hash: 'h1', text: '「译」Hello', cached: true },
+        { hash: 'h2', error: 'no-agent', cached: false },
+      ])
+      expect(agent.calls()).toBe(1)
+    })
+
+    it('all-hits returns no error and never enqueues', async () => {
+      const { session } = sessions.open(file)
+      const agent = autoAgent(session.id, (t) => `「译」${t}`)
+      await translateBlocks(session, [{ hash: 'h1', text: 'Hello' }], 'en', 'zh-CN', assist) // warms h1
+      const out = await translateBlocks(session, [{ hash: 'h1', text: 'Hello' }], 'en', 'zh-CN', assist, {
+        cacheOnly: true,
+      })
+      expect(out.error).toBeUndefined()
+      expect(out.results).toEqual([{ hash: 'h1', text: '「译」Hello', cached: true }])
+      expect(agent.calls()).toBe(1)
+    })
+  })
 })

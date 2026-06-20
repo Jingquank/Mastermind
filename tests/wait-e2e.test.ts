@@ -52,7 +52,9 @@ interface WaitProc {
 }
 
 function runOpenWait(file: string, cfgDir: string, extraArgs: string[] = []): WaitProc {
-  const proc = spawn(process.execPath, [distCli, 'open', file, '--wait', '--no-browser', ...extraArgs], {
+  // --no-translate: these tests exercise the wait/handback lifecycle on a cold cache, so skip
+  // the translate-first guard (open would otherwise exit 2 demanding a pre-translated doc).
+  const proc = spawn(process.execPath, [distCli, 'open', file, '--wait', '--no-browser', '--no-translate', ...extraArgs], {
     env: { ...process.env, MASTERMIND_CONFIG_DIR: cfgDir },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -152,6 +154,22 @@ describe.skipIf(!hasDist)('mastermind open --wait (e2e)', () => {
     expect(meta.agentWaiting).toBe(true)
     expect(meta.assistAvailable).toBe(false)
     wait.proc.kill('SIGKILL')
+  }, 20000)
+
+  it('refuses a cold translation cache with exit 2 (translate-first guard)', async () => {
+    const { cfgDir, file } = tmpSetup('coldcache')
+    // no daemon needed: the guard fires before the server is contacted
+    const proc = spawn(process.execPath, [distCli, 'open', file, '--no-browser'], {
+      env: { ...process.env, MASTERMIND_CONFIG_DIR: cfgDir },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    children.push(proc)
+    let err = ''
+    proc.stderr!.on('data', (d: Buffer) => (err += d.toString()))
+    const code = await new Promise<number | null>((r) => proc.on('exit', r))
+    expect(code).toBe(2)
+    expect(err).toContain('translation cache is cold')
+    expect(err).toContain('mastermind translate-blocks')
   }, 20000)
 
   it('exits 130 on SIGINT', async () => {

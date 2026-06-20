@@ -70,10 +70,11 @@ program
   .option('--wait', 'block until the user clicks "Save & hand back", then exit 0')
   .option('--serve-assist', 'answer translation requests for this session (on by default with --wait)')
   .option('--no-assist', 'with --wait, review only — do not serve the assist channel (translation)')
+  .option('--no-translate', 'open even if the translation cache is cold (skip the translate-first guard)')
   .option('--no-browser', 'print the URL without opening a browser tab')
   .option('--in <browser>', 'open in a specific browser app, e.g. "Google Chrome" (overrides the configured default)')
   .description('start the server if not running and open a browser tab for this file')
-  .action(async (file: string, opts: { wait?: boolean; serveAssist?: boolean; assist: boolean; browser: boolean; in?: string }) => {
+  .action(async (file: string, opts: { wait?: boolean; serveAssist?: boolean; assist: boolean; translate: boolean; browser: boolean; in?: string }) => {
     const pinnedPort = parsePort(program.opts<{ port?: string }>().port)
     const abs = path.resolve(file)
     let st: fs.Stats
@@ -83,6 +84,24 @@ program
       die(2, `file not found: ${abs}`)
     }
     if (!st.isFile()) die(2, `not a file: ${abs}`)
+
+    // Translate-first guard: the reading-language toggle is cache-only, so the cache must
+    // be warm BEFORE opening or the toggle has nothing to show. Refuse a cold cache and
+    // point at the offline pre-translate flow (opt out with --no-translate).
+    if (opts.translate) {
+      const plan = await planPretranslate(abs, fs.readFileSync(abs, 'utf8'), readConfig().langPair)
+      if (plan.blocks.length > 0) {
+        die(
+          2,
+          `translation cache is cold (${plan.blocks.length} block(s) untranslated for ${plan.targetLang}).\n` +
+            `  Pre-translate first, then re-run open:\n` +
+            `    mastermind translate-blocks ${file}            # emits the blocks to translate\n` +
+            `    …translate each block, preserving Markdown + CriticMarkup…\n` +
+            `    printf '%s' '[{"hash":"…","text":"…"}]' | mastermind translate-blocks ${file} --save\n` +
+            `  Or open without translating: mastermind open --no-translate ${file}`,
+        )
+      }
+    }
 
     const port = await ensureServer({ pinnedPort })
     const session = await createSession(port, abs)

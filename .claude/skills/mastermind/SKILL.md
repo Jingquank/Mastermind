@@ -54,8 +54,11 @@ created or edited in this conversation; if there is none, ask which file.
    printf '%s' '[{"hash":"…","text":"<translated>"},…]' | mastermind translate-blocks <file> --save
    ```
    It reports how many cached (and skips stale-hash / CriticMarkup-mismatch entries).
-4. Open it: `mastermind open <file>` (uses the configured browser; toggle is warm).
-   - **Plan you want reviewed?** Use `mastermind open --wait <file>` instead, then follow the
-     plan-review protocol: when it returns, re-read the file, apply/argue each CriticMarkup
-     mark and comment, remove the resolved marks + the `mastermind:summary` block, and re-open
-     for the next round until approved.
+4. Open it: `mastermind open <file>` (uses the configured browser; toggle is warm). `open`
+   enforces this flow — it refuses a cold cache (exit 2) and points back to steps 1–3, because
+   the reading-language toggle is cache-only and never fetches on demand. (`--no-translate`
+   bypasses the guard for docs you don't need translated.)
+   - **Plan you want reviewed?** Run steps 1–3 first as always, then use `mastermind open --wait
+     <file>` instead of plain open, and follow the plan-review protocol: when it returns, re-read
+     the file, apply/argue each CriticMarkup mark and comment, remove the resolved marks + the
+     `mastermind:summary` block, and re-translate + re-open for the next round until approved.

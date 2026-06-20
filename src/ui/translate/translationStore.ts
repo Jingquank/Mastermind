@@ -36,6 +36,7 @@ async function fetchTranslations(
   sourceLang: string,
   targetLang: string,
   known: Record<string, string>,
+  cacheOnly: boolean,
 ): Promise<{ map: Record<string, string>; failed: Record<string, true>; error?: string }> {
   const blocks = await segmentBlocks(source)
   const misses = blocks.filter((b) => b.translatable && known[b.hash] === undefined)
@@ -51,6 +52,7 @@ async function fetchTranslations(
         sessionId,
         sourceLang,
         targetLang,
+        cacheOnly,
         blocks: chunk.map((b) => ({ hash: b.hash, text: b.text })),
       }),
     })
@@ -90,7 +92,11 @@ export const useTranslation = create<TransState>((set, get) => ({
     const { sourceLang, targetLang } = pickTarget(source, langPair)
     set({ loading: true, targetLang })
     try {
-      const { map, failed, error } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map)
+      // cache-only: a toggle only flips between original and already-cached text —
+      // it never sends a live translation request to the agent. Uncached blocks come
+      // back as `no-agent` and fall back to the original (the background prefetch and
+      // the agent's pre-translate step are what warm the cache).
+      const { map, failed, error } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map, true)
       const merged = { ...get().map, ...map }
       if (Object.keys(merged).length === 0) {
         // nothing to show (no cache, agent absent) — surface the reason, don't blank the view
@@ -114,7 +120,9 @@ export const useTranslation = create<TransState>((set, get) => ({
     if (!targetLang || loading || !active) return
     set({ loading: true })
     try {
-      const { map, failed } = await fetchTranslations(sessionId, source, 'the document language', targetLang, get().map)
+      // cache-only too: re-translating after an edit reads the cache and falls back to
+      // the original for changed blocks; the eager prefetch effect re-warms via the agent.
+      const { map, failed } = await fetchTranslations(sessionId, source, 'the document language', targetLang, get().map, true)
       set((s) => ({ map: { ...s.map, ...map }, failed: { ...s.failed, ...failed } }))
     } finally {
       set({ loading: false })
@@ -127,8 +135,10 @@ export const useTranslation = create<TransState>((set, get) => ({
     if (prefetchInFlight.has(key)) return
     prefetchInFlight.add(key)
     try {
-      // background warm-up: no `loading` flip (it must not block or spin the button)
-      const { map, failed } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map)
+      // background warm-up: no `loading` flip (it must not block or spin the button).
+      // This is the one UI path that may ask the agent (cacheOnly off) — it seeds the
+      // on-disk cache so a later toggle is instant.
+      const { map, failed } = await fetchTranslations(sessionId, source, sourceLang, targetLang, get().map, false)
       if (Object.keys(map).length > 0) {
         set((s) => ({ targetLang, map: { ...s.map, ...map }, failed: { ...s.failed, ...failed } }))
       }
