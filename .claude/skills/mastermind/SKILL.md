@@ -1,6 +1,6 @@
 ---
 name: mastermind
-description: Visualize and review a Markdown file in Mastermind — configure preferences (/mastermind setup), run the bilingual demo (/mastermind demo), or open any .md (/mastermind <file>, or bare = the most recent .md from this chat). Always pre-translates the doc into both reading languages first. Use whenever the user wants to open, visualize, or review a doc in Mastermind.
+description: Visualize and review a Markdown file in Mastermind — configure preferences (/mastermind setup), run the bilingual demo (/mastermind demo), or open any .md (/mastermind FILE, or bare = the most recent .md from this chat). Always pre-translates the doc into both reading languages first. Use whenever the user wants to open, visualize, or review a doc in Mastermind.
 ---
 
 # Mastermind
@@ -9,6 +9,24 @@ Mastermind shows one `.md` as a reviewable document whose reading-language toggl
 between the user's **Preferred** (`langPair.a`) and **Secondary** (`langPair.b`) languages.
 **You are the translator** — there is no API key. The rule for every path below: **translate
 first, then open**, so the toggle is warm the instant the page loads.
+
+## Cost-aware language work
+Treat routine language transformations as affordable-model work: document translation, demo
+localization, and meaning-preserving copy normalization (for example casing, terminology, or
+typos). Do not delegate plan authoring, ambiguous rewrites, or interpretation of review feedback.
+
+For each translation request, send all missing blocks together as one batch. Prefer, in order:
+
+1. The host's native subagent/model controls, using its current fast, affordable capable tier.
+2. An already installed and authenticated CLI from the same host/vendor.
+3. The active agent completing the work itself.
+
+When the host is Claude Code, use the `sonnet` model alias for delegated language work. For other
+hosts, use their equivalent current affordable tier; do not guess a vendor-specific model name.
+Never install or authenticate a CLI, change provider configuration, or send unrelated repository
+context to a delegate. If delegated output is malformed, incomplete, or rejected by Mastermind's
+CriticMarkup/cache validation, fall back immediately to the active agent instead of repeatedly
+retrying the delegate.
 
 Dispatch on `$ARGUMENTS`:
 
@@ -46,7 +64,8 @@ created or edited in this conversation; if there is none, ask which file.
 1. `mastermind translate-blocks <file>` → prints `{ "targetLang", "cachePath", "blocks":[{"hash","text"}] }`.
    - If `blocks` is empty, the cache is already warm — skip to step 4.
    - If it errors that `langPair` is unset, tell the user to run `/mastermind setup` first.
-2. Translate each block's `text` into `targetLang`. **Preserve all Markdown + CriticMarkup
+2. Translate all emitted blocks as one batch into `targetLang`, following **Cost-aware language
+   work** above. **Preserve all Markdown + CriticMarkup
    syntax exactly** (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`); translate only
    human-readable text; leave `@name:` author tags untranslated.
 3. Write them to the cache via stdin:

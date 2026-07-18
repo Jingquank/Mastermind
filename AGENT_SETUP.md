@@ -59,6 +59,21 @@ need translated.
 
 `mastermind config`, `browsers`, `themes`, and `typefaces` round out the CLI the skills drive.
 
+### Cost-aware language routing
+
+Routine language transformations are delegated as one batch to a faster, more affordable capable
+model by default. This covers offline `translate-blocks`, live `mastermind-assist` translation,
+demo localization, and meaning-preserving copy normalization such as casing, terminology, or typo
+cleanup. It does not cover plan authoring, ambiguous rewrites, or interpreting review feedback.
+
+The installed skill first uses the host's native subagent/model controls. In Claude Code it uses
+the moving `sonnet` alias; other hosts use their equivalent current affordable tier without a
+hard-coded model name. If native delegation is unavailable, the agent may use an already installed
+and authenticated CLI from the same host/vendor. It never installs or authenticates tooling,
+changes provider configuration, or sends unrelated repository context. The active agent completes
+the translation if delegation is unavailable or produces malformed, incomplete, or
+CriticMarkup-invalid output.
+
 ## How the protocol behaves
 
 - `mastermind open --wait <file>` prints the review URL to stdout immediately, then blocks. It **serves the assist channel by default** — a background warm-up that keeps the cache current (e.g. for blocks edited mid-review) by answering the `mastermind-assist:` lines it prints. This is a convenience on top of the mandatory translate-first step, not a substitute for it (the toggle click itself never asks the agent). Pass `--no-assist` to review without it.
@@ -96,7 +111,7 @@ mastermind assist <plan-file>.md
 Each task line is prefixed `mastermind-assist: ` followed by JSON. There is one kind:
 
 1. **translate** — `mastermind-assist: {"id":"…","kind":"translate","sourceLang":"…","targetLang":"…","blocks":[{"hash":"…","text":"…"}]}`
-   Translate each block's text. **Preserve all Markdown and CriticMarkup syntax exactly** (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`); translate only the human-readable text, and keep `@name:` author tags untranslated. Reply:
+   Translate all blocks together as one cost-aware batch. **Preserve all Markdown and CriticMarkup syntax exactly** (`{++ ++}`, `{-- --}`, `{~~ ~> ~~}`, `{== ==}`, `{>> <<}`); translate only the human-readable text, and keep `@name:` author tags untranslated. Reply:
    ```
    mastermind assist-result <id> --blocks '[{"hash":"…","text":"<translated>"}]'
    ```

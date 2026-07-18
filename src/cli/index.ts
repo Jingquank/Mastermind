@@ -377,7 +377,7 @@ configCmd
   })
 
 const MM_DESC =
-  'Visualize and review a Markdown file in Mastermind — /mastermind [setup|demo|<file>]. Always pre-translates the doc into both reading languages first.'
+  'Visualize and review a Markdown file in Mastermind — /mastermind setup, demo, or FILE. Always pre-translates the doc into both reading languages first.'
 const MASTER_DESC = 'Alias of /mastermind: translate a file into both reading languages, then open it in Mastermind.'
 
 function readCanonical(rel: string): string {

@@ -75,7 +75,10 @@ After `install-agents`, type these in your agent:
 
 Every open **translates first**, so the language toggle is warm the instant the page loads. With the
 global rule installed, finished plans (in plan mode) open in Mastermind automatically, in both
-languages.
+languages. Routine translation and localization are sent as one batch to the coding agent's
+current fast, affordable model tier when available (`sonnet` in Claude Code); an existing
+same-vendor CLI and then the active agent provide non-blocking fallbacks. Planning and review
+interpretation stay with the primary agent.
 
 ## Reviewing
 
